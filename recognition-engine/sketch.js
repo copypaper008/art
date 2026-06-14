@@ -1,50 +1,45 @@
-// Recognition Engine — Phase 2
+// Recognition Engine — Gaydar Detector
 
 const STATES = {
-  EMPTY:         "EMPTY",
-  APPROACHING:   "APPROACHING",
-  DETECTED:      "DETECTED",
-  OBSERVING:     "OBSERVING",
-  MISREADING:    "MISREADING",
-  CONTRADICTING: "CONTRADICTING",
-  RELATIONAL:    "RELATIONAL",
-  FADING:        "FADING",
+  IDLE:     "IDLE",      // waiting for subject
+  SCANNING: "SCANNING",  // active scan in progress
+  STRAIGHT: "STRAIGHT",  // result: heterosexual
+  ALARM:    "ALARM",     // result: HOMOSEXUAL DETECTED
 };
 
-let state = STATES.EMPTY;
-let prevState = null;
-let stateEnteredAt = 0;
+const IDLE_BEFORE_SCAN = 1500;  // ms of presence before scan triggers
+const SCAN_DURATION    = 5000;  // ms the scan takes
+const STRAIGHT_HOLD    = 6000;  // ms STRAIGHT result stays on screen
+const ALARM_HOLD       = 9000;  // ms ALARM stays on screen
+
+let state   = STATES.IDLE;
+let stateAt = 0;
+let uiScale = 1;
+
+// Scan counter — gay detection fires every 20–25 scans
+let scanCount = 0;
+let nextGayAt = 0; // set in setup()
+
+// Rotating text during scanning
+let scanLine      = "";
+let scanLineTimer = 0;
+const SCAN_LINE_INTERVAL = 750;
+
+// Rotating sub-line during alarm
+let alarmSub      = "";
+let alarmSubTimer = 0;
+const ALARM_SUB_INTERVAL = 2200;
+
+// Result held across state
+let resultIsStraight = true;
+let straightSub      = "";
+
+// Confidence displayed with result
+let displayedConfidence = 0;
+let targetConfidence    = 0;
 
 let cam;
 let detectionGraphics;
-let confidence = 40;
-let uiScale = 1;
-
-// ── Text timing ───────────────────────────────────────────────────────────────
-// One phrase at a time. Fades in, holds, fades out. No label arrays.
-
-const PHRASE_HOLD  = 8000;  // ms each primary phrase stays on screen
-const PHRASE_FADE  = 1800;  // ms for fade in and out
-const DIAG_HOLD    = 20000; // diagnostic sentence lasts much longer than phrases
-
-// Primary phrase slot
-let phrase   = { text: "", born: 0 };
-
-// Diagnostic sentence (smaller, below phrase, changes slowly)
-let diagLine = { text: "", born: -DIAG_HOLD };
-
-// CONTRADICTING: two words revealed with a gap between them
-let contraA  = { text: "", born: 0 };
-let contraB  = { text: "", born: 0 };
-const CONTRA_DELAY = 4000;  // ms after A before B appears
-const CONTRA_HOLD  = 12000; // how long each pair stays before refreshing
-
-// FADING: one phrase that decays with the state timer
-let fadingPhrase  = "";
-let fadingStartTime = 0;
-const FADING_DURATION = 6000;
-
-// ─────────────────────────────────────────────────────────────────────────────
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -62,7 +57,11 @@ function setup() {
   cam.hide();
 
   textFont("monospace");
-  stateEnteredAt = millis();
+  stateAt = millis();
+
+  nextGayAt = floor(random(20, 26));
+  scanLine  = getRandomPhrase("scanning");
+  alarmSub  = getRandomPhrase("alarmSub");
   initMediaPipe();
 }
 
@@ -74,342 +73,241 @@ function draw() {
   updateState();
   updateConfidence();
 
+  // Mirror + overlays
   drawDistortedMirror(cam, detection.motionAmount, state);
-  drawFaceOverlays(detection.faces, state, detection.personCount);
-  drawScanLines();
 
-  updatePhrases();
-  drawSystemHeader();
-  drawPhraseText();
-  drawDiagnosticLine();
+  if (state === STATES.ALARM) {
+    drawAlarmOverlay();
+    drawFaceOverlays(detection.faces, state, detection.personCount, true);
+  } else {
+    drawFaceOverlays(detection.faces, state, detection.personCount, false);
+  }
+
+  drawScanLines();
+  drawUI();
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
 // State machine
 
 function updateState() {
-  const now  = millis();
-  const pd   = detection.presenceDuration;
-  const ma   = detection.motionAmount;
+  const now     = millis();
+  const elapsed = now - stateAt;
   const present = detection.personDetected;
-  const count   = detection.personCount;
 
-  prevState = state;
-
-  if (count >= 2 && present && state !== STATES.FADING) {
-    if (state !== STATES.RELATIONAL) enterState(STATES.RELATIONAL);
-    return;
-  }
-
-  if (state === STATES.RELATIONAL) {
-    if (!present) { enterState(STATES.FADING); return; }
-    if (count < 2) enterState(STATES.DETECTED);
-    return;
-  }
-
-  if (!present && state !== STATES.FADING && state !== STATES.EMPTY) {
-    enterState(STATES.FADING);
-    return;
-  }
-
-  if (state === STATES.FADING) {
-    if (present) { enterState(STATES.APPROACHING); return; }
-    if (now - fadingStartTime > FADING_DURATION) enterState(STATES.EMPTY);
-    return;
-  }
-
-  if (state === STATES.EMPTY) {
-    if (present) enterState(STATES.APPROACHING);
-    return;
-  }
-
-  if (state === STATES.APPROACHING) {
-    if (pd >= 3) enterState(STATES.DETECTED);
-    return;
-  }
-
-  if (state === STATES.DETECTED || state === STATES.OBSERVING || state === STATES.MISREADING) {
-    if (pd > 12) { enterState(ma > 0.05 ? STATES.MISREADING : STATES.CONTRADICTING); return; }
-    if (pd > 8)  { enterState(ma > 0.05 ? STATES.MISREADING : STATES.OBSERVING); return; }
-    if (ma > 0.06) { enterState(STATES.MISREADING); return; }
-    if (state === STATES.MISREADING && ma < 0.03) {
-      enterState(pd > 8 ? STATES.OBSERVING : STATES.DETECTED);
+  if (state === STATES.IDLE) {
+    if (present && elapsed > IDLE_BEFORE_SCAN) {
+      enterState(STATES.SCANNING);
     }
     return;
   }
 
-  if (state === STATES.CONTRADICTING) {
-    if (ma > 0.06) { enterState(STATES.MISREADING); return; }
-    if (!present)  { enterState(STATES.FADING); }
+  if (state === STATES.SCANNING) {
+    // Rotate scanning text
+    if (now - scanLineTimer > SCAN_LINE_INTERVAL) {
+      scanLine      = getRandomPhrase("scanning");
+      scanLineTimer = now;
+    }
+
+    if (elapsed > SCAN_DURATION) {
+      // Determine result at moment of reveal
+      scanCount++;
+      if (scanCount >= nextGayAt) {
+        nextGayAt = scanCount + floor(random(20, 26));
+        enterState(STATES.ALARM);
+      } else {
+        enterState(STATES.STRAIGHT);
+      }
+    }
+    return;
+  }
+
+  if (state === STATES.STRAIGHT) {
+    if (elapsed > STRAIGHT_HOLD) enterState(STATES.IDLE);
+    return;
+  }
+
+  if (state === STATES.ALARM) {
+    // Rotate alarm sub-line
+    if (now - alarmSubTimer > ALARM_SUB_INTERVAL) {
+      alarmSub      = getRandomPhrase("alarmSub");
+      alarmSubTimer = now;
+    }
+    if (elapsed > ALARM_HOLD) enterState(STATES.IDLE);
     return;
   }
 }
 
 function enterState(newState) {
-  if (newState === state) return;
-  state = newState;
-  stateEnteredAt = millis();
+  state   = newState;
+  stateAt = millis();
 
-  // Reset primary phrase so a new one fades in immediately
-  phrase = { text: "", born: 0 };
-
-  // Diagnostic always refreshes on state change
-  diagLine = { text: pickDiagnostic(), born: millis() };
-
-  if (state === STATES.CONTRADICTING) {
-    const pair = getContradictionPair();
-    contraA = { text: pair[0], born: millis() };
-    contraB = { text: pair[1], born: millis() + CONTRA_DELAY };
+  if (newState === STATES.SCANNING) {
+    scanLine      = getRandomPhrase("scanning");
+    scanLineTimer = millis();
+    targetConfidence = 0;
   }
 
-  if (state === STATES.FADING) {
-    fadingStartTime = millis();
-    fadingPhrase = getRandomPhrase("fading");
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Phrase cycling — only one phrase active at a time
-
-function updatePhrases() {
-  // APPROACHING, CONTRADICTING, and FADING have their own drawing logic
-  if (state === STATES.APPROACHING ||
-      state === STATES.CONTRADICTING ||
-      state === STATES.FADING) return;
-
-  const age = millis() - phrase.born;
-  if (age > PHRASE_HOLD || phrase.text === "") {
-    phrase = { text: pickPhrase(), born: millis() };
+  if (newState === STATES.STRAIGHT) {
+    straightSub      = getRandomPhrase("straightSub");
+    targetConfidence = floor(random(92, 98));
   }
 
-  // Refresh contradiction pair when its hold time expires
-  if (state === STATES.CONTRADICTING) {
-    if (millis() - contraA.born > CONTRA_HOLD) {
-      const pair = getContradictionPair();
-      contraA = { text: pair[0], born: millis() };
-      contraB = { text: pair[1], born: millis() + CONTRA_DELAY };
-    }
+  if (newState === STATES.ALARM) {
+    alarmSub      = getRandomPhrase("alarmSub");
+    alarmSubTimer = millis();
+    targetConfidence = 99;
   }
 
-  // Diagnostic refreshes on its own slower schedule
-  if (millis() - diagLine.born > DIAG_HOLD) {
-    diagLine = { text: pickDiagnostic(), born: millis() };
+  if (newState === STATES.IDLE) {
+    targetConfidence = 0;
   }
 }
-
-function pickPhrase() {
-  switch (state) {
-    case STATES.EMPTY:         return getRandomPhrase("empty");
-    case STATES.DETECTED:      return getRandomPhrase("detected");
-    case STATES.OBSERVING:     return getRandomPhrase("observing");
-    case STATES.MISREADING:    return getRandomPhrase("moving");
-    case STATES.RELATIONAL:    return getRandomPhrase("relational");
-    default: return "";
-  }
-}
-
-function pickDiagnostic() {
-  const key = state === STATES.MISREADING    ? "misreading"    :
-              state === STATES.CONTRADICTING ? "contradicting" :
-              state === STATES.RELATIONAL    ? "relational"    :
-              state.toLowerCase();
-  return getDiagnosticSentence(key);
-}
-
-// Alpha for a phrase: fade in → hold → fade out
-function phraseAlpha(born, hold = PHRASE_HOLD) {
-  const age = millis() - born;
-  if (age <= 0)             return 0;
-  if (age < PHRASE_FADE)    return (age / PHRASE_FADE) * 255;
-  if (age > hold - PHRASE_FADE) return max(0, ((hold - age) / PHRASE_FADE) * 255);
-  return 255;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Confidence
 
 function updateConfidence() {
-  let target = 40;
-  if (detection.personDetected)        target += 10;
-  if (detection.personCount >= 2)      target += 8;
-  if (detection.faceDetected)          target += 6;
-  if (detection.stillnessDuration > 5) target += 15;
-  if (detection.motionAmount > 0.06)   target -= 20;
-  if (detection.presenceDuration > 20) target -= 10;
-  if (detection.gazeApproximation === "away") target -= 12;
-  if (state === STATES.CONTRADICTING)  target -= 8;
-  if (state === STATES.MISREADING)     target -= 15;
-  if (state === STATES.OBSERVING)      target += 8;
-  if (state === STATES.RELATIONAL)     target += 5;
-  target = constrain(target, 12, 89);
-  confidence += (target - confidence) * 0.02;
+  // During scan: confidence builds with progress
+  if (state === STATES.SCANNING) {
+    const progress = constrain((millis() - stateAt) / SCAN_DURATION, 0, 1);
+    targetConfidence = floor(progress * 94);
+  }
+  displayedConfidence += (targetConfidence - displayedConfidence) * 0.06;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────
 // Drawing
 
-function drawSystemHeader() {
-  const flicker = state === STATES.MISREADING ? random(140, 255) : 200;
+function drawUI() {
   const pad = Math.round(24 * uiScale);
   const sm  = Math.round(11 * uiScale);
-  const med = Math.round(13 * uiScale);
-  const lh  = Math.round(18 * uiScale);
+  const md  = Math.round(14 * uiScale);
+  const lg  = Math.round(36 * uiScale);
+  const xl  = Math.round(44 * uiScale);
+  const lh  = Math.round(20 * uiScale);
 
+  const isAlarm = state === STATES.ALARM;
+
+  // ── Header ───────────────────────────────────────────────────────────────
   noStroke();
   textAlign(LEFT, TOP);
 
-  fill(0, 255, 120, flicker * 0.6);
-  textSize(sm);
-  text("RECOGNITION ENGINE / ACTIVE", pad, pad * 0.8);
+  const headerCol = isAlarm ? color(255, 60, 60) : color(0, 255, 120);
 
-  fill(0, 255, 120, flicker * 0.4);
-  text("STATE: " + state, pad, pad * 0.8 + lh * 1.4);
+  fill(red(headerCol), green(headerCol), blue(headerCol), 180);
+  textSize(sm);
+  text("GAYDAR DETECTION SYSTEM / ACTIVE", pad, pad * 0.8);
 
   // Confidence — top right
-  textAlign(RIGHT, TOP);
-  textSize(med);
-  fill(0, 255, 120, flicker * 0.8);
-  text("CONFIDENCE: " + Math.round(confidence) + "%", width - pad, pad * 0.8);
+  if (displayedConfidence > 1) {
+    textAlign(RIGHT, TOP);
+    textSize(md);
+    fill(red(headerCol), green(headerCol), blue(headerCol), 220);
+    text("CONFIDENCE: " + Math.round(displayedConfidence) + "%", width - pad, pad * 0.8);
 
-  const barW = Math.round(160 * uiScale);
-  const barH = Math.max(2, Math.round(3 * uiScale));
-  const barX = width - pad - barW;
-  const barY = Math.round(pad * 0.8 + lh * 1.4);
-  noFill();
-  stroke(0, 255, 120, 50);
-  strokeWeight(1);
-  rect(barX, barY, barW, barH);
-  noStroke();
-  fill(0, 255, 120, flicker * 0.5);
-  rect(barX, barY, barW * (confidence / 100), barH);
-
-  textAlign(LEFT, TOP);
-}
-
-function drawPhraseText() {
-  noStroke();
-  textAlign(CENTER, CENTER);
-
-  // ── APPROACHING: scanning animation ─────────────────────────────────────
-  if (state === STATES.APPROACHING) {
-    const elapsed = millis() - stateEnteredAt;
-    const progress = constrain(elapsed / 3000, 0, 1);
-
-    // Pulsing label
-    const pulse = (sin(elapsed * 0.004) + 1) / 2;
-    fill(0, 255, 120, 120 + pulse * 100);
-    textSize(Math.round(13 * uiScale));
-    const dots = ".".repeat(floor(elapsed / 450) % 4);
-    text("SCANNING" + dots, width * 0.5, height * 0.42);
-
-    // Progress bar
-    const barW = Math.round(180 * uiScale);
-    const barH = Math.max(1, Math.round(2 * uiScale));
-    const barX = width * 0.5 - barW / 2;
-    const barY = height * 0.42 + Math.round(22 * uiScale);
+    const barW = Math.round(160 * uiScale);
+    const barH = Math.max(2, Math.round(3 * uiScale));
+    const barX = width - pad - barW;
+    const barY = Math.round(pad * 0.8 + lh * 1.4);
     noFill();
-    stroke(0, 255, 120, 40);
+    stroke(red(headerCol), green(headerCol), blue(headerCol), 50);
     strokeWeight(1);
     rect(barX, barY, barW, barH);
     noStroke();
-    fill(0, 255, 120, 160);
-    rect(barX, barY, barW * progress, barH);
-
-    textAlign(LEFT, TOP);
-    return;
+    fill(red(headerCol), green(headerCol), blue(headerCol), 180);
+    rect(barX, barY, barW * (displayedConfidence / 100), barH);
   }
 
-  // ── CONTRADICTING: two words revealed with a gap ──────────────────────────
-  if (state === STATES.CONTRADICTING) {
-    const sz = Math.round(38 * uiScale);
-    const gap = Math.round(60 * uiScale);
-    const cy  = height * 0.42;
-
-    if (contraA.text) {
-      const a = phraseAlpha(contraA.born, CONTRA_HOLD);
-      const flicker = random(0.9, 1.0);
-      fill(255, 255, 255, a * flicker);
-      textSize(sz);
-      text(contraA.text, width * 0.5 - gap, cy);
-    }
-
-    if (contraB.text) {
-      const a = phraseAlpha(contraB.born, CONTRA_HOLD - CONTRA_DELAY);
-      const flicker = random(0.88, 1.0);
-      fill(200, 200, 200, a * flicker);
-      textSize(Math.round(30 * uiScale));
-      text(contraB.text, width * 0.5 + gap, cy + Math.round(20 * uiScale));
-    }
-
-    // Refresh pair when expired
-    if (millis() - contraA.born > CONTRA_HOLD) {
-      const pair = getContradictionPair();
-      contraA = { text: pair[0], born: millis() };
-      contraB = { text: pair[1], born: millis() + CONTRA_DELAY };
-    }
-
-    textAlign(LEFT, TOP);
-    return;
-  }
-
-  // ── FADING: single phrase that decays ─────────────────────────────────────
-  if (state === STATES.FADING) {
-    const a = map(millis() - fadingStartTime, 0, FADING_DURATION, 220, 0, true);
-    fill(255, 255, 255, a);
-    textSize(Math.round(32 * uiScale));
-    text(fadingPhrase, width * 0.5, height * 0.42);
-    textAlign(LEFT, TOP);
-    return;
-  }
-
-  // ── RELATIONAL: midpoint label between faces (if detected) ─────────────────
-  if (state === STATES.RELATIONAL && detection.faces.length >= 2) {
-    const a = phraseAlpha(phrase.born);
-    const flicker = random(0.92, 1.0);
-    fill(255, 255, 255, a * flicker);
-    textSize(Math.round(32 * uiScale));
-    text(phrase.text, width * 0.5, height * 0.42);
-    textAlign(LEFT, TOP);
-    return;
-  }
-
-  // ── Default: single primary phrase ────────────────────────────────────────
-  if (phrase.text) {
-    const a = phraseAlpha(phrase.born);
-    const flicker = state === STATES.MISREADING ? random(0.65, 1.0) : random(0.96, 1.0);
-    const drift   = sin(frameCount * 0.008) * (state === STATES.MISREADING ? 10 : 2);
-    fill(255, 255, 255, a * flicker);
-    textSize(Math.round(34 * uiScale));
-    text(phrase.text, width * 0.5 + drift, height * 0.42);
-  }
-
-  textAlign(LEFT, TOP);
-}
-
-function drawDiagnosticLine() {
-  if (!diagLine.text) return;
-
-  // Diagnostic sits below the phrase, smaller, green
-  const a = phraseAlpha(diagLine.born, DIAG_HOLD);
-  if (a <= 0) return;
-
-  const barAlpha = state === STATES.MISREADING ? random(0.7, 1.0) : 1.0;
   noStroke();
   textAlign(CENTER, CENTER);
-  textSize(Math.round(14 * uiScale));
-  fill(0, 255, 120, a * barAlpha * 0.85);
-  text(diagLine.text, width * 0.5, height * 0.60);
 
-  // Presence duration — bottom-left, very quiet
-  if (detection.personDetected) {
-    const pad = Math.round(24 * uiScale);
-    textAlign(LEFT, BOTTOM);
-    textSize(Math.round(10 * uiScale));
-    fill(0, 255, 120, 50);
-    text("DURATION: " + detection.presenceDuration.toFixed(1) + "s", pad, height - pad * 0.4);
+  // ── IDLE ─────────────────────────────────────────────────────────────────
+  if (state === STATES.IDLE) {
+    const pulse = (sin(millis() * 0.002) + 1) / 2;
+    fill(0, 255, 120, 80 + pulse * 80);
+    textSize(md);
+    text(getRandomPhrase("idle"), width * 0.5, height * 0.44);
+    textAlign(LEFT, TOP);
+    return;
   }
 
-  textAlign(LEFT, TOP);
+  // ── SCANNING ─────────────────────────────────────────────────────────────
+  if (state === STATES.SCANNING) {
+    const elapsed  = millis() - stateAt;
+    const progress = constrain(elapsed / SCAN_DURATION, 0, 1);
+
+    // Rotating status line
+    fill(0, 255, 120, 220);
+    textSize(md);
+    text(scanLine, width * 0.5, height * 0.38);
+
+    // Progress bar
+    const barW = Math.round(320 * uiScale);
+    const barH = Math.max(3, Math.round(4 * uiScale));
+    const barX = width * 0.5 - barW / 2;
+    const barY = height * 0.46;
+    noFill();
+    stroke(0, 255, 120, 50);
+    strokeWeight(1);
+    rect(barX, barY, barW, barH);
+    noStroke();
+    fill(0, 255, 120, 200);
+    rect(barX, barY, barW * progress, barH);
+
+    // Percentage ticker
+    fill(0, 255, 120, 140);
+    textSize(sm);
+    text(Math.round(progress * 94) + "%", width * 0.5, height * 0.46 + barH + Math.round(16 * uiScale));
+
+    textAlign(LEFT, TOP);
+    return;
+  }
+
+  // ── STRAIGHT RESULT ───────────────────────────────────────────────────────
+  if (state === STATES.STRAIGHT) {
+    fill(0, 255, 120, 255);
+    textSize(xl);
+    text(getRandomPhrase("straight"), width * 0.5, height * 0.40);
+
+    fill(0, 255, 120, 180);
+    textSize(md);
+    text(straightSub, width * 0.5, height * 0.54);
+
+    textAlign(LEFT, TOP);
+    return;
+  }
+
+  // ── ALARM ─────────────────────────────────────────────────────────────────
+  if (state === STATES.ALARM) {
+    const flash = sin(millis() * 0.012) > 0; // ~1Hz flash
+    const textA = flash ? 255 : 200;
+
+    // Primary alarm line
+    fill(255, 255, 255, textA);
+    textSize(xl);
+    text(getRandomPhrase("alarm"), width * 0.5, height * 0.38);
+
+    // Rotating sub-line
+    fill(255, 60, 60, textA * 0.9);
+    textSize(Math.round(22 * uiScale));
+    text(alarmSub, width * 0.5, height * 0.52);
+
+    // CONFIDENCE: 99%
+    fill(255, 60, 60, 200);
+    textSize(md);
+    text("CONFIDENCE: 99%", width * 0.5, height * 0.62);
+
+    // Flashing ALERT in corners
+    if (flash) {
+      textAlign(LEFT, TOP);
+      textSize(sm);
+      fill(255, 60, 60, 255);
+      text("⚠ ALERT ⚠", pad, pad * 0.8 + Math.round(lh * 1.8));
+      textAlign(RIGHT, TOP);
+      text("⚠ ALERT ⚠", width - pad, pad * 0.8 + Math.round(lh * 1.8));
+    }
+
+    textAlign(LEFT, TOP);
+    return;
+  }
 }
 
 function windowResized() {

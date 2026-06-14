@@ -1,4 +1,4 @@
-// Visual effects: mirror, scan lines, ghost trails, pixel ripple
+// Visual effects: mirror, scan lines, ghost trails, pixel ripple, alarm overlay
 
 const GHOST_FRAMES = 8;
 const ghostTrails = [];
@@ -14,7 +14,6 @@ function initVisuals(w, h) {
   rippleBuffer.pixelDensity(1);
 }
 
-// Draw the mirrored, distorted camera feed
 function drawDistortedMirror(videoCapture, motionAmount, state) {
   if (!videoCapture || !mirrorBuffer) return;
 
@@ -24,12 +23,10 @@ function drawDistortedMirror(videoCapture, motionAmount, state) {
   mirrorBuffer.image(videoCapture, 0, 0, mirrorBuffer.width, mirrorBuffer.height);
   mirrorBuffer.pop();
 
-  // Apply pixel-level ripple distortion
   const amplitude = map(motionAmount, 0, 0.15, 2, 22, true);
   ripplePhase += 0.04;
   applyRipple(mirrorBuffer, rippleBuffer, amplitude);
 
-  // Draw base layer — ghost trails first
   for (let i = 0; i < ghostTrails.length; i++) {
     const alpha = map(i, 0, ghostTrails.length, 5, 25);
     tint(255, alpha);
@@ -37,17 +34,18 @@ function drawDistortedMirror(videoCapture, motionAmount, state) {
   }
   noTint();
 
-  // Draw current distorted frame at low opacity
-  const baseOpacity = state === "EMPTY" ? 60 : state === "FADING" ? 80 : 120;
-  tint(255, baseOpacity);
+  // In alarm mode, tint the mirror red
+  const isAlarm = state === "ALARM";
+  if (isAlarm) {
+    tint(255, 80, 80, 130);
+  } else {
+    tint(255, 120);
+  }
   image(rippleBuffer, 0, 0);
   noTint();
 
-  // Store this frame as ghost trail
   if (frameCount % 3 === 0) {
-    if (ghostTrails.length >= GHOST_FRAMES) {
-      ghostTrails.shift();
-    }
+    if (ghostTrails.length >= GHOST_FRAMES) ghostTrails.shift();
     const snapshot = createGraphics(width, height);
     snapshot.image(rippleBuffer, 0, 0);
     ghostTrails.push(snapshot);
@@ -64,9 +62,9 @@ function applyRipple(src, dst, amplitude) {
   for (let y = 0; y < h; y++) {
     const offsetX = Math.floor(sin(y * 0.03 + ripplePhase) * amplitude);
     for (let x = 0; x < w; x++) {
-      const srcX = constrain(x + offsetX, 0, w - 1);
-      const srcIdx = (y * w + srcX) * 4;
-      const dstIdx = (y * w + x) * 4;
+      const srcX    = constrain(x + offsetX, 0, w - 1);
+      const srcIdx  = (y * w + srcX) * 4;
+      const dstIdx  = (y * w + x) * 4;
       dst.pixels[dstIdx]     = src.pixels[srcIdx];
       dst.pixels[dstIdx + 1] = src.pixels[srcIdx + 1];
       dst.pixels[dstIdx + 2] = src.pixels[srcIdx + 2];
@@ -78,20 +76,43 @@ function applyRipple(src, dst, amplitude) {
 }
 
 function drawScanLines() {
-  // uiScale is a global set each frame in sketch.js
+  const isAlarm     = state === "ALARM";
   const lineSpacing = Math.max(2, Math.round(4 * uiScale));
-  const lineAlpha = 18;
-  stroke(0, lineAlpha);
+
+  stroke(0, isAlarm ? 30 : 18);
   strokeWeight(1);
   for (let y = 0; y < height; y += lineSpacing) {
     line(0, y, width, y);
   }
   noStroke();
 
-  const sweepY = ((frameCount * 0.5) % height);
-  stroke(0, 255, 120, 12);
+  // Sweep line — red in alarm mode, green otherwise
+  const sweepY = (frameCount * (isAlarm ? 1.5 : 0.5)) % height;
+  if (isAlarm) {
+    stroke(255, 0, 0, 25);
+  } else {
+    stroke(0, 255, 120, 12);
+  }
   strokeWeight(Math.max(1, Math.round(2 * uiScale)));
   line(0, sweepY, width, sweepY);
+  noStroke();
+}
+
+// Full-screen pulsing red overlay for ALARM state
+function drawAlarmOverlay() {
+  const pulse = (sin(millis() * 0.008) + 1) / 2; // 0→1 at ~0.8Hz
+  const alpha = 30 + pulse * 50;
+
+  noStroke();
+  fill(180, 0, 0, alpha);
+  rect(0, 0, width, height);
+
+  // Red border flash
+  const borderA = 80 + pulse * 120;
+  stroke(255, 0, 0, borderA);
+  strokeWeight(Math.max(3, Math.round(6 * uiScale)));
+  noFill();
+  rect(0, 0, width, height);
   noStroke();
 }
 
@@ -100,69 +121,41 @@ function clearGhostTrails() {
   ghostTrails.length = 0;
 }
 
-// ─────────────────────────────────────────────
-// Face overlays (Phase 2)
-// Draws subtle glow boundaries around detected faces and a connection
-// line between subjects in the RELATIONAL state.
-
-function drawFaceOverlays(faces, state, personCount) {
+// Face targeting reticle — green normally, red in alarm mode
+function drawFaceOverlays(faces, state, personCount, alarmMode = false) {
   if (!faces || faces.length === 0) return;
 
+  const r = alarmMode ? 255 : 0;
+  const g = alarmMode ? 0   : 255;
+  const b = alarmMode ? 0   : 120;
+
   noFill();
-  strokeWeight(1);
 
-  // Soft glow rectangle around each face
   for (const face of faces) {
-    const flicker = state === "MISREADING" ? random(0.4, 1.0) : random(0.8, 1.0);
+    const flicker = alarmMode ? random(0.6, 1.0) : random(0.85, 1.0);
 
-    // Outer soft halo
-    stroke(0, 255, 120, 12 * flicker);
+    // Outer halo
+    stroke(r, g, b, 18 * flicker);
     strokeWeight(8);
     rect(face.x - face.w * 0.6, face.y - face.h * 0.65, face.w * 1.2, face.h * 1.3, 4);
 
-    // Inner line
-    stroke(0, 255, 120, 25 * flicker);
-    strokeWeight(1);
+    // Inner box
+    stroke(r, g, b, alarmMode ? 80 * flicker : 25 * flicker);
+    strokeWeight(alarmMode ? 2 : 1);
     rect(face.x - face.w * 0.55, face.y - face.h * 0.6, face.w * 1.1, face.h * 1.2, 2);
 
-    // Corner tick marks (top-left and bottom-right only, like a targeting reticle)
-    const tlx = face.x - face.w * 0.55;
-    const tly = face.y - face.h * 0.6;
-    const brx = tlx + face.w * 1.1;
-    const bry = tly + face.h * 1.2;
+    // Corner ticks
+    const tlx  = face.x - face.w * 0.55;
+    const tly  = face.y - face.h * 0.6;
+    const brx  = tlx + face.w * 1.1;
+    const bry  = tly + face.h * 1.2;
     const tick = Math.round(10 * uiScale);
-    stroke(0, 255, 120, 50 * flicker);
+    stroke(r, g, b, (alarmMode ? 200 : 50) * flicker);
     strokeWeight(Math.max(1, Math.round(uiScale)));
-    // top-left
     line(tlx, tly, tlx + tick, tly);
     line(tlx, tly, tlx, tly + tick);
-    // bottom-right
     line(brx - tick, bry, brx, bry);
     line(brx, bry - tick, brx, bry);
-  }
-
-  // RELATIONAL: connection line between face centres
-  if (personCount >= 2 && faces.length >= 2) {
-    const t = millis() * 0.001;
-    for (let i = 0; i < faces.length - 1; i++) {
-      const a = faces[i];
-      const b = faces[i + 1];
-
-      // Animated dashed connection — draw short segments that travel between faces
-      const segments = 12;
-      for (let s = 0; s < segments; s++) {
-        const tStart = (s / segments + t * 0.1) % 1;
-        const tEnd   = tStart + 0.04;
-        const x1 = lerp(a.x, b.x, tStart);
-        const y1 = lerp(a.y, b.y, tStart);
-        const x2 = lerp(a.x, b.x, min(tEnd, 1));
-        const y2 = lerp(a.y, b.y, min(tEnd, 1));
-        const segAlpha = 40 * sin(s / segments * PI);
-        stroke(255, 255, 255, segAlpha);
-        strokeWeight(1);
-        line(x1, y1, x2, y2);
-      }
-    }
   }
 
   noStroke();
