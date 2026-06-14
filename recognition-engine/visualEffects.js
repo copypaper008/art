@@ -121,32 +121,76 @@ function clearGhostTrails() {
   ghostTrails.length = 0;
 }
 
-// Downward-pointing pink triangle — ACT UP / SILENCE=DEATH symbol
-// Used as the scan frame (SCANNING) and alarm overlay element (ALARM)
+// Downward-pointing triangle scan frame + camera lens eye inside
 function drawPinkTriangle(alarmMode) {
-  const cx      = width * 0.5;
-  const top     = height * 0.10;
-  const bottom  = height * 0.90;
+  const cx       = width * 0.5;
+  const topY     = height * 0.10;
+  const botY     = height * 0.90;
   const halfBase = Math.min(width, height) * 0.42;
 
-  // Vertices: top-left, top-right, bottom-centre (pointing down)
-  const x1 = cx - halfBase, y1 = top;
-  const x2 = cx + halfBase, y2 = top;
-  const x3 = cx,            y3 = bottom;
+  const x1 = cx - halfBase, y1 = topY;
+  const x2 = cx + halfBase, y2 = topY;
+  const x3 = cx,            y3 = botY;
 
+  const t             = millis() * 0.001;
+  const scanProgress  = alarmMode ? 1 : constrain((millis() - stateAt) / SCAN_DURATION, 0, 1);
+  const pulse         = (sin(t * 1.8) + 1) / 2;
+
+  // ── Triangle frame ──────────────────────────────────────────────────────
+  noFill();
   if (alarmMode) {
-    const pulse = (sin(millis() * 0.006) + 1) / 2;
-    fill(255, 20, 147, 30 + pulse * 45);
-    stroke(255, 20, 147, 160 + pulse * 95);
-    strokeWeight(Math.max(2, Math.round(3 * uiScale)));
+    const ap = (sin(millis() * 0.008) + 1) / 2;
+    stroke(255, 40, 40, 100 + ap * 110);
   } else {
-    noFill();
-    const scanProgress = constrain((millis() - stateAt) / SCAN_DURATION, 0, 1);
-    stroke(255, 105, 180, 30 + scanProgress * 110);
+    stroke(0, 255, 120, 25 + scanProgress * 160);
+  }
+  strokeWeight(Math.max(1, Math.round(2 * uiScale)));
+  triangle(x1, y1, x2, y2, x3, y3);
+  noStroke();
+
+  // ── Camera lens — centroid of the triangle ───────────────────────────────
+  const lcx   = cx;
+  const lcy   = (topY * 2 + botY) / 3;   // visual centroid ~36% down
+  const maxR  = Math.min(width, height) * 0.13;
+  const fade  = alarmMode ? 1.0 : 0.35 + scanProgress * 0.65;
+
+  // Outer housing ring
+  noFill();
+  stroke(160, 25, 25, 95 * fade);
+  strokeWeight(Math.max(2, Math.round(3 * uiScale)));
+  circle(lcx, lcy, maxR * 2);
+
+  // Glass element rings
+  const rings = [0.76, 0.52, 0.33];
+  for (let i = 0; i < rings.length; i++) {
+    stroke(185, 35, 35, (22 + i * 18) * fade);
     strokeWeight(Math.max(1, Math.round(1.5 * uiScale)));
+    circle(lcx, lcy, maxR * rings[i] * 2);
   }
 
-  triangle(x1, y1, x2, y2, x3, y3);
+  // Rotating aperture blades
+  const blades   = 8;
+  const rotation = t * 0.22;
+  stroke(210, 45, 45, 65 * fade);
+  strokeWeight(Math.max(1, Math.round(uiScale)));
+  for (let i = 0; i < blades; i++) {
+    const a = (i / blades) * TWO_PI + rotation;
+    line(
+      lcx + cos(a) * maxR * 0.16, lcy + sin(a) * maxR * 0.16,
+      lcx + cos(a) * maxR * 0.70, lcy + sin(a) * maxR * 0.70
+    );
+  }
+
+  // Iris — breathes gently
+  noStroke();
+  const irisR = maxR * (0.26 + pulse * (alarmMode ? 0.10 : 0.05));
+  fill(100, 8, 8, 65 * fade);
+  circle(lcx, lcy, irisR * 2);
+
+  // Pupil — the red eye
+  fill(225, 28, 28, (145 + pulse * 110) * fade);
+  circle(lcx, lcy, maxR * 0.16);
+
   noStroke();
   noFill();
 }
