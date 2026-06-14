@@ -17,8 +17,13 @@ let stateAt = 0;
 let uiScale = 1;
 
 // Scan counter — gay detection fires every 20–25 scans
-let scanCount = 0;
-let nextGayAt = 0; // set in setup()
+let scanCount        = 0;
+let nextGayAt        = 0; // set in setup()
+
+// Fallback: if too many idle cycles pass without a completed scan triggering
+// the alarm naturally, force the next completed scan to be gay.
+let idlesSinceAlarm  = 0;
+const FORCE_GAY_AFTER_IDLES = 15;
 
 // Rotating text during scanning
 let scanLine      = "";
@@ -164,13 +169,21 @@ function enterState(newState) {
   }
 
   if (newState === STATES.ALARM) {
-    alarmSub      = getRandomPhrase("alarmSub");
-    alarmSubTimer = millis();
+    alarmSub         = getRandomPhrase("alarmSub");
+    alarmSubTimer    = millis();
     targetConfidence = 99;
+    idlesSinceAlarm  = 0; // alarm fired — reset the fallback counter
   }
 
   if (newState === STATES.IDLE) {
     targetConfidence = 0;
+    idlesSinceAlarm++;
+    // If too many idles have passed without a gay result, guarantee the
+    // next completed scan triggers it. The scan must still complete —
+    // someone has to stay through the full scan for it to count.
+    if (idlesSinceAlarm >= FORCE_GAY_AFTER_IDLES) {
+      nextGayAt = scanCount; // next completed scan will be gay
+    }
   }
 }
 
