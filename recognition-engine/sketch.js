@@ -1,62 +1,12 @@
-// Recognition Engine — Gaydar Detector
+// Recognition Engine — Gaydar Detector (per-face edition)
 
-const STATES = {
-  IDLE:     "IDLE",      // waiting for subject
-  SCANNING: "SCANNING",  // active scan in progress
-  STRAIGHT: "STRAIGHT",  // result: heterosexual
-  ALARM:    "ALARM",     // result: HOMOSEXUAL DETECTED
-};
+// Timing constants — referenced by faceTracker.js Subject methods at runtime
+const IDLE_BEFORE_SCAN = 1500;
+const SCAN_DURATION    = 5000;
+const STRAIGHT_HOLD    = 7500;
+const ALARM_HOLD       = 9000;
 
-const IDLE_BEFORE_SCAN = 1500;  // ms of presence before scan triggers
-const SCAN_DURATION    = 5000;  // ms the scan takes
-const STRAIGHT_HOLD    = 7500;  // ms STRAIGHT result stays on screen
-const ALARM_HOLD       = 9000;  // ms ALARM stays on screen
-
-let state   = STATES.IDLE;
-let stateAt = 0;
-let uiScale = 1;
-
-// Scan counter — gay detection fires every 2 scans (TESTING — change to random(10,16) for exhibition)
-let scanCount       = 0;
-let nextGayAt       = 0; // set in setup()
-
-// Fallback: if too many idle cycles pass without a completed scan triggering
-// the alarm naturally, force the next completed scan to be gay.
-let idlesSinceAlarm = 0;
-const FORCE_GAY_AFTER_IDLES = 15;
-
-// Rotating status line during scanning
-let scanLine      = "";
-let scanLineTimer = 0;
-const SCAN_LINE_INTERVAL = 2200;
-
-// Alarm text slots
-let alarmPrimary  = "";
-let alarmSub      = "";
-let alarmSubTimer = 0;
-const ALARM_SUB_INTERVAL = 3500;
-
-// Result text slots — picked on state entry, held for full duration
-let straightPhrase = "";
-let straightSub    = "";
-
-// Idle phrase — held for several seconds, then quietly swapped
-let idlePhrase      = "";
-let idlePhraseTimer = 0;
-const IDLE_PHRASE_INTERVAL = 4000;
-
-// Confidence displayed with result
-let displayedConfidence = 0;
-let targetConfidence    = 0;
-
-// ── Scanning HUD state (populated on SCANNING entry) ──────────────────────
-let hudSessionId  = "";
-let hudExpression = "";
-let hudLogLines   = [];
-let hudLogTimer   = 0;
-let hudDataTicker = "";
-let hudDataTimer  = 0;
-
+// Log sequence — referenced by Subject.tick() at runtime
 const HUD_LOG_SEQ = [
   "SYSTEM BOOT",
   "CAMERA LINK: OK",
@@ -66,8 +16,17 @@ const HUD_LOG_SEQ = [
   "AWAITING CLARITY",
 ];
 
+let uiScale = 1;
 let cam;
 let detectionGraphics;
+
+// Global session header
+let hudSessionId = "";
+
+// Idle phrase shown when no subjects are in frame
+let idlePhrase      = "";
+let idlePhraseTimer = 0;
+const IDLE_PHRASE_INTERVAL = 4000;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -85,11 +44,10 @@ function setup() {
   cam.hide();
 
   textFont("monospace");
-  stateAt = millis();
 
-  nextGayAt       = 2; // TESTING — change to floor(random(10, 16)) for exhibition
-  scanLine        = getRandomPhrase("scanning");
-  alarmSub        = getRandomPhrase("alarmSub");
+  const rndId  = () => Math.floor(Math.random() * 65536).toString(16).toUpperCase().padStart(4, '0');
+  hudSessionId = "G4Y-" + rndId() + "-" + rndId();
+
   idlePhrase      = getRandomPhrase("idle");
   idlePhraseTimer = millis();
   initMediaPipe();
@@ -100,290 +58,190 @@ function draw() {
   uiScale = height / 1080;
 
   runDetection(cam);
-  updateState();
-  updateConfidence();
+  faceTracker.update(detection.faces || []);
 
-  drawDistortedMirror(cam, state);
+  // Camera filter uses aggregate state across all subjects
+  const anyAlarm    = faceTracker.hasAlarm();
+  const allStraight = faceTracker.allStraight();
+  const visualState = anyAlarm ? 'ALARM' : allStraight ? 'STRAIGHT' : 'OTHER';
 
-  if (state === STATES.ALARM) {
+  drawDistortedMirror(cam, visualState);
+
+  if (anyAlarm) {
     drawAlarmOverlay();
     drawParticles();
-    drawSpectrumScan(true);
-  } else if (state === STATES.SCANNING) {
-    drawSpectrumScan(false);
-  } else if (state === STATES.IDLE) {
-    drawFaceOverlays(detection.faces, state, detection.personCount, false);
+  }
+
+  if (faceTracker.subjects.length > 0) {
+    drawSpectrumScan(anyAlarm);
+    drawAllSubjectOverlays();
+  } else {
+    // No tracked subjects — show raw detection reticles
+    drawFaceOverlays(detection.faces, 'IDLE', detection.personCount, false);
   }
 
   drawScanLines();
-  drawUI();
-  drawTransitionFlash(); // always on top
+  drawGlobalHUD();
+  drawTransitionFlash();
 }
 
 // ─────────────────────────────────────────────
-// State machine
+// Per-face overlay: reticle + state-specific text + confidence bar
 
-function updateState() {
-  const now     = millis();
-  const elapsed = now - stateAt;
-  const present = detection.personDetected;
+function drawSubjectOverlay(s) {
+  const tlx  = s.x - s.w * 0.55;
+  const tly  = s.y - s.h * 0.6;
+  const brx  = tlx + s.w * 1.1;
+  const bry  = tly + s.h * 1.2;
+  const tick = Math.round(10 * uiScale);
+  const t    = millis();
 
-  if (state === STATES.IDLE) {
-    if (now - idlePhraseTimer > IDLE_PHRASE_INTERVAL) {
-      idlePhrase      = getRandomPhrase("idle");
-      idlePhraseTimer = now;
+  noFill();
+
+  if (s.state === 'ALARM') {
+    const hue     = (t * 0.3 + s.id * 60) % 360;
+    const flicker = random(0.7, 1.0);
+    colorMode(HSB, 360, 100, 100, 255);
+
+    stroke(hue, 80, 100, 18 * flicker);
+    strokeWeight(8);
+    rect(s.x - s.w * 0.6, s.y - s.h * 0.65, s.w * 1.2, s.h * 1.3, 4);
+
+    stroke(hue, 100, 100, 80 * flicker);
+    strokeWeight(2);
+    rect(tlx, tly, s.w * 1.1, s.h * 1.2, 2);
+
+    stroke((hue + 30) % 360, 100, 100, 200 * flicker);
+    strokeWeight(Math.max(1, Math.round(uiScale)));
+    line(tlx, tly, tlx + tick, tly);
+    line(tlx, tly, tlx, tly + tick);
+    line(brx - tick, bry, brx, bry);
+    line(brx, bry - tick, brx, bry);
+    colorMode(RGB, 255);
+  } else {
+    const flicker = random(0.85, 1.0);
+    stroke(0, 255, 120, 18 * flicker);
+    strokeWeight(8);
+    rect(s.x - s.w * 0.6, s.y - s.h * 0.65, s.w * 1.2, s.h * 1.3, 4);
+    stroke(0, 255, 120, 25 * flicker);
+    strokeWeight(1);
+    rect(tlx, tly, s.w * 1.1, s.h * 1.2, 2);
+    stroke(0, 255, 120, 50 * flicker);
+    strokeWeight(Math.max(1, Math.round(uiScale)));
+    line(tlx, tly, tlx + tick, tly);
+    line(tlx, tly, tlx, tly + tick);
+    line(brx - tick, bry, brx, bry);
+    line(brx, bry - tick, brx, bry);
+  }
+  noStroke();
+
+  // ── Per-state text ────────────────────────────────────────────────────────
+  const textAbove = tly - Math.round(10 * uiScale);
+  const textBelow = bry + Math.round(8  * uiScale);
+  const xl        = Math.max(12, Math.round(20 * uiScale));
+  const md        = Math.max(9,  Math.round(12 * uiScale));
+  const sm        = Math.max(7,  Math.round(9  * uiScale));
+
+  textFont("monospace");
+  noStroke();
+  textAlign(CENTER, BOTTOM);
+
+  if (s.state === 'SCANNING') {
+    fill(0, 255, 120, 200);
+    textSize(md);
+    text(s.scanLine, s.x, textAbove);
+
+    if (s.confidence > 1) {
+      const barW = Math.min(s.w * 1.4, Math.round(200 * uiScale));
+      const barH = Math.max(2, Math.round(3 * uiScale));
+      const barX = s.x - barW * 0.5;
+      noFill();
+      stroke(0, 255, 120, 60);
+      strokeWeight(1);
+      rect(barX, textBelow, barW, barH);
+      noStroke();
+      fill(0, 255, 120, 160);
+      rect(barX, textBelow, barW * (s.confidence / 100), barH);
+      noFill();
     }
-    if (present && elapsed > IDLE_BEFORE_SCAN) {
-      enterState(STATES.SCANNING);
-    }
-    return;
   }
 
-  if (state === STATES.SCANNING) {
-    // Lock to RESULT IMMINENT in the final 15% for tension
-    if (elapsed > SCAN_DURATION * 0.85) {
-      scanLine = "RESULT IMMINENT";
-    } else if (now - scanLineTimer > SCAN_LINE_INTERVAL) {
-      scanLine      = getRandomPhrase("scanning");
-      scanLineTimer = now;
-    }
-
-    // Progress log lines
-    if (hudLogLines.length < HUD_LOG_SEQ.length && now - hudLogTimer > 750) {
-      hudLogLines.push(_hhmmss() + " " + HUD_LOG_SEQ[hudLogLines.length]);
-      hudLogTimer = now;
-    }
-
-    // Refresh data stream ticker
-    if (now - hudDataTimer > 320) {
-      hudDataTicker = _randomHex(120);
-      hudDataTimer  = now;
-    }
-
-    if (!present && elapsed > 1000) {
-      enterState(STATES.IDLE);
-      return;
-    }
-
-    if (elapsed > SCAN_DURATION) {
-      if (!present) { enterState(STATES.IDLE); return; }
-      scanCount++;
-      if (scanCount >= nextGayAt) {
-        nextGayAt = scanCount + 2; // TESTING — change to + floor(random(10, 16)) for exhibition
-        enterState(STATES.ALARM);
-      } else {
-        enterState(STATES.STRAIGHT);
-      }
-    }
-    return;
+  if (s.state === 'STRAIGHT') {
+    fill(0, 255, 120, 255);
+    textSize(xl);
+    text(s.straightPhrase, s.x, textAbove - Math.round(20 * uiScale));
+    fill(0, 255, 120, 175);
+    textSize(sm);
+    text(s.straightSub, s.x, textAbove);
   }
 
-  if (state === STATES.STRAIGHT) {
-    if (elapsed > STRAIGHT_HOLD) enterState(STATES.IDLE);
-    return;
-  }
+  if (s.state === 'ALARM') {
+    const flash = sin(t * 0.012) > 0;
+    const textA = flash ? 255 : 190;
 
-  if (state === STATES.ALARM) {
-    if (now - alarmSubTimer > ALARM_SUB_INTERVAL) {
-      alarmSub      = getRandomPhrase("alarmSub");
-      alarmSubTimer = now;
-    }
-    if (elapsed > ALARM_HOLD) enterState(STATES.IDLE);
-    return;
-  }
-}
+    fill(255, 255, 255, textA);
+    textSize(Math.max(12, Math.round(24 * uiScale)));
+    text(s.alarmPrimary, s.x, textAbove - Math.round(22 * uiScale));
 
-function enterState(newState) {
-  state   = newState;
-  stateAt = millis();
-
-  if (newState === STATES.SCANNING) {
-    scanLine      = getRandomPhrase("scanning");
-    scanLineTimer = millis();
-    targetConfidence = 0;
-
-    // Populate HUD panels
-    const rndId   = () => hex(floor(random(65536)), 4);
-    hudSessionId  = "G4Y-" + rndId() + "-" + rndId();
-    hudExpression = random(["UNREADABLE", "NEUTRAL", "TENSE", "AMBIGUOUS"]);
-    hudLogLines   = [];
-    hudLogTimer   = millis();
-    hudDataTicker = _randomHex(120);
-    hudDataTimer  = millis();
-  }
-
-  if (newState === STATES.STRAIGHT) {
-    straightPhrase   = getRandomPhrase("straight");
-    straightSub      = getRandomPhrase("straightSub");
-    targetConfidence = floor(random(92, 98));
-    triggerFlash();
-  }
-
-  if (newState === STATES.ALARM) {
-    alarmPrimary     = getRandomPhrase("alarm");
-    alarmSub         = getRandomPhrase("alarmSub");
-    alarmSubTimer    = millis();
-    targetConfidence = 99;
-    idlesSinceAlarm  = 0;
-    initParticles();
-    triggerFlash();
-  }
-
-  if (newState === STATES.IDLE) {
-    idlePhrase       = getRandomPhrase("idle");
-    idlePhraseTimer  = millis();
-    targetConfidence = 0;
-    idlesSinceAlarm++;
-    if (idlesSinceAlarm >= FORCE_GAY_AFTER_IDLES) {
-      nextGayAt = scanCount;
-    }
+    colorMode(HSB, 360, 100, 100, 255);
+    fill((t * 0.25 + s.id * 45) % 360, 90, 100, textA);
+    colorMode(RGB, 255);
+    textSize(Math.max(9, Math.round(14 * uiScale)));
+    text(s.alarmSub, s.x, textAbove);
   }
 }
 
-function updateConfidence() {
-  if (state === STATES.SCANNING) {
-    const progress = constrain((millis() - stateAt) / SCAN_DURATION, 0, 1);
-    targetConfidence = floor(progress * 94);
-  }
-  displayedConfidence += (targetConfidence - displayedConfidence) * 0.06;
+function drawAllSubjectOverlays() {
+  for (const s of faceTracker.subjects) drawSubjectOverlay(s);
 }
 
 // ─────────────────────────────────────────────
-// Drawing
+// Global HUD: header + idle phrase + multi-subject list + bottom tagline
 
-function drawUI() {
-  const pad = Math.round(24 * uiScale);
-  const sm  = Math.round(11 * uiScale);
-  const md  = Math.round(14 * uiScale);
-  const xl  = Math.round(44 * uiScale);
-  const lh  = Math.round(20 * uiScale);
+function drawGlobalHUD() {
+  const pad      = Math.round(24 * uiScale);
+  const sm       = Math.max(8,  Math.round(11 * uiScale));
+  const md       = Math.max(10, Math.round(14 * uiScale));
+  const xs       = Math.max(7,  Math.round(9  * uiScale));
+  const lh       = Math.round(20 * uiScale);
+  const anyAlarm = faceTracker.hasAlarm();
+  const t        = millis();
 
-  const isAlarm = state === STATES.ALARM;
-
-  // Header colour helpers: rainbow cycling in alarm, green otherwise
   function _hFill(a) {
-    if (isAlarm) {
-      const h = (millis() * 0.2) % 360;
+    if (anyAlarm) {
       colorMode(HSB, 360, 100, 100, 255);
-      fill(h, 90, 100, a);
+      fill((t * 0.2) % 360, 90, 100, a);
       colorMode(RGB, 255);
     } else {
       fill(0, 255, 120, a);
     }
   }
-  function _hStroke(a) {
-    if (isAlarm) {
-      const h = (millis() * 0.2 + 60) % 360;
-      colorMode(HSB, 360, 100, 100, 255);
-      stroke(h, 90, 100, a);
-      colorMode(RGB, 255);
-    } else {
-      stroke(0, 255, 120, a);
-    }
-  }
 
   // ── Header ───────────────────────────────────────────────────────────────
   noStroke();
+  textFont("monospace");
   textAlign(LEFT, TOP);
   _hFill(180);
   textSize(sm);
   text("GAYDAR DETECTION SYSTEM / ACTIVE", pad, pad * 0.8);
+  _hFill(100);
+  textSize(xs);
+  text("SESSION: " + hudSessionId, pad, pad * 0.8 + lh * 1.1);
 
-  if (state === STATES.SCANNING) {
-    _hFill(100);
-    textSize(Math.max(7, Math.round(9 * uiScale)));
-    text("SESSION ID: " + hudSessionId, pad, pad * 0.8 + lh * 1.1);
-    text("BUILD: 2.7.9 // OS: GDS-CORE",   pad, pad * 0.8 + lh * 1.85);
-  }
+  // Subject count — top right
+  textAlign(RIGHT, TOP);
+  _hFill(180);
+  textSize(sm);
+  text("SUBJECTS: " + String(faceTracker.subjects.length).padStart(2, '0'), width - pad, pad * 0.8);
 
-  // Confidence — top right
-  if (displayedConfidence > 1) {
-    textAlign(RIGHT, TOP);
-    textSize(md);
-    _hFill(220);
-    text("CONFIDENCE: " + Math.round(displayedConfidence) + "%", width - pad, pad * 0.8);
-
-    const barW = Math.round(160 * uiScale);
-    const barH = Math.max(2, Math.round(3 * uiScale));
-    const barX = width - pad - barW;
-    const barY = Math.round(pad * 0.8 + lh * 1.4);
-    noFill();
-    _hStroke(50);
-    strokeWeight(1);
-    rect(barX, barY, barW, barH);
-    noStroke();
-    _hFill(180);
-    rect(barX, barY, barW * (displayedConfidence / 100), barH);
-  }
-
-  noStroke();
-  textAlign(CENTER, CENTER);
-
-  // ── IDLE ─────────────────────────────────────────────────────────────────
-  if (state === STATES.IDLE) {
-    const pulse = (sin(millis() * 0.002) + 1) / 2;
-    fill(0, 255, 120, 80 + pulse * 80);
-    textSize(md);
-    text(idlePhrase, width * 0.5, height * 0.44);
-    textAlign(LEFT, TOP);
-    return;
-  }
-
-  // ── SCANNING ─────────────────────────────────────────────────────────────
-  if (state === STATES.SCANNING) {
-    fill(0, 255, 120, 200);
-    textSize(md);
-    text(scanLine, width * 0.5, height * 0.25);
-
-    drawScanningHUD();
-    textAlign(LEFT, TOP);
-    return;
-  }
-
-  // ── STRAIGHT RESULT ───────────────────────────────────────────────────────
-  if (state === STATES.STRAIGHT) {
-    fill(0, 255, 120, 255);
-    textSize(xl);
-    text(straightPhrase, width * 0.5, height * 0.40);
-
-    fill(0, 255, 120, 180);
-    textSize(md);
-    text(straightSub, width * 0.5, height * 0.54);
-
-    textAlign(LEFT, TOP);
-    return;
-  }
-
-  // ── ALARM ─────────────────────────────────────────────────────────────────
-  if (state === STATES.ALARM) {
-    const flash  = sin(millis() * 0.012) > 0;
-    const flash2 = sin(millis() * 0.018) > 0;
-    const textA  = flash ? 255 : 190;
-    const t      = millis();
-
-    // Primary headline — extra large, bright white
-    fill(255, 255, 255, textA);
-    textSize(Math.round(52 * uiScale));
-    text(alarmPrimary, width * 0.5, height * 0.36);
-
-    // Rotating sub-line — rainbow cycling
-    colorMode(HSB, 360, 100, 100, 255);
-    fill((t * 0.25) % 360, 90, 100, textA);
-    colorMode(RGB, 255);
-    textSize(Math.round(24 * uiScale));
-    text(alarmSub, width * 0.5, height * 0.51);
-
-    // Confidence — rainbow offset by 90°
-    colorMode(HSB, 360, 100, 100, 255);
-    fill((t * 0.25 + 90) % 360, 90, 100, flash2 ? 230 : 140);
-    colorMode(RGB, 255);
-    textSize(md);
-    text("CONFIDENCE: 99%", width * 0.5, height * 0.62);
-
-    // Corner alerts — celebratory, rainbow, independently flashing
-    textAlign(LEFT, TOP);
+  // ── Alarm global extras ───────────────────────────────────────────────────
+  if (anyAlarm) {
+    const flash  = sin(t * 0.012) > 0;
+    const flash2 = sin(t * 0.018) > 0;
     textSize(sm);
+
     if (flash) {
+      textAlign(LEFT, TOP);
       colorMode(HSB, 360, 100, 100, 255);
       fill((t * 0.3) % 360, 90, 100, 255);
       colorMode(RGB, 255);
@@ -397,97 +255,75 @@ function drawUI() {
       text("★ PRIDE ★", width - pad, pad * 0.8 + Math.round(lh * 1.8));
     }
 
-    // Bottom — protocol line — rainbow
     textAlign(CENTER, BOTTOM);
     colorMode(HSB, 360, 100, 100, 255);
     fill((t * 0.2 + 180) % 360, 85, 100, flash ? 180 : 80);
     colorMode(RGB, 255);
-    textSize(Math.round(10 * uiScale));
+    textSize(Math.max(7, Math.round(10 * uiScale)));
     text("PRIDE RESPONSE PROTOCOL INITIATED — ALL UNITS RESPOND", width * 0.5, height - Math.round(12 * uiScale));
-
-    textAlign(LEFT, TOP);
-    return;
   }
+
+  // ── No subjects: idle phrase ──────────────────────────────────────────────
+  if (faceTracker.subjects.length === 0) {
+    const now = millis();
+    if (now - idlePhraseTimer > IDLE_PHRASE_INTERVAL) {
+      idlePhrase      = getRandomPhrase("idle");
+      idlePhraseTimer = now;
+    }
+    const pulse = (sin(now * 0.002) + 1) / 2;
+    noStroke();
+    fill(0, 255, 120, 80 + pulse * 80);
+    textSize(md);
+    textAlign(CENTER, CENTER);
+    text(idlePhrase, width * 0.5, height * 0.44);
+  }
+
+  // ── Multi-subject state list (left panel, only when >1 subject) ───────────
+  if (faceTracker.subjects.length > 1) {
+    const listY = Math.round(130 * uiScale);
+    const lineH = Math.round(18 * uiScale);
+    _hudLabel("ACTIVE SUBJECTS", pad, listY, sm, [0, 255, 120]);
+    textAlign(LEFT, TOP);
+    textFont("monospace");
+    for (let i = 0; i < faceTracker.subjects.length; i++) {
+      const s    = faceTracker.subjects[i];
+      const rowY = listY + Math.round(sm * 1.6) + Math.round(lineH * 1.2) + i * lineH;
+      fill(0, 255, 120, 90);
+      textSize(xs);
+      text("SUBJ " + String(i + 1).padStart(2, '0') + ":", pad, rowY);
+      if (s.state === 'ALARM') {
+        colorMode(HSB, 360, 100, 100, 255);
+        fill((t * 0.25 + i * 60) % 360, 90, 100, 220);
+        colorMode(RGB, 255);
+      } else {
+        fill(0, 255, 120, 200);
+      }
+      const confStr = s.confidence > 1 ? "  " + Math.round(s.confidence) + "%" : "";
+      text(s.state + confStr, pad + Math.round(55 * uiScale), rowY);
+    }
+  }
+
+  // ── Bottom tagline ────────────────────────────────────────────────────────
+  if (!anyAlarm) {
+    noStroke();
+    fill(0, 255, 120, 55);
+    textSize(xs);
+    textAlign(CENTER, BOTTOM);
+    text("◆  NOTHING IS EVER FULLY SEEN  ◆", width * 0.5, height - Math.round(12 * uiScale));
+  }
+
+  noStroke();
+  noFill();
 }
 
-// ─────────────────────────────────────────────
-// Scanning HUD — streamlined: orientation panel + status box + tagline
-
-function drawScanningHUD() {
-  const pad      = Math.round(24 * uiScale);
-  const sm       = Math.round(10 * uiScale);
-  const xs       = Math.round(9  * uiScale);
-  const lh       = Math.round(17 * uiScale);
-  const col      = [0, 255, 120];
-  const panelW   = Math.min(Math.round(195 * uiScale), width * 0.20);
-  const progress = constrain((millis() - stateAt) / SCAN_DURATION, 0, 1);
-
-  // ── LEFT: ORIENTATION ANALYSIS ──────────────────────────────────────────
-  const oriY    = Math.round(130 * uiScale);
-  const certainty = progress < 0.3 ? "LOW" : progress < 0.7 ? "PARTIAL" : "BUILDING";
-  _hudLabel("ORIENTATION ANALYSIS", pad, oriY, sm, col);
-  _hudRows([
-    ["SUBJECTS",   String(detection.personCount).padStart(2, "0")],
-    ["EXPRESSION", hudExpression],
-    ["FLUIDITY",   "??"],
-    ["CERTAINTY",  certainty],
-    ["ALIGNMENT",  "UNDETERMINED"],
-  ], pad, oriY + lh * 1.4, xs, lh, col, panelW);
-
-  // ── LEFT BOTTOM: LOG OUTPUT ──────────────────────────────────────────────
-  const logY = Math.round(430 * uiScale);
-  _hudLabel("LOG OUTPUT", pad, logY, sm, col);
-  fill(0, 255, 120, 90);
-  textSize(xs);
-  textAlign(LEFT, TOP);
-  hudLogLines.slice(-6).forEach((ln, i) => {
-    text(ln, pad, logY + lh * 1.4 + i * lh);
-  });
-
-  // ── BOTTOM CENTER: STATUS BOX ────────────────────────────────────────────
-  const stW = Math.round(300 * uiScale);
-  const stX = width * 0.5 - stW / 2;
-  const stY = Math.round(860 * uiScale);
-  const stH = Math.round(90 * uiScale);
-  noFill();
-  stroke(0, 255, 120, 50);
-  strokeWeight(1);
-  rect(stX, stY, stW, stH);
-  noStroke();
-  textAlign(CENTER, TOP);
-  fill(0, 255, 120, 90);
-  textSize(xs);
-  text("STATUS", width * 0.5, stY + Math.round(10 * uiScale));
-  fill(0, 255, 120, 215);
-  textSize(Math.round(18 * uiScale));
-  text("IDENTITY UNRESOLVED", width * 0.5, stY + Math.round(27 * uiScale));
-  fill(0, 255, 120, 115);
-  textSize(xs);
-  text("CONTINUING OBSERVATION", width * 0.5, stY + Math.round(54 * uiScale));
-
-  // Small pink triangle icon
-  const triSz = Math.round(10 * uiScale);
-  const triY  = height - Math.round(38 * uiScale);
-  noFill();
-  stroke(255, 20, 147, 75);
-  strokeWeight(1);
-  triangle(width * 0.5, triY + triSz, width * 0.5 - triSz, triY, width * 0.5 + triSz, triY);
-  noStroke();
-
-  // ── BOTTOM TAGLINE ───────────────────────────────────────────────────────
-  textAlign(CENTER, BOTTOM);
-  fill(0, 255, 120, 55);
-  textSize(xs);
-  text("◆  NOTHING IS EVER FULLY SEEN  ◆", width * 0.5, height - Math.round(12 * uiScale));
-}
-
-// ── HUD helpers ──────────────────────────────────────────────────────────────
+// ── HUD helpers ───────────────────────────────────────────────────────────────
 
 function _hudLabel(label, x, y, size, col) {
   noStroke();
   fill(col[0], col[1], col[2], 155);
   textSize(size);
   textAlign(LEFT, TOP);
+  textFont("monospace");
   text(label, x, y);
   stroke(col[0], col[1], col[2], 55);
   strokeWeight(1);
@@ -497,20 +333,7 @@ function _hudLabel(label, x, y, size, col) {
   noStroke();
 }
 
-function _hudRows(rows, x, y, size, lh, col, panelW) {
-  const keyX = x;
-  const valX = x + Math.round(panelW * 0.58);
-  textSize(size);
-  textAlign(LEFT, TOP);
-  for (let i = 0; i < rows.length; i++) {
-    const ry = y + i * lh;
-    fill(col[0], col[1], col[2], 90);
-    text(rows[i][0] + ":", keyX, ry);
-    fill(col[0], col[1], col[2], 195);
-    text(rows[i][1], valX, ry);
-  }
-}
-
+// Referenced by Subject.tick() — must be global
 function _randomHex(n) {
   const chars = "0123456789ABCDEF ";
   let s = "";

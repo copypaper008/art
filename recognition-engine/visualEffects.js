@@ -91,7 +91,7 @@ function applyRipple(src, dst, amplitude) {
 }
 
 function drawScanLines() {
-  const isAlarm     = state === "ALARM";
+  const isAlarm     = faceTracker.hasAlarm();
   const lineSpacing = Math.max(2, Math.round(4 * uiScale));
 
   stroke(0, isAlarm ? 30 : 18);
@@ -184,7 +184,17 @@ function drawParticles() {
 // ── Spectrum scanner — replaces triangle/eye ──────────────────────────────────
 function drawSpectrumScan(alarmMode) {
   const t            = millis() * 0.001;
-  const scanProgress = alarmMode ? 1 : constrain((millis() - stateAt) / SCAN_DURATION, 0, 1);
+  let scanProgress = 1;
+  if (!alarmMode) {
+    let maxProg = 0;
+    for (const s of faceTracker.subjects) {
+      if (s.state === 'SCANNING') {
+        const p = constrain((millis() - s.stateAt) / SCAN_DURATION, 0, 1);
+        if (p > maxProg) maxProg = p;
+      }
+    }
+    scanProgress = maxProg;
+  }
   const fade         = alarmMode ? 1.0 : 0.15 + scanProgress * 0.85;
 
   const pad    = Math.round(24 * uiScale);

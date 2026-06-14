@@ -266,7 +266,9 @@ function runFaceDetection(videoEl) {
       faces.length === 2 ? "pair"   : "group";
 
   } else {
-    // No faces — presence decays after a grace period
+    // Clear faces immediately so faceTracker can age out subjects correctly.
+    // The PRESENCE_TIMEOUT grace applies only to personDetected, not face positions.
+    detection.faces = [];
     const timeSinceFace = now - (detection._facePresentUntil || 0);
     if (timeSinceFace > PRESENCE_TIMEOUT) {
       detection.personDetected = false;
@@ -274,7 +276,6 @@ function runFaceDetection(videoEl) {
       detection._presenceStartTime = null;
       detection.presenceDuration = 0;
       detection.groupState = "none";
-      detection.faces = [];
       detection.gazeApproximation = "uncertain";
     }
   }
