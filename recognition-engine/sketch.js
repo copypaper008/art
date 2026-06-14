@@ -103,14 +103,14 @@ function draw() {
   updateState();
   updateConfidence();
 
-  drawDistortedMirror(cam, detection.motionAmount, state);
+  drawDistortedMirror(cam, state);
 
   if (state === STATES.ALARM) {
     drawAlarmOverlay();
     drawParticles();
-    drawPinkTriangle(true);
+    drawSpectrumScan(true);
   } else if (state === STATES.SCANNING) {
-    drawPinkTriangle(false);
+    drawSpectrumScan(false);
   } else if (state === STATES.IDLE) {
     drawFaceOverlays(detection.faces, state, detection.personCount, false);
   }

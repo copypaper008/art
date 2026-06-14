@@ -21,7 +21,7 @@ function initVisuals(w, h) {
   rippleBuffer.pixelDensity(1);
 }
 
-function drawDistortedMirror(videoCapture, motionAmount, currentState) {
+function drawDistortedMirror(videoCapture, currentState) {
   if (!videoCapture || !mirrorBuffer) return;
 
   mirrorBuffer.push();
@@ -30,7 +30,8 @@ function drawDistortedMirror(videoCapture, motionAmount, currentState) {
   mirrorBuffer.image(videoCapture, 0, 0, mirrorBuffer.width, mirrorBuffer.height);
   mirrorBuffer.pop();
 
-  const amplitude = map(motionAmount, 0, 0.15, 2, 22, true);
+  const motionAmount = detection.motionAmount;
+  const amplitude    = map(motionAmount, 0, 0.15, 2, 22, true);
   ripplePhase += 0.04;
   applyRipple(mirrorBuffer, rippleBuffer, amplitude);
 
@@ -41,15 +42,14 @@ function drawDistortedMirror(videoCapture, motionAmount, currentState) {
   }
   noTint();
 
-  // State-driven camera treatment
   if (currentState === "ALARM") {
-    // Cycling rainbow hue — pride in full display
+    // Full rainbow hue-rotate — the camera becomes a pride light show
     const hue = (millis() * 0.18) % 360;
     drawingContext.filter = `hue-rotate(${hue}deg) saturate(170%)`;
     image(rippleBuffer, 0, 0);
     drawingContext.filter = "none";
   } else if (currentState === "STRAIGHT") {
-    // Grayscale — you're boring, the world went grey
+    // World goes grey — boring, colourless, nothing to see here
     drawingContext.filter = "grayscale(100%) brightness(0.62)";
     image(rippleBuffer, 0, 0);
     drawingContext.filter = "none";
@@ -113,15 +113,12 @@ function drawScanLines() {
 }
 
 function drawAlarmOverlay() {
-  // Lighter overlay — camera's rainbow should show through
-  const pulse = (sin(millis() * 0.008) + 1) / 2;
-  const alpha = 15 + pulse * 30;
-
+  const pulse   = (sin(millis() * 0.008) + 1) / 2;
+  // Light overlay — let the rainbow camera feed show through
   noStroke();
-  fill(0, 0, 0, alpha);
+  fill(0, 0, 0, 12 + pulse * 20);
   rect(0, 0, width, height);
 
-  // Pulsing red border
   const borderA = 90 + pulse * 130;
   stroke(255, 0, 0, borderA);
   strokeWeight(Math.max(3, Math.round(6 * uiScale)));
@@ -136,9 +133,7 @@ function clearGhostTrails() {
 }
 
 // ── State-transition white flash ──────────────────────────────────────────────
-function triggerFlash() {
-  _flashTimer = millis();
-}
+function triggerFlash() { _flashTimer = millis(); }
 
 function drawTransitionFlash() {
   const elapsed = millis() - _flashTimer;
@@ -159,7 +154,7 @@ function initParticles() {
     r:     random(3, 9) * uiScale,
     hue:   random(360),
     a:     random(170, 255),
-    shape: floor(random(3)),  // 0 circle, 1 rect, 2 triangle
+    shape: floor(random(3)),
   }));
 }
 
@@ -180,189 +175,164 @@ function drawParticles() {
   noFill();
 }
 
-// ── Rainbow triangle outline ──────────────────────────────────────────────────
-function _rainbowTriangle(x1, y1, x2, y2, x3, y3, alpha, weight, hueShift) {
-  const segsPerSide = 48;
-  const pts = [];
-  for (let i = 0; i < segsPerSide; i++) {
-    const t = i / segsPerSide;
-    pts.push([lerp(x1, x2, t), lerp(y1, y2, t)]);
-  }
-  for (let i = 0; i < segsPerSide; i++) {
-    const t = i / segsPerSide;
-    pts.push([lerp(x2, x3, t), lerp(y2, y3, t)]);
-  }
-  for (let i = 0; i < segsPerSide; i++) {
-    const t = i / segsPerSide;
-    pts.push([lerp(x3, x1, t), lerp(y3, y1, t)]);
-  }
-
-  strokeWeight(weight);
-  noFill();
-  colorMode(HSB, 360, 100, 100, 255);
-  for (let i = 0; i < pts.length; i++) {
-    const hue  = (hueShift + (i / pts.length) * 360) % 360;
-    const next = pts[(i + 1) % pts.length];
-    stroke(hue, 88, 98, alpha);
-    line(pts[i][0], pts[i][1], next[0], next[1]);
-  }
-  colorMode(RGB, 255);
-  noStroke();
-}
-
-// ── Triangle + eye: one instance per detected face ───────────────────────────
-function drawPinkTriangle(alarmMode) {
-  const faces = detection.faces;
-
-  if (!faces || faces.length === 0) {
-    _drawFaceFrame(alarmMode, width * 0.5, height * 0.42, Math.min(width, height) * 0.45);
-  } else {
-    for (const f of faces) {
-      _drawFaceFrame(alarmMode, f.x, f.y, Math.max(f.w, f.h));
-    }
-  }
-}
-
-function _drawFaceFrame(alarmMode, fcx, fcy, faceSize) {
+// ── Spectrum scanner — replaces triangle/eye ──────────────────────────────────
+function drawSpectrumScan(alarmMode) {
   const t            = millis() * 0.001;
   const scanProgress = alarmMode ? 1 : constrain((millis() - stateAt) / SCAN_DURATION, 0, 1);
-  const fade         = alarmMode ? 1.0 : 0.25 + scanProgress * 0.75;
+  const fade         = alarmMode ? 1.0 : 0.15 + scanProgress * 0.85;
 
-  const lr = alarmMode ? 200 : 0;
-  const lg = alarmMode ? 30  : 210;
-  const lb = alarmMode ? 30  : 100;
+  const pad    = Math.round(24 * uiScale);
+  const barW   = Math.max(10, Math.round(14 * uiScale));
+  const barX   = width - pad - barW;
+  const barTop = height * 0.12;
+  const barBot = height * 0.88;
+  const barH   = barBot - barTop;
 
-  const triHalf = faceSize * 0.90;
-  const x1 = fcx - triHalf, y1 = fcy - faceSize * 1.05;
-  const x2 = fcx + triHalf, y2 = fcy - faceSize * 1.05;
-  const x3 = fcx,            y3 = fcy + faceSize * 0.95;
+  // ── Sweeping scan line ────────────────────────────────────────────────────
+  // Oscillates gently; in alarm it sweeps faster and more wildly
+  const speed    = alarmMode ? 1.4 : 0.72;
+  const range    = alarmMode ? height * 0.44 : height * 0.36;
+  const scanY    = height * 0.5 + sin(t * speed) * range;
 
-  const triWeight = Math.max(1, Math.round(2 * uiScale));
+  const glowSpan = Math.round(55 * uiScale);
 
   if (alarmMode) {
-    const ap = (sin(millis() * 0.008) + 1) / 2;
-    noFill();
-    stroke(255, 20, 80, 130 + ap * 125);
-    strokeWeight(triWeight);
-    triangle(x1, y1, x2, y2, x3, y3);
-    noStroke();
+    // Rainbow scan glow
+    colorMode(HSB, 360, 100, 100, 255);
+    for (let dy = 0; dy < glowSpan; dy++) {
+      const a   = map(dy, 0, glowSpan, 75, 0);
+      const hue = (t * 80 + dy * 3) % 360;
+      stroke(hue, 80, 100, a);
+      strokeWeight(1);
+      if (scanY + dy < height) line(0, scanY + dy, width, scanY + dy);
+      if (scanY - dy >= 0)     line(0, scanY - dy, width, scanY - dy);
+    }
+    // Bright scan line — rainbow
+    const lineHue = (t * 90) % 360;
+    stroke(lineHue, 60, 100, 230);
+    strokeWeight(Math.max(2, Math.round(3 * uiScale)));
+    line(0, scanY, width, scanY);
+    colorMode(RGB, 255);
   } else {
-    const hueShift = (millis() * 0.025) % 360;
-    _rainbowTriangle(x1, y1, x2, y2, x3, y3, 40 + scanProgress * 190, triWeight, hueShift);
+    // Green scan glow
+    for (let dy = 0; dy < glowSpan; dy++) {
+      const a = map(dy, 0, glowSpan, 70 * fade, 0);
+      stroke(0, 255, 120, a);
+      strokeWeight(1);
+      if (scanY + dy < height) line(0, scanY + dy, width, scanY + dy);
+      if (scanY - dy >= 0)     line(0, scanY - dy, width, scanY - dy);
+    }
+    // Bright scan line
+    stroke(220, 255, 230, 200 * fade);
+    strokeWeight(Math.max(2, Math.round(3 * uiScale)));
+    line(0, scanY, width, scanY);
   }
+  noStroke();
 
-  const chSz = Math.round(16 * uiScale);
-  _crosshair(x1 + triHalf * 0.18, y1 + faceSize * 0.12, chSz, lr, lg, lb, 120 * fade);
-  _crosshair(x2 - triHalf * 0.18, y2 + faceSize * 0.12, chSz, lr, lg, lb, 120 * fade);
-  _crosshair(fcx - faceSize * 0.72, fcy, chSz, lr, lg, lb, 90 * fade);
-  _crosshair(fcx + faceSize * 0.72, fcy, chSz, lr, lg, lb, 90 * fade);
+  // ── Right side: PRIDE SPECTRUM bar ───────────────────────────────────────
+  colorMode(HSB, 360, 100, 100, 255);
+  for (let y = 0; y < barH; y++) {
+    // Map top→bottom to violet→red (visible spectrum direction)
+    const hue  = map(y, 0, barH, 270, 0);
+    const sat  = alarmMode ? 95 : 85;
+    const bri  = alarmMode ? 100 : 90;
+    const alph = 140 * fade;
+    stroke(hue, sat, bri, alph);
+    strokeWeight(1);
+    line(barX, barTop + y, barX + barW, barTop + y);
+  }
+  colorMode(RGB, 255);
 
-  // ── Surveillance eye ─────────────────────────────────────────────────────
-  const maxR      = faceSize * 0.22;
-  const irisOuter = maxR * 0.60;
-  const pupilR    = maxR * 0.27;
-
-  const driftX = sin(t * 0.18) * maxR * 0.07;
-  const driftY = sin(t * 0.78) * irisOuter * 0.44;
-  const px = fcx + driftX;
-  const py = fcy + driftY;
-
+  // Spectrum bar border
   noFill();
-  stroke(lr, lg, lb, 115 * fade);
-  strokeWeight(Math.max(4, Math.round(6 * uiScale)));
-  circle(fcx, fcy, maxR * 2);
+  stroke(0, 255, 120, 55 * fade);
+  strokeWeight(1);
+  rect(barX, barTop, barW, barH);
+  noStroke();
 
-  stroke(lr, lg, lb, 55 * fade);
-  strokeWeight(Math.max(1, Math.round(2 * uiScale)));
-  circle(fcx, fcy, maxR * 1.82);
+  // Position indicator on spectrum bar
+  const specPos = constrain(map(scanY, height * 0.1, height * 0.9, barTop, barBot), barTop, barBot);
+  stroke(255, 255, 255, 210 * fade);
+  strokeWeight(Math.max(2, Math.round(2 * uiScale)));
+  line(barX - Math.round(5 * uiScale), specPos,
+       barX + barW + Math.round(5 * uiScale), specPos);
+  noStroke();
 
-  const rot1 = t * 0.14;
-  stroke(lr, lg, lb, 100 * fade);
-  strokeWeight(Math.max(1, Math.round(2 * uiScale)));
-  for (let i = 0; i < 4; i++) {
-    const sa = (i / 4) * TWO_PI + rot1 + 0.18;
-    arc(fcx, fcy, maxR * 1.58, maxR * 1.58, sa, sa + TWO_PI / 4 - 0.36);
+  // Face markers on spectrum bar — where each detected face sits
+  if (detection.faces && detection.faces.length > 0) {
+    for (const f of detection.faces) {
+      const fPos = constrain(map(f.y, height * 0.1, height * 0.9, barTop, barBot), barTop, barBot);
+      const hue  = map(fPos, barTop, barBot, 270, 0);
+      colorMode(HSB, 360, 100, 100, 255);
+      stroke(hue, 100, 100, 200 * fade);
+      colorMode(RGB, 255);
+      strokeWeight(Math.max(2, Math.round(2 * uiScale)));
+      const mk = Math.round(4 * uiScale);
+      line(barX - mk, fPos, barX,        fPos);
+      line(barX + barW, fPos, barX + barW + mk, fPos);
+      noStroke();
+    }
   }
 
-  const rot2 = -t * 0.09;
-  stroke(lr, lg, lb, 82 * fade);
-  strokeWeight(Math.max(1, Math.round(1.5 * uiScale)));
-  for (let i = 0; i < 6; i++) {
-    const sa = (i / 6) * TWO_PI + rot2 + 0.12;
-    arc(fcx, fcy, maxR * 1.32, maxR * 1.32, sa, sa + TWO_PI / 6 - 0.24);
-  }
+  // Spectrum bar label
+  noStroke();
+  fill(0, 255, 120, 100 * fade);
+  textFont("monospace");
+  textAlign(RIGHT, BOTTOM);
+  textSize(Math.max(6, Math.round(8 * uiScale)));
+  text("PRIDE", barX - Math.round(6 * uiScale), barTop + Math.round(barH * 0.4));
+  text("SPECTRUM", barX - Math.round(6 * uiScale), barTop + Math.round(barH * 0.4) + Math.round(10 * uiScale));
 
-  stroke(lr, lg, lb, 58 * fade);
-  strokeWeight(Math.max(1, Math.round(uiScale)));
-  for (let i = 0; i < 32; i++) {
-    const a   = (i / 32) * TWO_PI + rot1;
-    const len = (i % 4 === 0) ? 0.14 : 0.06;
-    const rIn = irisOuter * 1.10;
-    line(
-      fcx + cos(a) * rIn,             fcy + sin(a) * rIn,
-      fcx + cos(a) * rIn * (1 + len), fcy + sin(a) * rIn * (1 + len)
-    );
-  }
+  // ── Wavelength readout beside scan line ───────────────────────────────────
+  // Map scan position to a wavelength in the visible spectrum (380–700nm)
+  const wavelength = Math.round(map(scanY, height * 0.1, height * 0.9, 380, 700));
 
   noStroke();
-  fill(55, 8, 6, 100 * fade);
-  circle(fcx, fcy, irisOuter * 2);
+  fill(0, 255, 120, 170 * fade);
+  textFont("monospace");
+  textAlign(LEFT, CENTER);
+  textSize(Math.max(8, Math.round(10 * uiScale)));
+  text("λ " + wavelength + "nm", pad, scanY - Math.round(18 * uiScale));
 
-  stroke(lr, lg, lb, 44 * fade);
-  strokeWeight(Math.max(1, Math.round(0.6 * uiScale)));
-  for (let i = 0; i < 160; i++) {
-    const a         = (i / 160) * TWO_PI;
-    const innerEdge = pupilR * 1.05;
-    const outerEdge = irisOuter * (0.84 + (i % 3 === 0 ? 0.16 : 0));
-    line(
-      fcx + cos(a) * innerEdge, fcy + sin(a) * innerEdge,
-      fcx + cos(a) * outerEdge, fcy + sin(a) * outerEdge
-    );
-  }
+  // Chromatic index — fake but believable
+  const chromIdx = (sin(t * 0.6) * 0.5 + 0.5);
+  fill(0, 255, 120, 100 * fade);
+  textSize(Math.max(7, Math.round(9 * uiScale)));
+  text("CHROMATIC INDEX  " + chromIdx.toFixed(3), pad, scanY + Math.round(20 * uiScale));
 
-  noStroke();
-  fill(4, 0, 0, 242 * fade);
-  circle(px, py, pupilR * 2);
+  // ── Bottom: accumulating spectrum readout bar ─────────────────────────────
+  const readBarY = height * 0.91;
+  const readBarW = width * 0.55;
+  const readBarX = width * 0.5 - readBarW / 2;
+  const readBarH = Math.max(3, Math.round(5 * uiScale));
 
+  // Track border
   noFill();
-  stroke(lr, lg, lb, 58 * fade);
-  strokeWeight(Math.max(1, Math.round(1.5 * uiScale)));
-  circle(px, py, pupilR * 2.15);
+  stroke(0, 255, 120, 35 * fade);
+  strokeWeight(1);
+  rect(readBarX, readBarY, readBarW, readBarH);
 
-  noStroke();
-  fill(255, 230, 230, 108 * fade);
-  circle(px + pupilR * 0.38, py - pupilR * 0.38, pupilR * 0.30);
-  fill(255, 200, 200, 50 * fade);
-  circle(px - pupilR * 0.22, py + pupilR * 0.28, pupilR * 0.13);
-
-  if (!alarmMode && scanProgress > 0.05) {
-    noStroke();
-    fill(lr, lg, lb, 165 * fade);
-    textFont("monospace");
-    textAlign(LEFT, CENTER);
-    textSize(Math.max(8, Math.round(10 * uiScale)));
-    text(Math.round(scanProgress * 94) + "%", fcx + maxR * 1.14, fcy);
-    stroke(lr, lg, lb, 120 * fade);
-    strokeWeight(Math.max(1, Math.round(uiScale)));
-    line(fcx + maxR * 1.05, fcy, fcx + maxR * 1.10, fcy);
-    noStroke();
+  // Fill with progress-driven rainbow
+  colorMode(HSB, 360, 100, 100, 255);
+  const filledW = readBarW * scanProgress;
+  for (let x = 0; x < filledW; x++) {
+    const hue = map(x, 0, readBarW, 0, 300);
+    stroke(hue, 85, 95, 180 * fade);
+    strokeWeight(1);
+    line(readBarX + x, readBarY, readBarX + x, readBarY + readBarH);
   }
+  colorMode(RGB, 255);
+
+  // Label above readout bar
+  noStroke();
+  fill(0, 255, 120, 80 * fade);
+  textFont("monospace");
+  textAlign(CENTER, BOTTOM);
+  textSize(Math.max(6, Math.round(8 * uiScale)));
+  text("ORIENTATION SPECTRUM ANALYSIS", width * 0.5, readBarY - Math.round(4 * uiScale));
 
   noStroke();
   noFill();
-}
-
-function _crosshair(x, y, size, r, g, b, a) {
-  stroke(r, g, b, a);
-  strokeWeight(Math.max(1, Math.round(uiScale)));
-  noFill();
-  const hs  = size * 0.5;
-  const gap = size * 0.18;
-  line(x - hs, y, x - gap, y);
-  line(x + gap, y, x + hs, y);
-  line(x, y - hs, x, y - gap);
-  line(x, y + gap, x, y + hs);
-  noStroke();
 }
 
 // Face targeting reticle — IDLE only
