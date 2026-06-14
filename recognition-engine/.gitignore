@@ -1,0 +1,4 @@
+# MediaPipe vendor assets — downloaded by setup.sh, not tracked in git
+# (WASM files are ~18 MB; model is ~225 KB)
+vendor/
+node_modules/

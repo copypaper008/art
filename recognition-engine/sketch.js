@@ -30,6 +30,10 @@ let currentContradiction = null;
 let fadingStartTime = 0;
 const FADING_DURATION = 5000;
 
+// Scales all UI text and element sizes proportionally to the display.
+// Calibrated to 1080p; a 4K screen at native res gets 2×, a 720p laptop gets 0.67×.
+let uiScale = 1;
+
 function setup() {
   createCanvas(windowWidth, windowHeight);
   pixelDensity(1);
@@ -53,6 +57,8 @@ function setup() {
 
 function draw() {
   background(0);
+
+  uiScale = height / 1080;
 
   runDetection(cam);
   updateState();
@@ -266,33 +272,38 @@ function pushLabel(text, x, y, alpha) {
 
 function drawSystemHeader() {
   const flicker = state === STATES.MISREADING ? random(140, 255) : 200;
+  const pad  = Math.round(24 * uiScale);
+  const sm   = Math.round(11 * uiScale);
+  const med  = Math.round(13 * uiScale);
+  const lh   = Math.round(18 * uiScale); // line height between status rows
 
   noStroke();
   textAlign(LEFT, TOP);
 
   fill(0, 255, 120, flicker * 0.7);
-  textSize(11);
-  text("RECOGNITION ENGINE / ACTIVE", 24, 20);
-  text("SURFACE TENSION SYSTEM v2.0", 24, 36);
+  textSize(sm);
+  text("RECOGNITION ENGINE / ACTIVE", pad, pad * 0.8);
+  text("SURFACE TENSION SYSTEM v2.0",  pad, pad * 0.8 + lh);
 
   fill(0, 255, 120, flicker * 0.5);
-  text("STATE: " + state, 24, 60);
+  text("STATE: " + state, pad, pad * 0.8 + lh * 2.4);
 
-  // Person count — shown when MediaPipe is active
   if (mediaPipeReady) {
     fill(0, 255, 120, flicker * 0.45);
-    text("SUBJECTS: " + detection.personCount, 24, 76);
-    text("GAZE: " + detection.gazeApproximation.toUpperCase(), 24, 92);
+    text("SUBJECTS: " + detection.personCount,                    pad, pad * 0.8 + lh * 3.6);
+    text("GAZE: " + detection.gazeApproximation.toUpperCase(),   pad, pad * 0.8 + lh * 4.8);
   }
 
   // Confidence block — top right
   textAlign(RIGHT, TOP);
-  textSize(13);
+  textSize(med);
   fill(0, 255, 120, flicker * 0.8);
-  text("CONFIDENCE: " + Math.round(confidence) + "%", width - 24, 20);
+  text("CONFIDENCE: " + Math.round(confidence) + "%", width - pad, pad * 0.8);
 
-  const barW = 160, barH = 4;
-  const barX = width - 24 - barW, barY = 40;
+  const barW = Math.round(160 * uiScale);
+  const barH = Math.max(2, Math.round(4 * uiScale));
+  const barX = width - pad - barW;
+  const barY = Math.round(pad * 0.8 + lh * 1.5);
   noFill();
   stroke(0, 255, 120, 60);
   strokeWeight(1);
@@ -302,9 +313,9 @@ function drawSystemHeader() {
   rect(barX, barY, barW * (confidence / 100), barH);
 
   fill(0, 255, 120, 100);
-  textSize(11);
+  textSize(sm);
   const motionPct = (detection.motionAmount * 1000 / 10).toFixed(1);
-  text("MOTION: " + motionPct + "%", width - 24, 54);
+  text("MOTION: " + motionPct + "%", width - pad, pad * 0.8 + lh * 2.6);
 
   textAlign(LEFT, TOP);
 }
@@ -317,30 +328,28 @@ function drawFloatingLabels() {
     const flicker = state === STATES.MISREADING ? random(0.6, 1.0) : 1.0;
     const drift = sin(frameCount * 0.01 + label.drift * 10) * 3;
     fill(255, 255, 255, label.alpha * flicker);
-    textSize(18);
+    textSize(Math.round(18 * uiScale));
     text(label.text, label.x + drift, label.y);
   }
 
   // Contradiction pair — centred, stacked, large
   if (state === STATES.CONTRADICTING && currentContradiction) {
     const cy = height * 0.48;
+    const offset = Math.round(80 * uiScale);
     const flicker = random(0.85, 1.0);
-    textSize(22);
+    textSize(Math.round(22 * uiScale));
     fill(255, 255, 255, 200 * flicker);
-    text(currentContradiction[0], width * 0.5 - 80, cy);
+    text(currentContradiction[0], width * 0.5 - offset, cy);
     fill(180, 180, 180, 150 * flicker);
-    text(currentContradiction[1], width * 0.5 + 80, cy + 28);
+    text(currentContradiction[1], width * 0.5 + offset, cy + Math.round(28 * uiScale));
   }
 
-  // RELATIONAL — secondary contradiction-style pairing
+  // RELATIONAL — midpoint label between the two subjects
   if (state === STATES.RELATIONAL && detection.faces.length >= 2) {
-    const f0 = detection.faces[0];
-    const f1 = detection.faces[1];
-    // Midpoint label
-    const mx = (f0.x + f1.x) / 2;
-    const my = (f0.y + f1.y) / 2;
+    const mx = (detection.faces[0].x + detection.faces[1].x) / 2;
+    const my = (detection.faces[0].y + detection.faces[1].y) / 2;
     fill(255, 255, 255, 160 * random(0.9, 1.0));
-    textSize(14);
+    textSize(Math.round(14 * uiScale));
     text("BOUNDARY UNSTABLE", mx, my);
   }
 
@@ -348,7 +357,7 @@ function drawFloatingLabels() {
   if (state === STATES.FADING) {
     const alpha = map(millis() - fadingStartTime, 0, FADING_DURATION, 200, 0, true);
     fill(255, 255, 255, alpha);
-    textSize(20);
+    textSize(Math.round(20 * uiScale));
     text(getRandomPhrase("fading"), width * 0.5, height * 0.5);
   }
 
@@ -358,21 +367,23 @@ function drawFloatingLabels() {
 function drawDiagnosticBar() {
   if (!diagnosticText) return;
   const barAlpha = state === STATES.MISREADING ? random(160, 240) : 200;
+  const pad     = Math.round(24 * uiScale);
+  const barH    = Math.round(60 * uiScale);
 
   fill(0, 0, 0, 120);
   noStroke();
-  rect(0, height - 60, width, 60);
+  rect(0, height - barH, width, barH);
 
   textAlign(CENTER, CENTER);
-  textSize(13);
+  textSize(Math.round(13 * uiScale));
   fill(0, 255, 120, barAlpha * 0.9);
-  text(diagnosticText, width * 0.5, height - 30);
+  text(diagnosticText, width * 0.5, height - barH * 0.5);
 
   if (detection.personDetected) {
     textAlign(LEFT, BOTTOM);
-    textSize(10);
+    textSize(Math.round(10 * uiScale));
     fill(0, 255, 120, 80);
-    text("DURATION: " + detection.presenceDuration.toFixed(1) + "s", 24, height - 10);
+    text("DURATION: " + detection.presenceDuration.toFixed(1) + "s", pad, height - Math.round(10 * uiScale));
   }
 
   textAlign(LEFT, TOP);

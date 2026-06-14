@@ -78,7 +78,8 @@ function applyRipple(src, dst, amplitude) {
 }
 
 function drawScanLines() {
-  const lineSpacing = 4;
+  // uiScale is a global set each frame in sketch.js
+  const lineSpacing = Math.max(2, Math.round(4 * uiScale));
   const lineAlpha = 18;
   stroke(0, lineAlpha);
   strokeWeight(1);
@@ -87,10 +88,9 @@ function drawScanLines() {
   }
   noStroke();
 
-  // Slow moving brighter scan sweep
   const sweepY = ((frameCount * 0.5) % height);
   stroke(0, 255, 120, 12);
-  strokeWeight(2);
+  strokeWeight(Math.max(1, Math.round(2 * uiScale)));
   line(0, sweepY, width, sweepY);
   noStroke();
 }
@@ -130,9 +130,9 @@ function drawFaceOverlays(faces, state, personCount) {
     const tly = face.y - face.h * 0.6;
     const brx = tlx + face.w * 1.1;
     const bry = tly + face.h * 1.2;
-    const tick = 10;
+    const tick = Math.round(10 * uiScale);
     stroke(0, 255, 120, 50 * flicker);
-    strokeWeight(1);
+    strokeWeight(Math.max(1, Math.round(uiScale)));
     // top-left
     line(tlx, tly, tlx + tick, tly);
     line(tlx, tly, tlx, tly + tick);
