@@ -196,16 +196,34 @@ function drawSubjectOverlay(s) {
   if (s.state === 'ALARM') {
     const flash = sin(t * 0.012) > 0;
     const textA = flash ? 255 : 190;
+    const xlS   = Math.max(14, Math.round(22 * uiScale));
+    const mdS   = Math.max(10, Math.round(13 * uiScale));
+    const smS   = Math.max(9,  Math.round(11 * uiScale));
+    const gap   = Math.round(8 * uiScale);
+    const subN  = (s.alarmSub.match(/\n/g) || []).length + 1;
+    const subH  = Math.round(mdS * 1.4 * subN);
 
-    fill(255, 255, 255, textA);
-    textSize(Math.max(12, Math.round(24 * uiScale)));
-    text(s.alarmPrimary, s.x, textAbove - Math.round(22 * uiScale));
+    const baseY = tly - Math.round(10 * uiScale);
 
+    // Closer — bottom, punchy, cycling rainbow
     colorMode(HSB, 360, 100, 100, 255);
-    fill((t * 0.25 + s.id * 45) % 360, 90, 100, textA);
+    fill((t * 0.3 + s.id * 30) % 360, 95, 100, textA);
     colorMode(RGB, 255);
-    textSize(Math.max(9, Math.round(14 * uiScale)));
-    text(s.alarmSub, s.x, textAbove);
+    textSize(smS);
+    text(s.alarmNext, s.x, baseY);
+
+    // Sub description — middle, rainbow offset
+    colorMode(HSB, 360, 100, 100, 255);
+    fill((t * 0.25 + s.id * 45 + 120) % 360, 90, 100, textA);
+    colorMode(RGB, 255);
+    textSize(mdS);
+    textLeading(Math.round(mdS * 1.4));
+    text(s.alarmSub, s.x, baseY - Math.round(smS * 1.4 + gap));
+
+    // Headline — top, large, white flash
+    fill(255, 255, 255, textA);
+    textSize(xlS);
+    text(s.alarmPrimary, s.x, baseY - Math.round(smS * 1.4 + gap) - subH - gap);
   }
 }
 

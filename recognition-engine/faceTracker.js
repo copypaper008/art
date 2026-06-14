@@ -24,6 +24,7 @@ class Subject {
     this.scanLineTimer  = 0;
     this.alarmPrimary   = '';
     this.alarmSub       = '';
+    this.alarmNext      = '';
     this.alarmSubTimer  = 0;
     this.straightPhrase = '';
     this.straightSub    = '';
@@ -73,6 +74,7 @@ class Subject {
     if (s === 'ALARM') {
       this.alarmPrimary     = getRandomPhrase('alarm');
       this.alarmSub         = getRandomPhrase('alarmSub');
+      this.alarmNext        = getRandomPhrase('alarmNext');
       this.alarmSubTimer    = millis();
       this.targetConfidence = 99;
       initParticles();
@@ -133,6 +135,7 @@ class Subject {
     if (this.state === 'ALARM') {
       if (now - this.alarmSubTimer > 3500) {
         this.alarmSub      = getRandomPhrase('alarmSub');
+        this.alarmNext     = getRandomPhrase('alarmNext');
         this.alarmSubTimer = now;
       }
       if (elapsed > ALARM_HOLD) this.enterState('IDLE');
