@@ -151,14 +151,11 @@ async function initMediaPipe() {
       return;
     }
 
-    const vision = await FilesetResolver.forVisionTasks(
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm"
-    );
+    const vision = await FilesetResolver.forVisionTasks("./vendor/mediapipe/wasm");
 
     faceDetector = await FaceDetector.createFromOptions(vision, {
       baseOptions: {
-        modelAssetPath:
-          "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite",
+        modelAssetPath: "./vendor/mediapipe/models/blaze_face_short_range.tflite",
         delegate: "GPU",
       },
       runningMode: "VIDEO",

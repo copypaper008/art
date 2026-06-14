@@ -13,7 +13,7 @@
   -->
   <script type="module">
     import { FaceDetector, FilesetResolver }
-      from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
+      from "./vendor/mediapipe/vision_bundle.mjs";
     window._mp_FaceDetector = FaceDetector;
     window._mp_FilesetResolver = FilesetResolver;
     if (window._mp_resolve) window._mp_resolve();
