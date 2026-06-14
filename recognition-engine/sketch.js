@@ -9,7 +9,7 @@ const STATES = {
 
 const IDLE_BEFORE_SCAN = 1500;  // ms of presence before scan triggers
 const SCAN_DURATION    = 5000;  // ms the scan takes
-const STRAIGHT_HOLD    = 10000; // ms STRAIGHT result stays on screen
+const STRAIGHT_HOLD    = 5000;  // ms STRAIGHT result stays on screen
 const ALARM_HOLD       = 9000;  // ms ALARM stays on screen
 
 let state   = STATES.IDLE;
@@ -119,7 +119,7 @@ function draw() {
     drawPinkTriangle(true);
   } else if (state === STATES.SCANNING) {
     drawPinkTriangle(false);
-  } else {
+  } else if (state === STATES.IDLE) {
     drawFaceOverlays(detection.faces, state, detection.personCount, false);
   }
 

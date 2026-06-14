@@ -34,7 +34,6 @@ function drawDistortedMirror(videoCapture, motionAmount, state) {
   }
   noTint();
 
-  // In alarm mode, tint the mirror red
   const isAlarm = state === "ALARM";
   if (isAlarm) {
     tint(255, 80, 80, 130);
@@ -62,9 +61,9 @@ function applyRipple(src, dst, amplitude) {
   for (let y = 0; y < h; y++) {
     const offsetX = Math.floor(sin(y * 0.03 + ripplePhase) * amplitude);
     for (let x = 0; x < w; x++) {
-      const srcX    = constrain(x + offsetX, 0, w - 1);
-      const srcIdx  = (y * w + srcX) * 4;
-      const dstIdx  = (y * w + x) * 4;
+      const srcX   = constrain(x + offsetX, 0, w - 1);
+      const srcIdx = (y * w + srcX) * 4;
+      const dstIdx = (y * w + x) * 4;
       dst.pixels[dstIdx]     = src.pixels[srcIdx];
       dst.pixels[dstIdx + 1] = src.pixels[srcIdx + 1];
       dst.pixels[dstIdx + 2] = src.pixels[srcIdx + 2];
@@ -86,7 +85,6 @@ function drawScanLines() {
   }
   noStroke();
 
-  // Sweep line — red in alarm mode, green otherwise
   const sweepY = (frameCount * (isAlarm ? 1.5 : 0.5)) % height;
   if (isAlarm) {
     stroke(255, 0, 0, 25);
@@ -98,16 +96,14 @@ function drawScanLines() {
   noStroke();
 }
 
-// Full-screen pulsing red overlay for ALARM state
 function drawAlarmOverlay() {
-  const pulse = (sin(millis() * 0.008) + 1) / 2; // 0→1 at ~0.8Hz
+  const pulse = (sin(millis() * 0.008) + 1) / 2;
   const alpha = 30 + pulse * 50;
 
   noStroke();
   fill(180, 0, 0, alpha);
   rect(0, 0, width, height);
 
-  // Red border flash
   const borderA = 80 + pulse * 120;
   stroke(255, 0, 0, borderA);
   strokeWeight(Math.max(3, Math.round(6 * uiScale)));
@@ -121,79 +117,111 @@ function clearGhostTrails() {
   ghostTrails.length = 0;
 }
 
-// Pink triangle scan frame + sci-fi surveillance eye — tracks detected face
-function drawPinkTriangle(alarmMode) {
-  const faces   = detection.faces;
-  const hasFace = faces && faces.length > 0;
-
-  let fcx, fcy, faceSize;
-  if (hasFace) {
-    const f  = faces[0];
-    fcx      = f.x;
-    fcy      = f.y;
-    faceSize = Math.max(f.w, f.h);
-  } else {
-    fcx      = width  * 0.5;
-    fcy      = height * 0.42;
-    faceSize = Math.min(width, height) * 0.45;
+// ── Rainbow triangle outline ──────────────────────────────────────────────────
+function _rainbowTriangle(x1, y1, x2, y2, x3, y3, alpha, weight, hueShift) {
+  const segsPerSide = 48;
+  const pts = [];
+  for (let i = 0; i < segsPerSide; i++) {
+    const t = i / segsPerSide;
+    pts.push([lerp(x1, x2, t), lerp(y1, y2, t)]);
+  }
+  for (let i = 0; i < segsPerSide; i++) {
+    const t = i / segsPerSide;
+    pts.push([lerp(x2, x3, t), lerp(y2, y3, t)]);
+  }
+  for (let i = 0; i < segsPerSide; i++) {
+    const t = i / segsPerSide;
+    pts.push([lerp(x3, x1, t), lerp(y3, y1, t)]);
   }
 
+  strokeWeight(weight);
+  noFill();
+  colorMode(HSB, 360, 100, 100, 255);
+  for (let i = 0; i < pts.length; i++) {
+    const hue  = (hueShift + (i / pts.length) * 360) % 360;
+    const next = pts[(i + 1) % pts.length];
+    stroke(hue, 88, 98, alpha);
+    line(pts[i][0], pts[i][1], next[0], next[1]);
+  }
+  colorMode(RGB, 255);
+  noStroke();
+}
+
+// ── Triangle + eye: one instance per detected face ───────────────────────────
+function drawPinkTriangle(alarmMode) {
+  const faces = detection.faces;
+
+  if (!faces || faces.length === 0) {
+    _drawFaceFrame(alarmMode, width * 0.5, height * 0.42, Math.min(width, height) * 0.45);
+  } else {
+    for (const f of faces) {
+      _drawFaceFrame(alarmMode, f.x, f.y, Math.max(f.w, f.h));
+    }
+  }
+}
+
+function _drawFaceFrame(alarmMode, fcx, fcy, faceSize) {
   const t            = millis() * 0.001;
   const scanProgress = alarmMode ? 1 : constrain((millis() - stateAt) / SCAN_DURATION, 0, 1);
   const fade         = alarmMode ? 1.0 : 0.25 + scanProgress * 0.75;
 
-  // Lens ring colour: green when scanning, red when alarm
+  // Lens ring colour: green scanning, red alarm
   const lr = alarmMode ? 200 : 0;
   const lg = alarmMode ? 30  : 210;
   const lb = alarmMode ? 30  : 100;
 
-  // ── Pink triangle frame ───────────────────────────────────────────────────
+  // ── Triangle frame ───────────────────────────────────────────────────────
   const triHalf = faceSize * 0.90;
   const x1 = fcx - triHalf, y1 = fcy - faceSize * 1.05;
   const x2 = fcx + triHalf, y2 = fcy - faceSize * 1.05;
   const x3 = fcx,            y3 = fcy + faceSize * 0.95;
 
-  noFill();
+  const triWeight = Math.max(1, Math.round(2 * uiScale));
+
   if (alarmMode) {
     const ap = (sin(millis() * 0.008) + 1) / 2;
+    noFill();
     stroke(255, 20, 80, 120 + ap * 120);
+    strokeWeight(triWeight);
+    triangle(x1, y1, x2, y2, x3, y3);
+    noStroke();
   } else {
-    stroke(255, 20, 147, 35 + scanProgress * 185);
+    // Rainbow outline — slowly rotates through hues
+    const hueShift = (millis() * 0.025) % 360;
+    const alpha    = 40 + scanProgress * 185;
+    _rainbowTriangle(x1, y1, x2, y2, x3, y3, alpha, triWeight, hueShift);
   }
-  strokeWeight(Math.max(1, Math.round(2 * uiScale)));
-  triangle(x1, y1, x2, y2, x3, y3);
-  noStroke();
 
-  // Crosshair markers at triangle corners and eye flanks
+  // Crosshair markers at triangle corners + eye flanks
   const chSz = Math.round(16 * uiScale);
   _crosshair(x1 + triHalf * 0.18, y1 + faceSize * 0.12, chSz, lr, lg, lb, 120 * fade);
   _crosshair(x2 - triHalf * 0.18, y2 + faceSize * 0.12, chSz, lr, lg, lb, 120 * fade);
   _crosshair(fcx - faceSize * 0.72, fcy, chSz, lr, lg, lb, 90 * fade);
   _crosshair(fcx + faceSize * 0.72, fcy, chSz, lr, lg, lb, 90 * fade);
 
-  // ── Surveillance eye ───────────────────────────────────────────────────────
+  // ── Surveillance eye ─────────────────────────────────────────────────────
   const maxR      = faceSize * 0.22;
   const irisOuter = maxR * 0.60;
   const pupilR    = maxR * 0.27;
 
-  // Pupil scans up and down — deliberate surveillance sweep (~8s cycle)
+  // Pupil scans up and down (~8s cycle)
   const driftX = sin(t * 0.18) * maxR * 0.07;
   const driftY = sin(t * 0.78) * irisOuter * 0.44;
   const px = fcx + driftX;
   const py = fcy + driftY;
 
-  // Outer barrel — thick ring
+  // Outer barrel
   noFill();
   stroke(lr, lg, lb, 115 * fade);
   strokeWeight(Math.max(4, Math.round(6 * uiScale)));
   circle(fcx, fcy, maxR * 2);
 
-  // Inner barrel glow rim
+  // Inner barrel rim
   stroke(lr, lg, lb, 55 * fade);
   strokeWeight(Math.max(1, Math.round(2 * uiScale)));
   circle(fcx, fcy, maxR * 1.82);
 
-  // Tech ring 1 — 4 arc segments, slow clockwise
+  // Tech ring 1 — 4 arc segments, clockwise
   const rot1 = t * 0.14;
   stroke(lr, lg, lb, 100 * fade);
   strokeWeight(Math.max(1, Math.round(2 * uiScale)));
@@ -211,7 +239,7 @@ function drawPinkTriangle(alarmMode) {
     arc(fcx, fcy, maxR * 1.32, maxR * 1.32, sa, sa + TWO_PI / 6 - 0.24);
   }
 
-  // Tick marks around iris edge
+  // Tick marks
   stroke(lr, lg, lb, 58 * fade);
   strokeWeight(Math.max(1, Math.round(uiScale)));
   for (let i = 0; i < 32; i++) {
@@ -224,7 +252,7 @@ function drawPinkTriangle(alarmMode) {
     );
   }
 
-  // Iris fill — dark warm red (shows through green fibers, giving green→red gradient)
+  // Iris fill — dark warm red (green fibers over it give green→red gradient)
   noStroke();
   fill(55, 8, 6, 100 * fade);
   circle(fcx, fcy, irisOuter * 2);
@@ -253,12 +281,10 @@ function drawPinkTriangle(alarmMode) {
   strokeWeight(Math.max(1, Math.round(1.5 * uiScale)));
   circle(px, py, pupilR * 2.15);
 
-  // Primary catchlight
+  // Catchlights
   noStroke();
   fill(255, 230, 230, 108 * fade);
   circle(px + pupilR * 0.38, py - pupilR * 0.38, pupilR * 0.30);
-
-  // Secondary catchlight
   fill(255, 200, 200, 50 * fade);
   circle(px - pupilR * 0.22, py + pupilR * 0.28, pupilR * 0.13);
 
@@ -293,7 +319,7 @@ function _crosshair(x, y, size, r, g, b, a) {
   noStroke();
 }
 
-// Face targeting reticle — green normally, red in alarm mode
+// Face targeting reticle — used in IDLE only
 function drawFaceOverlays(faces, state, personCount, alarmMode = false) {
   if (!faces || faces.length === 0) return;
 
@@ -306,17 +332,14 @@ function drawFaceOverlays(faces, state, personCount, alarmMode = false) {
   for (const face of faces) {
     const flicker = alarmMode ? random(0.6, 1.0) : random(0.85, 1.0);
 
-    // Outer halo
     stroke(r, g, b, 18 * flicker);
     strokeWeight(8);
     rect(face.x - face.w * 0.6, face.y - face.h * 0.65, face.w * 1.2, face.h * 1.3, 4);
 
-    // Inner box
     stroke(r, g, b, alarmMode ? 80 * flicker : 25 * flicker);
     strokeWeight(alarmMode ? 2 : 1);
     rect(face.x - face.w * 0.55, face.y - face.h * 0.6, face.w * 1.1, face.h * 1.2, 2);
 
-    // Corner ticks
     const tlx  = face.x - face.w * 0.55;
     const tly  = face.y - face.h * 0.6;
     const brx  = tlx + face.w * 1.1;
