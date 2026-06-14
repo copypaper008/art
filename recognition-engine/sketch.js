@@ -107,6 +107,7 @@ function draw() {
 
   if (state === STATES.ALARM) {
     drawAlarmOverlay();
+    drawParticles();
     drawPinkTriangle(true);
   } else if (state === STATES.SCANNING) {
     drawPinkTriangle(false);
@@ -116,6 +117,7 @@ function draw() {
 
   drawScanLines();
   drawUI();
+  drawTransitionFlash(); // always on top
 }
 
 // ─────────────────────────────────────────────
@@ -138,7 +140,10 @@ function updateState() {
   }
 
   if (state === STATES.SCANNING) {
-    if (now - scanLineTimer > SCAN_LINE_INTERVAL) {
+    // Lock to RESULT IMMINENT in the final 15% for tension
+    if (elapsed > SCAN_DURATION * 0.85) {
+      scanLine = "RESULT IMMINENT";
+    } else if (now - scanLineTimer > SCAN_LINE_INTERVAL) {
       scanLine      = getRandomPhrase("scanning");
       scanLineTimer = now;
     }
@@ -211,6 +216,7 @@ function enterState(newState) {
     straightPhrase   = getRandomPhrase("straight");
     straightSub      = getRandomPhrase("straightSub");
     targetConfidence = floor(random(92, 98));
+    triggerFlash();
   }
 
   if (newState === STATES.ALARM) {
@@ -219,6 +225,8 @@ function enterState(newState) {
     alarmSubTimer    = millis();
     targetConfidence = 99;
     idlesSinceAlarm  = 0;
+    initParticles();
+    triggerFlash();
   }
 
   if (newState === STATES.IDLE) {

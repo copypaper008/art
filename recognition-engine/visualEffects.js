@@ -7,6 +7,13 @@ let ripplePhase = 0;
 let rippleBuffer = null;
 let mirrorBuffer = null;
 
+// Transition flash
+let _flashTimer = -9999;
+const _FLASH_DUR = 320;
+
+// Rainbow confetti particles (ALARM state)
+let _particles = [];
+
 function initVisuals(w, h) {
   mirrorBuffer = createGraphics(w, h);
   rippleBuffer = createGraphics(w, h);
@@ -14,7 +21,7 @@ function initVisuals(w, h) {
   rippleBuffer.pixelDensity(1);
 }
 
-function drawDistortedMirror(videoCapture, motionAmount, state) {
+function drawDistortedMirror(videoCapture, motionAmount, currentState) {
   if (!videoCapture || !mirrorBuffer) return;
 
   mirrorBuffer.push();
@@ -34,14 +41,23 @@ function drawDistortedMirror(videoCapture, motionAmount, state) {
   }
   noTint();
 
-  const isAlarm = state === "ALARM";
-  if (isAlarm) {
-    tint(255, 80, 80, 130);
+  // State-driven camera treatment
+  if (currentState === "ALARM") {
+    // Cycling rainbow hue — pride in full display
+    const hue = (millis() * 0.18) % 360;
+    drawingContext.filter = `hue-rotate(${hue}deg) saturate(170%)`;
+    image(rippleBuffer, 0, 0);
+    drawingContext.filter = "none";
+  } else if (currentState === "STRAIGHT") {
+    // Grayscale — you're boring, the world went grey
+    drawingContext.filter = "grayscale(100%) brightness(0.62)";
+    image(rippleBuffer, 0, 0);
+    drawingContext.filter = "none";
   } else {
     tint(255, 120);
+    image(rippleBuffer, 0, 0);
+    noTint();
   }
-  image(rippleBuffer, 0, 0);
-  noTint();
 
   if (frameCount % 3 === 0) {
     if (ghostTrails.length >= GHOST_FRAMES) ghostTrails.shift();
@@ -97,14 +113,16 @@ function drawScanLines() {
 }
 
 function drawAlarmOverlay() {
+  // Lighter overlay — camera's rainbow should show through
   const pulse = (sin(millis() * 0.008) + 1) / 2;
-  const alpha = 30 + pulse * 50;
+  const alpha = 15 + pulse * 30;
 
   noStroke();
-  fill(180, 0, 0, alpha);
+  fill(0, 0, 0, alpha);
   rect(0, 0, width, height);
 
-  const borderA = 80 + pulse * 120;
+  // Pulsing red border
+  const borderA = 90 + pulse * 130;
   stroke(255, 0, 0, borderA);
   strokeWeight(Math.max(3, Math.round(6 * uiScale)));
   noFill();
@@ -115,6 +133,51 @@ function drawAlarmOverlay() {
 function clearGhostTrails() {
   for (const g of ghostTrails) g.remove();
   ghostTrails.length = 0;
+}
+
+// ── State-transition white flash ──────────────────────────────────────────────
+function triggerFlash() {
+  _flashTimer = millis();
+}
+
+function drawTransitionFlash() {
+  const elapsed = millis() - _flashTimer;
+  if (elapsed > _FLASH_DUR) return;
+  const alpha = map(elapsed, 0, _FLASH_DUR, 230, 0, true);
+  noStroke();
+  fill(255, alpha);
+  rect(0, 0, width, height);
+}
+
+// ── Rainbow confetti particles ────────────────────────────────────────────────
+function initParticles() {
+  _particles = Array.from({ length: 80 }, () => ({
+    x:     random(width),
+    y:     random(-height * 0.6, 0),
+    vy:    random(1.8, 5.5) * uiScale,
+    vx:    random(-1.2, 1.2),
+    r:     random(3, 9) * uiScale,
+    hue:   random(360),
+    a:     random(170, 255),
+    shape: floor(random(3)),  // 0 circle, 1 rect, 2 triangle
+  }));
+}
+
+function drawParticles() {
+  colorMode(HSB, 360, 100, 100, 255);
+  noStroke();
+  for (const p of _particles) {
+    p.y  += p.vy;
+    p.x  += p.vx;
+    p.hue = (p.hue + 1.2) % 360;
+    if (p.y > height + p.r) { p.y = -p.r * 2; p.x = random(width); }
+    fill(p.hue, 88, 98, p.a);
+    if      (p.shape === 0) circle(p.x, p.y, p.r * 2);
+    else if (p.shape === 1) rect(p.x - p.r * 0.4, p.y - p.r * 0.6, p.r * 0.8, p.r * 1.4);
+    else triangle(p.x, p.y - p.r, p.x - p.r * 0.9, p.y + p.r * 0.7, p.x + p.r * 0.9, p.y + p.r * 0.7);
+  }
+  colorMode(RGB, 255);
+  noFill();
 }
 
 // ── Rainbow triangle outline ──────────────────────────────────────────────────
@@ -165,12 +228,10 @@ function _drawFaceFrame(alarmMode, fcx, fcy, faceSize) {
   const scanProgress = alarmMode ? 1 : constrain((millis() - stateAt) / SCAN_DURATION, 0, 1);
   const fade         = alarmMode ? 1.0 : 0.25 + scanProgress * 0.75;
 
-  // Lens ring colour: green scanning, red alarm
   const lr = alarmMode ? 200 : 0;
   const lg = alarmMode ? 30  : 210;
   const lb = alarmMode ? 30  : 100;
 
-  // ── Triangle frame ───────────────────────────────────────────────────────
   const triHalf = faceSize * 0.90;
   const x1 = fcx - triHalf, y1 = fcy - faceSize * 1.05;
   const x2 = fcx + triHalf, y2 = fcy - faceSize * 1.05;
@@ -181,18 +242,15 @@ function _drawFaceFrame(alarmMode, fcx, fcy, faceSize) {
   if (alarmMode) {
     const ap = (sin(millis() * 0.008) + 1) / 2;
     noFill();
-    stroke(255, 20, 80, 120 + ap * 120);
+    stroke(255, 20, 80, 130 + ap * 125);
     strokeWeight(triWeight);
     triangle(x1, y1, x2, y2, x3, y3);
     noStroke();
   } else {
-    // Rainbow outline — slowly rotates through hues
     const hueShift = (millis() * 0.025) % 360;
-    const alpha    = 40 + scanProgress * 185;
-    _rainbowTriangle(x1, y1, x2, y2, x3, y3, alpha, triWeight, hueShift);
+    _rainbowTriangle(x1, y1, x2, y2, x3, y3, 40 + scanProgress * 190, triWeight, hueShift);
   }
 
-  // Crosshair markers at triangle corners + eye flanks
   const chSz = Math.round(16 * uiScale);
   _crosshair(x1 + triHalf * 0.18, y1 + faceSize * 0.12, chSz, lr, lg, lb, 120 * fade);
   _crosshair(x2 - triHalf * 0.18, y2 + faceSize * 0.12, chSz, lr, lg, lb, 120 * fade);
@@ -204,24 +262,20 @@ function _drawFaceFrame(alarmMode, fcx, fcy, faceSize) {
   const irisOuter = maxR * 0.60;
   const pupilR    = maxR * 0.27;
 
-  // Pupil scans up and down (~8s cycle)
   const driftX = sin(t * 0.18) * maxR * 0.07;
   const driftY = sin(t * 0.78) * irisOuter * 0.44;
   const px = fcx + driftX;
   const py = fcy + driftY;
 
-  // Outer barrel
   noFill();
   stroke(lr, lg, lb, 115 * fade);
   strokeWeight(Math.max(4, Math.round(6 * uiScale)));
   circle(fcx, fcy, maxR * 2);
 
-  // Inner barrel rim
   stroke(lr, lg, lb, 55 * fade);
   strokeWeight(Math.max(1, Math.round(2 * uiScale)));
   circle(fcx, fcy, maxR * 1.82);
 
-  // Tech ring 1 — 4 arc segments, clockwise
   const rot1 = t * 0.14;
   stroke(lr, lg, lb, 100 * fade);
   strokeWeight(Math.max(1, Math.round(2 * uiScale)));
@@ -230,7 +284,6 @@ function _drawFaceFrame(alarmMode, fcx, fcy, faceSize) {
     arc(fcx, fcy, maxR * 1.58, maxR * 1.58, sa, sa + TWO_PI / 4 - 0.36);
   }
 
-  // Tech ring 2 — 6 arc segments, counter-rotating
   const rot2 = -t * 0.09;
   stroke(lr, lg, lb, 82 * fade);
   strokeWeight(Math.max(1, Math.round(1.5 * uiScale)));
@@ -239,7 +292,6 @@ function _drawFaceFrame(alarmMode, fcx, fcy, faceSize) {
     arc(fcx, fcy, maxR * 1.32, maxR * 1.32, sa, sa + TWO_PI / 6 - 0.24);
   }
 
-  // Tick marks
   stroke(lr, lg, lb, 58 * fade);
   strokeWeight(Math.max(1, Math.round(uiScale)));
   for (let i = 0; i < 32; i++) {
@@ -252,12 +304,10 @@ function _drawFaceFrame(alarmMode, fcx, fcy, faceSize) {
     );
   }
 
-  // Iris fill — dark warm red (green fibers over it give green→red gradient)
   noStroke();
   fill(55, 8, 6, 100 * fade);
   circle(fcx, fcy, irisOuter * 2);
 
-  // Dense radial iris fibers — 160 green lines
   stroke(lr, lg, lb, 44 * fade);
   strokeWeight(Math.max(1, Math.round(0.6 * uiScale)));
   for (let i = 0; i < 160; i++) {
@@ -270,25 +320,21 @@ function _drawFaceFrame(alarmMode, fcx, fcy, faceSize) {
     );
   }
 
-  // Pupil — deep black, drifts vertically
   noStroke();
   fill(4, 0, 0, 242 * fade);
   circle(px, py, pupilR * 2);
 
-  // Pupil rim
   noFill();
   stroke(lr, lg, lb, 58 * fade);
   strokeWeight(Math.max(1, Math.round(1.5 * uiScale)));
   circle(px, py, pupilR * 2.15);
 
-  // Catchlights
   noStroke();
   fill(255, 230, 230, 108 * fade);
   circle(px + pupilR * 0.38, py - pupilR * 0.38, pupilR * 0.30);
   fill(255, 200, 200, 50 * fade);
   circle(px - pupilR * 0.22, py + pupilR * 0.28, pupilR * 0.13);
 
-  // Confidence label beside eye
   if (!alarmMode && scanProgress > 0.05) {
     noStroke();
     fill(lr, lg, lb, 165 * fade);
@@ -319,8 +365,8 @@ function _crosshair(x, y, size, r, g, b, a) {
   noStroke();
 }
 
-// Face targeting reticle — used in IDLE only
-function drawFaceOverlays(faces, state, personCount, alarmMode = false) {
+// Face targeting reticle — IDLE only
+function drawFaceOverlays(faces, currentState, personCount, alarmMode = false) {
   if (!faces || faces.length === 0) return;
 
   const r = alarmMode ? 255 : 0;
