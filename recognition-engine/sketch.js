@@ -9,7 +9,7 @@ const STATES = {
 
 const IDLE_BEFORE_SCAN = 1500;  // ms of presence before scan triggers
 const SCAN_DURATION    = 5000;  // ms the scan takes
-const STRAIGHT_HOLD    = 5000;  // ms STRAIGHT result stays on screen
+const STRAIGHT_HOLD    = 7500;  // ms STRAIGHT result stays on screen
 const ALARM_HOLD       = 9000;  // ms ALARM stays on screen
 
 let state   = STATES.IDLE;
@@ -51,16 +51,7 @@ let targetConfidence    = 0;
 
 // ── Scanning HUD state (populated on SCANNING entry) ──────────────────────
 let hudSessionId  = "";
-let hudEnvLight   = "";
-let hudEnvNoise   = "";
-let hudEnvThreat  = "";
-let hudPosture    = "";
-let hudEnergy     = "";
 let hudExpression = "";
-let hudVisionCore = 0;
-let hudDataStr    = 0;
-let hudAlgorithm  = 0;
-let hudMemory     = 0;
 let hudLogLines   = [];
 let hudLogTimer   = 0;
 let hudDataTicker = "";
@@ -207,18 +198,9 @@ function enterState(newState) {
     targetConfidence = 0;
 
     // Populate HUD panels
-    const rndId = () => hex(floor(random(65536)), 4);
+    const rndId   = () => hex(floor(random(65536)), 4);
     hudSessionId  = "G4Y-" + rndId() + "-" + rndId();
-    hudEnvLight   = random(["LOW", "MEDIUM", "MODERATE"]);
-    hudEnvNoise   = random(["MINIMAL", "LOW", "MODERATE"]);
-    hudEnvThreat  = "UNKNOWN";
-    hudPosture    = random(["NEUTRAL", "CASUAL", "GUARDED", "RELAXED"]);
-    hudEnergy     = random(["RESERVED", "ELEVATED", "RELAXED", "UNCERTAIN"]);
     hudExpression = random(["UNREADABLE", "NEUTRAL", "TENSE", "AMBIGUOUS"]);
-    hudVisionCore = floor(random(72, 95));
-    hudDataStr    = floor(random(55, 74));
-    hudAlgorithm  = floor(random(64, 85));
-    hudMemory     = floor(random(60, 80));
     hudLogLines   = [];
     hudLogTimer   = millis();
     hudDataTicker = _randomHex(120);
@@ -346,29 +328,43 @@ function drawUI() {
 
   // ── ALARM ─────────────────────────────────────────────────────────────────
   if (state === STATES.ALARM) {
-    const flash = sin(millis() * 0.012) > 0;
-    const textA = flash ? 255 : 200;
+    const flash  = sin(millis() * 0.012) > 0;
+    const flash2 = sin(millis() * 0.018) > 0;
+    const textA  = flash ? 255 : 190;
 
+    // Primary headline — extra large
     fill(255, 255, 255, textA);
-    textSize(xl);
-    text(alarmPrimary, width * 0.5, height * 0.38);
+    textSize(Math.round(52 * uiScale));
+    text(alarmPrimary, width * 0.5, height * 0.36);
 
-    fill(255, 60, 60, textA * 0.9);
-    textSize(Math.round(22 * uiScale));
-    text(alarmSub, width * 0.5, height * 0.52);
+    // Rotating sub-line
+    fill(255, 55, 55, textA);
+    textSize(Math.round(24 * uiScale));
+    text(alarmSub, width * 0.5, height * 0.51);
 
-    fill(255, 60, 60, 200);
+    // Confidence
+    fill(255, 55, 55, flash2 ? 230 : 140);
     textSize(md);
     text("CONFIDENCE: 99%", width * 0.5, height * 0.62);
 
+    // Corner alerts — both flash independently
+    textAlign(LEFT, TOP);
+    textSize(sm);
     if (flash) {
-      textAlign(LEFT, TOP);
-      textSize(sm);
-      fill(255, 60, 60, 255);
+      fill(255, 55, 55, 255);
       text("⚠ ALERT ⚠", pad, pad * 0.8 + Math.round(lh * 1.8));
+    }
+    if (flash2) {
       textAlign(RIGHT, TOP);
+      fill(255, 55, 55, 255);
       text("⚠ ALERT ⚠", width - pad, pad * 0.8 + Math.round(lh * 1.8));
     }
+
+    // Bottom — protocol line
+    textAlign(CENTER, BOTTOM);
+    fill(255, 55, 55, flash ? 180 : 80);
+    textSize(Math.round(10 * uiScale));
+    text("PRIDE RESPONSE PROTOCOL INITIATED — ALL UNITS RESPOND", width * 0.5, height - Math.round(12 * uiScale));
 
     textAlign(LEFT, TOP);
     return;
@@ -376,148 +372,74 @@ function drawUI() {
 }
 
 // ─────────────────────────────────────────────
-// Scanning HUD panels
+// Scanning HUD — streamlined: orientation panel + status box + tagline
 
 function drawScanningHUD() {
-  const pad    = Math.round(24 * uiScale);
-  const sm     = Math.round(10 * uiScale);
-  const xs     = Math.round(9  * uiScale);
-  const lh     = Math.round(16 * uiScale);
-  const col    = [0, 255, 120];
-  const panelW = Math.min(Math.round(200 * uiScale), width * 0.21);
-  const rightX = width - pad - panelW;
+  const pad      = Math.round(24 * uiScale);
+  const sm       = Math.round(10 * uiScale);
+  const xs       = Math.round(9  * uiScale);
+  const lh       = Math.round(17 * uiScale);
+  const col      = [0, 255, 120];
+  const panelW   = Math.min(Math.round(195 * uiScale), width * 0.20);
   const progress = constrain((millis() - stateAt) / SCAN_DURATION, 0, 1);
 
-  // ── LEFT: ENVIRONMENT ANALYSIS ──────────────────────────────────────────
-  const envY = Math.round(110 * uiScale);
-  _hudLabel("ENVIRONMENT ANALYSIS", pad, envY, sm, col);
-  _hudRows([
-    ["LIGHT",  hudEnvLight],
-    ["NOISE",  hudEnvNoise],
-    ["CROWD",  String(detection.personCount).padStart(2, "0")],
-    ["THREAT", hudEnvThreat],
-  ], pad, envY + lh * 1.4, xs, lh, col, panelW);
-
   // ── LEFT: ORIENTATION ANALYSIS ──────────────────────────────────────────
-  const oriY = Math.round(310 * uiScale);
-  _hudLabel("ORIENTATION ANALYSIS", pad, oriY, sm, col);
+  const oriY    = Math.round(130 * uiScale);
   const certainty = progress < 0.3 ? "LOW" : progress < 0.7 ? "PARTIAL" : "BUILDING";
+  _hudLabel("ORIENTATION ANALYSIS", pad, oriY, sm, col);
   _hudRows([
-    ["FACE",          detection.faceDetected ? "DETECTED" : "PARTIAL"],
-    ["POSTURE",       hudPosture],
-    ["ENERGY",        hudEnergy],
-    ["EXPRESSION",    hudExpression],
-    ["VULNERABILITY", "UNKNOWN"],
-    ["CERTAINTY",     certainty],
-    ["FLUIDITY",      "??"],
-    ["ALIGNMENT",     "UNDETERMINED"],
+    ["SUBJECTS",   String(detection.personCount).padStart(2, "0")],
+    ["EXPRESSION", hudExpression],
+    ["FLUIDITY",   "??"],
+    ["CERTAINTY",  certainty],
+    ["ALIGNMENT",  "UNDETERMINED"],
   ], pad, oriY + lh * 1.4, xs, lh, col, panelW);
 
-  // ── LEFT: WARNING ────────────────────────────────────────────────────────
-  const warnY = Math.round(680 * uiScale);
-  noStroke();
-  fill(255, 80, 80, 200);
-  textAlign(LEFT, TOP);
-  textSize(sm);
-  text("WARNING", pad, warnY);
-  fill(255, 80, 80, 130);
-  textSize(xs);
-  text("SUBJECT REMAINS", pad, warnY + lh * 1.3);
-  text("OUTSIDE OF",      pad, warnY + lh * 2.1);
-  text("RECOGNITION LIMITS", pad, warnY + lh * 2.9);
-
-  // ── LEFT: LOG OUTPUT ─────────────────────────────────────────────────────
-  const logY = Math.round(820 * uiScale);
+  // ── LEFT BOTTOM: LOG OUTPUT ──────────────────────────────────────────────
+  const logY = Math.round(430 * uiScale);
   _hudLabel("LOG OUTPUT", pad, logY, sm, col);
-  fill(0, 255, 120, 95);
+  fill(0, 255, 120, 90);
   textSize(xs);
   textAlign(LEFT, TOP);
-  hudLogLines.slice(-5).forEach((line, i) => {
-    text(line, pad, logY + lh * 1.4 + i * lh);
-  });
-
-  // ── RIGHT: DATA STREAM ───────────────────────────────────────────────────
-  const dsY = Math.round(420 * uiScale);
-  _hudLabel("DATA STREAM", rightX, dsY, sm, col);
-  fill(0, 255, 120, 50);
-  textSize(xs);
-  textAlign(LEFT, TOP);
-  const dataChunks = hudDataTicker.match(/.{1,22}/g) || [];
-  dataChunks.slice(0, 5).forEach((chunk, i) => {
-    text(chunk, rightX, dsY + lh * 1.4 + i * lh);
-  });
-
-  // ── RIGHT: PATTERN MATCH ─────────────────────────────────────────────────
-  const pmY = Math.round(610 * uiScale);
-  _hudLabel("PATTERN MATCH", rightX, pmY, sm, col);
-  fill(0, 255, 120, 170);
-  textSize(Math.round(26 * uiScale));
-  textAlign(LEFT, TOP);
-  text("00%", rightX, pmY + lh * 1.4);
-
-  // ── RIGHT: SYSTEM HEALTH ─────────────────────────────────────────────────
-  const shY  = Math.round(720 * uiScale);
-  const barH = Math.max(2, Math.round(3 * uiScale));
-  _hudLabel("SYSTEM HEALTH", rightX, shY, sm, col);
-  [
-    ["VISION CORE", hudVisionCore],
-    ["DATA STREAM", hudDataStr],
-    ["ALGORITHM",   hudAlgorithm],
-    ["MEMORY",      hudMemory],
-  ].forEach(([label, pct], i) => {
-    const rowY = shY + lh * 1.4 + i * lh * 2.1;
-    noStroke();
-    fill(0, 255, 120, 115);
-    textSize(xs);
-    textAlign(LEFT, TOP);
-    text(label, rightX, rowY);
-    textAlign(RIGHT, TOP);
-    fill(0, 255, 120, 115);
-    text(pct + "%", rightX + panelW, rowY);
-    noFill();
-    stroke(0, 255, 120, 30);
-    strokeWeight(1);
-    rect(rightX, rowY + lh * 0.9, panelW, barH);
-    noStroke();
-    fill(0, 255, 120, 120);
-    rect(rightX, rowY + lh * 0.9, panelW * (pct / 100), barH);
+  hudLogLines.slice(-6).forEach((ln, i) => {
+    text(ln, pad, logY + lh * 1.4 + i * lh);
   });
 
   // ── BOTTOM CENTER: STATUS BOX ────────────────────────────────────────────
-  const stW = Math.round(320 * uiScale);
+  const stW = Math.round(300 * uiScale);
   const stX = width * 0.5 - stW / 2;
-  const stY = Math.round(848 * uiScale);
-  const stH = Math.round(96 * uiScale);
+  const stY = Math.round(860 * uiScale);
+  const stH = Math.round(90 * uiScale);
   noFill();
-  stroke(0, 255, 120, 55);
+  stroke(0, 255, 120, 50);
   strokeWeight(1);
   rect(stX, stY, stW, stH);
   noStroke();
   textAlign(CENTER, TOP);
-  fill(0, 255, 120, 95);
+  fill(0, 255, 120, 90);
   textSize(xs);
   text("STATUS", width * 0.5, stY + Math.round(10 * uiScale));
-  fill(0, 255, 120, 210);
-  textSize(Math.round(19 * uiScale));
-  text("IDENTITY UNRESOLVED", width * 0.5, stY + Math.round(28 * uiScale));
-  fill(0, 255, 120, 120);
+  fill(0, 255, 120, 215);
+  textSize(Math.round(18 * uiScale));
+  text("IDENTITY UNRESOLVED", width * 0.5, stY + Math.round(27 * uiScale));
+  fill(0, 255, 120, 115);
   textSize(xs);
-  text("CONTINUING OBSERVATION", width * 0.5, stY + Math.round(56 * uiScale));
+  text("CONTINUING OBSERVATION", width * 0.5, stY + Math.round(54 * uiScale));
 
-  // Small pink triangle icon above tagline
-  const triY = Math.round(958 * uiScale);
+  // Small pink triangle icon
   const triSz = Math.round(10 * uiScale);
+  const triY  = height - Math.round(38 * uiScale);
   noFill();
-  stroke(255, 20, 147, 80);
+  stroke(255, 20, 147, 75);
   strokeWeight(1);
   triangle(width * 0.5, triY + triSz, width * 0.5 - triSz, triY, width * 0.5 + triSz, triY);
   noStroke();
 
   // ── BOTTOM TAGLINE ───────────────────────────────────────────────────────
   textAlign(CENTER, BOTTOM);
-  fill(0, 255, 120, 60);
+  fill(0, 255, 120, 55);
   textSize(xs);
-  text("◆  NOTHING IS EVER FULLY SEEN  ◆", width * 0.5, height - Math.round(10 * uiScale));
+  text("◆  NOTHING IS EVER FULLY SEEN  ◆", width * 0.5, height - Math.round(12 * uiScale));
 }
 
 // ── HUD helpers ──────────────────────────────────────────────────────────────
