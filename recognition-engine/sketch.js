@@ -44,6 +44,9 @@ function setup() {
   initVisuals(width, height);
 
   cam = createCapture(VIDEO);
+  // iOS Safari requires playsinline or it intercepts the stream for fullscreen
+  cam.elt.setAttribute('playsinline', '');
+  cam.elt.setAttribute('webkit-playsinline', '');
   cam.size(640, 480);
   cam.hide();
 
