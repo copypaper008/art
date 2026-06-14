@@ -7,6 +7,15 @@ const MOTION_PIXEL_RATIO = 0.02;
 const MOTION_HIGH = 0.06;
 const PRESENCE_ZONE_MARGIN = 0.1;
 
+// Two-tier presence detection:
+// INIT_THRESHOLD  — needs real movement to first register someone entering
+// SUSTAIN_THRESHOLD — much lower; keeps a still person present via micro-movements
+//   (breathing, gaze shifts, hair, fabric). Mobile cameras with noise reduction
+//   produce very low diff when still, so this must be well below INIT.
+const PRESENCE_INIT_THRESHOLD    = MOTION_PIXEL_RATIO * 0.3; // 0.6% of pixels
+const PRESENCE_SUSTAIN_THRESHOLD = MOTION_PIXEL_RATIO * 0.08; // 0.16% of pixels
+const PRESENCE_TIMEOUT = 8; // seconds of sub-sustain motion before declaring empty
+
 let prevPixels = null;
 let detectionBuffer = null;
 
@@ -38,6 +47,8 @@ function initDetection(pg) {
 
 function runDetection(videoCapture) {
   if (!videoCapture || !detectionBuffer) return;
+  // Wait for camera to be ready (important on mobile — stream takes a moment)
+  if (videoCapture.elt && videoCapture.elt.readyState < 2) return;
 
   const w = detectionBuffer.width;
   const h = detectionBuffer.height;
@@ -89,19 +100,25 @@ function runDetection(videoCapture) {
 
   const now = millis() / 1000;
 
-  if (motionRatio > MOTION_PIXEL_RATIO * 0.3) {
+  if (motionRatio > PRESENCE_INIT_THRESHOLD) {
+    // Enough motion to register a new presence
     detection._lastMotionTime = now;
     if (!detection._presenceStartTime) detection._presenceStartTime = now;
+  } else if (detection.personDetected && motionRatio > PRESENCE_SUSTAIN_THRESHOLD) {
+    // Person is already present — even very slight motion (breathing, micro-shifts)
+    // keeps the timer alive. Only fires when already detected, so empty-room
+    // camera noise never bootstraps a false presence.
+    detection._lastMotionTime = now;
   }
 
   const timeSinceMotion = detection._lastMotionTime ? now - detection._lastMotionTime : 999;
 
   // When MediaPipe is active, it owns personDetected/personCount.
   // Motion detection only owns those fields when MediaPipe isn't ready.
-  const mpOwnsPresence = mediaPipeReady && now < detection._facePresentUntil + 3;
+  const mpOwnsPresence = mediaPipeReady && now < detection._facePresentUntil + PRESENCE_TIMEOUT;
 
   if (!mpOwnsPresence) {
-    if (timeSinceMotion < 3) {
+    if (timeSinceMotion < PRESENCE_TIMEOUT) {
       detection.personDetected = true;
       detection.personCount = 1;
       detection.presenceDuration = detection._presenceStartTime
@@ -151,11 +168,19 @@ async function initMediaPipe() {
       return;
     }
 
-    const vision = await FilesetResolver.forVisionTasks("./vendor/mediapipe/wasm");
+    const _cdnBase = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+    const wasmPath  = window._mp_localVendor
+      ? "./vendor/mediapipe/wasm"
+      : _cdnBase + "/wasm";
+    const modelPath = window._mp_localVendor
+      ? "./vendor/mediapipe/models/blaze_face_short_range.tflite"
+      : "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite";
+
+    const vision = await FilesetResolver.forVisionTasks(wasmPath);
 
     faceDetector = await FaceDetector.createFromOptions(vision, {
       baseOptions: {
-        modelAssetPath: "./vendor/mediapipe/models/blaze_face_short_range.tflite",
+        modelAssetPath: modelPath,
         delegate: "GPU",
       },
       runningMode: "VIDEO",
@@ -243,7 +268,7 @@ function runFaceDetection(videoEl) {
   } else {
     // No faces — presence decays after a grace period
     const timeSinceFace = now - (detection._facePresentUntil || 0);
-    if (timeSinceFace > 3) {
+    if (timeSinceFace > PRESENCE_TIMEOUT) {
       detection.personDetected = false;
       detection.personCount = 0;
       detection._presenceStartTime = null;
