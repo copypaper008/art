@@ -121,12 +121,11 @@ function clearGhostTrails() {
   ghostTrails.length = 0;
 }
 
-// Triangle scan frame + realistic camera eye — tracks detected face position
+// Pink triangle scan frame + sci-fi surveillance eye — tracks detected face
 function drawPinkTriangle(alarmMode) {
   const faces   = detection.faces;
   const hasFace = faces && faces.length > 0;
 
-  // Anchor to face center if detected, else screen center
   let fcx, fcy, faceSize;
   if (hasFace) {
     const f  = faces[0];
@@ -142,8 +141,9 @@ function drawPinkTriangle(alarmMode) {
   const t            = millis() * 0.001;
   const pulse        = (sin(t * 1.8) + 1) / 2;
   const scanProgress = alarmMode ? 1 : constrain((millis() - stateAt) / SCAN_DURATION, 0, 1);
+  const fade         = alarmMode ? 1.0 : 0.25 + scanProgress * 0.75;
 
-  // ── Triangle frame sized to face ─────────────────────────────────────────
+  // ── Pink triangle frame ───────────────────────────────────────────────────
   const triHalf = faceSize * 0.90;
   const x1 = fcx - triHalf, y1 = fcy - faceSize * 1.05;
   const x2 = fcx + triHalf, y2 = fcy - faceSize * 1.05;
@@ -152,76 +152,107 @@ function drawPinkTriangle(alarmMode) {
   noFill();
   if (alarmMode) {
     const ap = (sin(millis() * 0.008) + 1) / 2;
-    stroke(255, 40, 40, 110 + ap * 120);
+    stroke(255, 20, 80, 120 + ap * 120);
   } else {
-    stroke(0, 255, 120, 28 + scanProgress * 165);
+    stroke(255, 20, 147, 35 + scanProgress * 185);
   }
   strokeWeight(Math.max(1, Math.round(2 * uiScale)));
   triangle(x1, y1, x2, y2, x3, y3);
   noStroke();
 
-  // ── Realistic camera / surveillance eye at face centre ───────────────────
-  const maxR = faceSize * 0.30;
-  const fade = alarmMode ? 1.0 : 0.28 + scanProgress * 0.72;
+  // ── Sci-fi surveillance eye ───────────────────────────────────────────────
+  const maxR     = faceSize * 0.32;
+  const irisOuter = maxR * 0.58;
+  const pupilR   = maxR * 0.26;
 
-  // Slow pupil drift — looks like the lens is tracking
-  const driftX = sin(t * 0.28) * maxR * 0.09;
-  const driftY = cos(t * 0.37) * maxR * 0.06;
+  // Pupil drifts slowly — camera tracking effect
+  const driftX = sin(t * 0.27) * maxR * 0.08;
+  const driftY = cos(t * 0.35) * maxR * 0.05;
   const px = fcx + driftX;
   const py = fcy + driftY;
 
-  // Outer lens barrel
+  // Outer barrel ring — thick, dark
   noFill();
-  stroke(130, 18, 18, 105 * fade);
-  strokeWeight(Math.max(2, Math.round(3 * uiScale)));
+  stroke(160, 20, 20, 125 * fade);
+  strokeWeight(Math.max(4, Math.round(6 * uiScale)));
   circle(fcx, fcy, maxR * 2);
 
-  // Glass element rings (3 inner rings)
-  const glassRings = [0.78, 0.54, 0.35];
-  glassRings.forEach((r, i) => {
-    stroke(165, 28, 28, (18 + i * 16) * fade);
-    strokeWeight(Math.max(1, Math.round(1.5 * uiScale)));
-    circle(fcx, fcy, maxR * r * 2);
-  });
+  // Inner barrel edge — glowing rim
+  stroke(220, 50, 50, 70 * fade);
+  strokeWeight(Math.max(1, Math.round(2 * uiScale)));
+  circle(fcx, fcy, maxR * 1.82);
 
-  // Rotating aperture blades (8 blades)
-  stroke(195, 40, 40, 58 * fade);
+  // Tech ring 1 — 4 arc segments, slow clockwise rotation
+  const rot1 = t * 0.14;
+  stroke(200, 45, 45, 105 * fade);
+  strokeWeight(Math.max(1, Math.round(2 * uiScale)));
+  for (let i = 0; i < 4; i++) {
+    const sa = (i / 4) * TWO_PI + rot1 + 0.18;
+    const ea = sa + TWO_PI / 4 - 0.36;
+    arc(fcx, fcy, maxR * 1.58, maxR * 1.58, sa, ea);
+  }
+
+  // Tech ring 2 — 6 arc segments, counter-rotating
+  const rot2 = -t * 0.09;
+  stroke(185, 38, 38, 88 * fade);
+  strokeWeight(Math.max(1, Math.round(1.5 * uiScale)));
+  for (let i = 0; i < 6; i++) {
+    const sa = (i / 6) * TWO_PI + rot2 + 0.12;
+    const ea = sa + TWO_PI / 6 - 0.24;
+    arc(fcx, fcy, maxR * 1.32, maxR * 1.32, sa, ea);
+  }
+
+  // Tick marks around iris edge
+  stroke(200, 45, 45, 65 * fade);
   strokeWeight(Math.max(1, Math.round(uiScale)));
-  const rot = t * 0.20;
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * TWO_PI + rot;
+  for (let i = 0; i < 32; i++) {
+    const a    = (i / 32) * TWO_PI + rot1;
+    const len  = (i % 4 === 0) ? 0.15 : 0.07; // longer every 4th
+    const rIn  = irisOuter * 1.10;
+    const rOut = irisOuter * (1.10 + len);
     line(
-      fcx + cos(a) * maxR * 0.20, fcy + sin(a) * maxR * 0.20,
-      fcx + cos(a) * maxR * 0.68, fcy + sin(a) * maxR * 0.68
+      fcx + cos(a) * rIn,  fcy + sin(a) * rIn,
+      fcx + cos(a) * rOut, fcy + sin(a) * rOut
     );
   }
 
-  // Iris fill — dark red, breathes
+  // Iris background fill
   noStroke();
-  const irisR = maxR * (0.29 + pulse * (alarmMode ? 0.09 : 0.04));
-  fill(65, 4, 4, 75 * fade);
-  circle(fcx, fcy, irisR * 2);
+  fill(55, 6, 6, 95 * fade);
+  circle(fcx, fcy, irisOuter * 2);
 
-  // Iris radial texture — 24 fine lines
-  stroke(145, 18, 18, 38 * fade);
-  strokeWeight(Math.max(1, Math.round(0.7 * uiScale)));
-  for (let i = 0; i < 24; i++) {
-    const a     = (i / 24) * TWO_PI;
-    const inner = irisR * 0.38;
+  // Dense radial iris fibers — 160 lines
+  stroke(185, 32, 32, 48 * fade);
+  strokeWeight(Math.max(1, Math.round(0.6 * uiScale)));
+  for (let i = 0; i < 160; i++) {
+    const a        = (i / 160) * TWO_PI;
+    const innerEdge = pupilR * 1.05;
+    const outerEdge = irisOuter * (0.85 + (i % 3 === 0 ? 0.15 : 0)); // stagger
     line(
-      fcx + cos(a) * inner, fcy + sin(a) * inner,
-      fcx + cos(a) * irisR, fcy + sin(a) * irisR
+      fcx + cos(a) * innerEdge, fcy + sin(a) * innerEdge,
+      fcx + cos(a) * outerEdge, fcy + sin(a) * outerEdge
     );
   }
 
-  // Pupil — drifts with the tracking motion
+  // Pupil — large, black, with drift
   noStroke();
-  fill(8, 0, 0, (190 + pulse * 65) * fade);
-  circle(px, py, maxR * 0.20);
+  fill(4, 0, 0, 238 * fade);
+  circle(px, py, pupilR * 2);
 
-  // Catchlight — tiny bright spot offset from pupil centre
-  fill(255, 210, 210, 85 * fade);
-  circle(px + maxR * 0.06, py - maxR * 0.06, maxR * 0.06);
+  // Pupil rim glow
+  noFill();
+  stroke(185, 28, 28, 65 * fade);
+  strokeWeight(Math.max(1, Math.round(1.5 * uiScale)));
+  circle(px, py, pupilR * 2.15);
+
+  // Primary catchlight — bright offset spot
+  noStroke();
+  fill(255, 215, 215, 100 * fade);
+  circle(px + pupilR * 0.38, py - pupilR * 0.38, pupilR * 0.28);
+
+  // Secondary catchlight
+  fill(255, 180, 180, 45 * fade);
+  circle(px - pupilR * 0.22, py + pupilR * 0.28, pupilR * 0.12);
 
   noStroke();
   noFill();
