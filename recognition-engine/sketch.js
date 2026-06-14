@@ -91,11 +91,11 @@ function draw() {
 
   if (state === STATES.ALARM) {
     drawAlarmOverlay();
-    drawFaceOverlays(detection.faces, state, detection.personCount, true);
-    drawPinkTriangle(true);
+    drawPinkTriangle(true);   // triangle + lens replaces face reticle
+  } else if (state === STATES.SCANNING) {
+    drawPinkTriangle(false);  // triangle + lens replaces face reticle
   } else {
     drawFaceOverlays(detection.faces, state, detection.personCount, false);
-    if (state === STATES.SCANNING) drawPinkTriangle(false);
   }
 
   drawScanLines();

@@ -121,75 +121,107 @@ function clearGhostTrails() {
   ghostTrails.length = 0;
 }
 
-// Downward-pointing triangle scan frame + camera lens eye inside
+// Triangle scan frame + realistic camera eye — tracks detected face position
 function drawPinkTriangle(alarmMode) {
-  const cx       = width * 0.5;
-  const topY     = height * 0.10;
-  const botY     = height * 0.90;
-  const halfBase = Math.min(width, height) * 0.42;
+  const faces   = detection.faces;
+  const hasFace = faces && faces.length > 0;
 
-  const x1 = cx - halfBase, y1 = topY;
-  const x2 = cx + halfBase, y2 = topY;
-  const x3 = cx,            y3 = botY;
+  // Anchor to face center if detected, else screen center
+  let fcx, fcy, faceSize;
+  if (hasFace) {
+    const f  = faces[0];
+    fcx      = f.x;
+    fcy      = f.y;
+    faceSize = Math.max(f.w, f.h);
+  } else {
+    fcx      = width  * 0.5;
+    fcy      = height * 0.42;
+    faceSize = Math.min(width, height) * 0.45;
+  }
 
-  const t             = millis() * 0.001;
-  const scanProgress  = alarmMode ? 1 : constrain((millis() - stateAt) / SCAN_DURATION, 0, 1);
-  const pulse         = (sin(t * 1.8) + 1) / 2;
+  const t            = millis() * 0.001;
+  const pulse        = (sin(t * 1.8) + 1) / 2;
+  const scanProgress = alarmMode ? 1 : constrain((millis() - stateAt) / SCAN_DURATION, 0, 1);
 
-  // ── Triangle frame ──────────────────────────────────────────────────────
+  // ── Triangle frame sized to face ─────────────────────────────────────────
+  const triHalf = faceSize * 0.90;
+  const x1 = fcx - triHalf, y1 = fcy - faceSize * 1.05;
+  const x2 = fcx + triHalf, y2 = fcy - faceSize * 1.05;
+  const x3 = fcx,            y3 = fcy + faceSize * 0.95;
+
   noFill();
   if (alarmMode) {
     const ap = (sin(millis() * 0.008) + 1) / 2;
-    stroke(255, 40, 40, 100 + ap * 110);
+    stroke(255, 40, 40, 110 + ap * 120);
   } else {
-    stroke(0, 255, 120, 25 + scanProgress * 160);
+    stroke(0, 255, 120, 28 + scanProgress * 165);
   }
   strokeWeight(Math.max(1, Math.round(2 * uiScale)));
   triangle(x1, y1, x2, y2, x3, y3);
   noStroke();
 
-  // ── Camera lens — centroid of the triangle ───────────────────────────────
-  const lcx   = cx;
-  const lcy   = (topY * 2 + botY) / 3;   // visual centroid ~36% down
-  const maxR  = Math.min(width, height) * 0.13;
-  const fade  = alarmMode ? 1.0 : 0.35 + scanProgress * 0.65;
+  // ── Realistic camera / surveillance eye at face centre ───────────────────
+  const maxR = faceSize * 0.30;
+  const fade = alarmMode ? 1.0 : 0.28 + scanProgress * 0.72;
 
-  // Outer housing ring
+  // Slow pupil drift — looks like the lens is tracking
+  const driftX = sin(t * 0.28) * maxR * 0.09;
+  const driftY = cos(t * 0.37) * maxR * 0.06;
+  const px = fcx + driftX;
+  const py = fcy + driftY;
+
+  // Outer lens barrel
   noFill();
-  stroke(160, 25, 25, 95 * fade);
+  stroke(130, 18, 18, 105 * fade);
   strokeWeight(Math.max(2, Math.round(3 * uiScale)));
-  circle(lcx, lcy, maxR * 2);
+  circle(fcx, fcy, maxR * 2);
 
-  // Glass element rings
-  const rings = [0.76, 0.52, 0.33];
-  for (let i = 0; i < rings.length; i++) {
-    stroke(185, 35, 35, (22 + i * 18) * fade);
+  // Glass element rings (3 inner rings)
+  const glassRings = [0.78, 0.54, 0.35];
+  glassRings.forEach((r, i) => {
+    stroke(165, 28, 28, (18 + i * 16) * fade);
     strokeWeight(Math.max(1, Math.round(1.5 * uiScale)));
-    circle(lcx, lcy, maxR * rings[i] * 2);
-  }
+    circle(fcx, fcy, maxR * r * 2);
+  });
 
-  // Rotating aperture blades
-  const blades   = 8;
-  const rotation = t * 0.22;
-  stroke(210, 45, 45, 65 * fade);
+  // Rotating aperture blades (8 blades)
+  stroke(195, 40, 40, 58 * fade);
   strokeWeight(Math.max(1, Math.round(uiScale)));
-  for (let i = 0; i < blades; i++) {
-    const a = (i / blades) * TWO_PI + rotation;
+  const rot = t * 0.20;
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * TWO_PI + rot;
     line(
-      lcx + cos(a) * maxR * 0.16, lcy + sin(a) * maxR * 0.16,
-      lcx + cos(a) * maxR * 0.70, lcy + sin(a) * maxR * 0.70
+      fcx + cos(a) * maxR * 0.20, fcy + sin(a) * maxR * 0.20,
+      fcx + cos(a) * maxR * 0.68, fcy + sin(a) * maxR * 0.68
     );
   }
 
-  // Iris — breathes gently
+  // Iris fill — dark red, breathes
   noStroke();
-  const irisR = maxR * (0.26 + pulse * (alarmMode ? 0.10 : 0.05));
-  fill(100, 8, 8, 65 * fade);
-  circle(lcx, lcy, irisR * 2);
+  const irisR = maxR * (0.29 + pulse * (alarmMode ? 0.09 : 0.04));
+  fill(65, 4, 4, 75 * fade);
+  circle(fcx, fcy, irisR * 2);
 
-  // Pupil — the red eye
-  fill(225, 28, 28, (145 + pulse * 110) * fade);
-  circle(lcx, lcy, maxR * 0.16);
+  // Iris radial texture — 24 fine lines
+  stroke(145, 18, 18, 38 * fade);
+  strokeWeight(Math.max(1, Math.round(0.7 * uiScale)));
+  for (let i = 0; i < 24; i++) {
+    const a     = (i / 24) * TWO_PI;
+    const inner = irisR * 0.38;
+    line(
+      fcx + cos(a) * inner, fcy + sin(a) * inner,
+      fcx + cos(a) * irisR, fcy + sin(a) * irisR
+    );
+  }
+
+  // Pupil — drifts with the tracking motion
+  noStroke();
+  fill(8, 0, 0, (190 + pulse * 65) * fade);
+  circle(px, py, maxR * 0.20);
+
+  // Catchlight — tiny bright spot offset from pupil centre
+  fill(255, 210, 210, 85 * fade);
+  circle(px + maxR * 0.06, py - maxR * 0.06, maxR * 0.06);
 
   noStroke();
   noFill();
