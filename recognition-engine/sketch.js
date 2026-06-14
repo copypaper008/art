@@ -9,14 +9,14 @@ const STATES = {
 
 const IDLE_BEFORE_SCAN = 1500;  // ms of presence before scan triggers
 const SCAN_DURATION    = 5000;  // ms the scan takes
-const STRAIGHT_HOLD    = 6000;  // ms STRAIGHT result stays on screen
+const STRAIGHT_HOLD    = 10000;  // ms STRAIGHT result stays on screen
 const ALARM_HOLD       = 9000;  // ms ALARM stays on screen
 
 let state   = STATES.IDLE;
 let stateAt = 0;
 let uiScale = 1;
 
-// Scan counter — gay detection fires every 20–25 scans
+// Scan counter — gay detection fires every 2 scans (TESTING — change to random(10,16) for exhibition)
 let scanCount        = 0;
 let nextGayAt        = 0; // set in setup()
 
@@ -70,7 +70,7 @@ function setup() {
   textFont("monospace");
   stateAt = millis();
 
-  nextGayAt       = floor(random(10, 16));
+  nextGayAt       = 2; // TESTING — change to floor(random(10, 16)) for exhibition
   scanLine        = getRandomPhrase("scanning");
   alarmSub        = getRandomPhrase("alarmSub");
   idlePhrase      = getRandomPhrase("idle");
@@ -142,7 +142,7 @@ function updateState() {
       }
       scanCount++;
       if (scanCount >= nextGayAt) {
-        nextGayAt = scanCount + floor(random(10, 16));
+        nextGayAt = scanCount + 2; // TESTING — change to + floor(random(10, 16)) for exhibition
         enterState(STATES.ALARM);
       } else {
         enterState(STATES.STRAIGHT);
