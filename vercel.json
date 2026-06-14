@@ -1,6 +1,6 @@
 {
-  "framework": null,
-  "buildCommand": null,
-  "installCommand": null,
-  "outputDirectory": "recognition-engine"
+  "rewrites": [
+    { "source": "/",      "destination": "/recognition-engine/index.html" },
+    { "source": "/(.*)", "destination": "/recognition-engine/$1" }
+  ]
 }
