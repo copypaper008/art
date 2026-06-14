@@ -139,9 +139,13 @@ function drawPinkTriangle(alarmMode) {
   }
 
   const t            = millis() * 0.001;
-  const pulse        = (sin(t * 1.8) + 1) / 2;
   const scanProgress = alarmMode ? 1 : constrain((millis() - stateAt) / SCAN_DURATION, 0, 1);
   const fade         = alarmMode ? 1.0 : 0.25 + scanProgress * 0.75;
+
+  // Lens ring colour: green when scanning, red when alarm
+  const lr = alarmMode ? 200 : 0;
+  const lg = alarmMode ? 30  : 210;
+  const lb = alarmMode ? 30  : 100;
 
   // ── Pink triangle frame ───────────────────────────────────────────────────
   const triHalf = faceSize * 0.90;
@@ -160,103 +164,133 @@ function drawPinkTriangle(alarmMode) {
   triangle(x1, y1, x2, y2, x3, y3);
   noStroke();
 
-  // ── Sci-fi surveillance eye ───────────────────────────────────────────────
-  const maxR      = faceSize * 0.19;   // smaller
+  // Crosshair markers at triangle corners and eye flanks
+  const chSz = Math.round(16 * uiScale);
+  _crosshair(x1 + triHalf * 0.18, y1 + faceSize * 0.12, chSz, lr, lg, lb, 120 * fade);
+  _crosshair(x2 - triHalf * 0.18, y2 + faceSize * 0.12, chSz, lr, lg, lb, 120 * fade);
+  _crosshair(fcx - faceSize * 0.72, fcy, chSz, lr, lg, lb, 90 * fade);
+  _crosshair(fcx + faceSize * 0.72, fcy, chSz, lr, lg, lb, 90 * fade);
+
+  // ── Surveillance eye ───────────────────────────────────────────────────────
+  const maxR      = faceSize * 0.22;
   const irisOuter = maxR * 0.60;
   const pupilR    = maxR * 0.27;
 
   // Pupil scans up and down — deliberate surveillance sweep (~8s cycle)
-  // Tiny horizontal sway to feel alive; dominant vertical scan
   const driftX = sin(t * 0.18) * maxR * 0.07;
   const driftY = sin(t * 0.78) * irisOuter * 0.44;
   const px = fcx + driftX;
   const py = fcy + driftY;
 
-  // Outer barrel ring — thick, dark
+  // Outer barrel — thick ring
   noFill();
-  stroke(160, 20, 20, 125 * fade);
+  stroke(lr, lg, lb, 115 * fade);
   strokeWeight(Math.max(4, Math.round(6 * uiScale)));
   circle(fcx, fcy, maxR * 2);
 
-  // Inner barrel edge — glowing rim
-  stroke(220, 50, 50, 70 * fade);
+  // Inner barrel glow rim
+  stroke(lr, lg, lb, 55 * fade);
   strokeWeight(Math.max(1, Math.round(2 * uiScale)));
   circle(fcx, fcy, maxR * 1.82);
 
-  // Tech ring 1 — 4 arc segments, slow clockwise rotation
+  // Tech ring 1 — 4 arc segments, slow clockwise
   const rot1 = t * 0.14;
-  stroke(200, 45, 45, 105 * fade);
+  stroke(lr, lg, lb, 100 * fade);
   strokeWeight(Math.max(1, Math.round(2 * uiScale)));
   for (let i = 0; i < 4; i++) {
     const sa = (i / 4) * TWO_PI + rot1 + 0.18;
-    const ea = sa + TWO_PI / 4 - 0.36;
-    arc(fcx, fcy, maxR * 1.58, maxR * 1.58, sa, ea);
+    arc(fcx, fcy, maxR * 1.58, maxR * 1.58, sa, sa + TWO_PI / 4 - 0.36);
   }
 
   // Tech ring 2 — 6 arc segments, counter-rotating
   const rot2 = -t * 0.09;
-  stroke(185, 38, 38, 88 * fade);
+  stroke(lr, lg, lb, 82 * fade);
   strokeWeight(Math.max(1, Math.round(1.5 * uiScale)));
   for (let i = 0; i < 6; i++) {
     const sa = (i / 6) * TWO_PI + rot2 + 0.12;
-    const ea = sa + TWO_PI / 6 - 0.24;
-    arc(fcx, fcy, maxR * 1.32, maxR * 1.32, sa, ea);
+    arc(fcx, fcy, maxR * 1.32, maxR * 1.32, sa, sa + TWO_PI / 6 - 0.24);
   }
 
   // Tick marks around iris edge
-  stroke(200, 45, 45, 65 * fade);
+  stroke(lr, lg, lb, 58 * fade);
   strokeWeight(Math.max(1, Math.round(uiScale)));
   for (let i = 0; i < 32; i++) {
-    const a    = (i / 32) * TWO_PI + rot1;
-    const len  = (i % 4 === 0) ? 0.15 : 0.07; // longer every 4th
-    const rIn  = irisOuter * 1.10;
-    const rOut = irisOuter * (1.10 + len);
+    const a   = (i / 32) * TWO_PI + rot1;
+    const len = (i % 4 === 0) ? 0.14 : 0.06;
+    const rIn = irisOuter * 1.10;
     line(
-      fcx + cos(a) * rIn,  fcy + sin(a) * rIn,
-      fcx + cos(a) * rOut, fcy + sin(a) * rOut
+      fcx + cos(a) * rIn,             fcy + sin(a) * rIn,
+      fcx + cos(a) * rIn * (1 + len), fcy + sin(a) * rIn * (1 + len)
     );
   }
 
-  // Iris background fill
+  // Iris fill — dark warm red (shows through green fibers, giving green→red gradient)
   noStroke();
-  fill(55, 6, 6, 95 * fade);
+  fill(55, 8, 6, 100 * fade);
   circle(fcx, fcy, irisOuter * 2);
 
-  // Dense radial iris fibers — 160 lines
-  stroke(185, 32, 32, 48 * fade);
+  // Dense radial iris fibers — 160 green lines
+  stroke(lr, lg, lb, 44 * fade);
   strokeWeight(Math.max(1, Math.round(0.6 * uiScale)));
   for (let i = 0; i < 160; i++) {
-    const a        = (i / 160) * TWO_PI;
+    const a         = (i / 160) * TWO_PI;
     const innerEdge = pupilR * 1.05;
-    const outerEdge = irisOuter * (0.85 + (i % 3 === 0 ? 0.15 : 0)); // stagger
+    const outerEdge = irisOuter * (0.84 + (i % 3 === 0 ? 0.16 : 0));
     line(
       fcx + cos(a) * innerEdge, fcy + sin(a) * innerEdge,
       fcx + cos(a) * outerEdge, fcy + sin(a) * outerEdge
     );
   }
 
-  // Pupil — large, black, with drift
+  // Pupil — deep black, drifts vertically
   noStroke();
-  fill(4, 0, 0, 238 * fade);
+  fill(4, 0, 0, 242 * fade);
   circle(px, py, pupilR * 2);
 
-  // Pupil rim glow
+  // Pupil rim
   noFill();
-  stroke(185, 28, 28, 65 * fade);
+  stroke(lr, lg, lb, 58 * fade);
   strokeWeight(Math.max(1, Math.round(1.5 * uiScale)));
   circle(px, py, pupilR * 2.15);
 
-  // Primary catchlight — bright offset spot
+  // Primary catchlight
   noStroke();
-  fill(255, 215, 215, 100 * fade);
-  circle(px + pupilR * 0.38, py - pupilR * 0.38, pupilR * 0.28);
+  fill(255, 230, 230, 108 * fade);
+  circle(px + pupilR * 0.38, py - pupilR * 0.38, pupilR * 0.30);
 
   // Secondary catchlight
-  fill(255, 180, 180, 45 * fade);
-  circle(px - pupilR * 0.22, py + pupilR * 0.28, pupilR * 0.12);
+  fill(255, 200, 200, 50 * fade);
+  circle(px - pupilR * 0.22, py + pupilR * 0.28, pupilR * 0.13);
+
+  // Confidence label beside eye
+  if (!alarmMode && scanProgress > 0.05) {
+    noStroke();
+    fill(lr, lg, lb, 165 * fade);
+    textFont("monospace");
+    textAlign(LEFT, CENTER);
+    textSize(Math.max(8, Math.round(10 * uiScale)));
+    text(Math.round(scanProgress * 94) + "%", fcx + maxR * 1.14, fcy);
+    stroke(lr, lg, lb, 120 * fade);
+    strokeWeight(Math.max(1, Math.round(uiScale)));
+    line(fcx + maxR * 1.05, fcy, fcx + maxR * 1.10, fcy);
+    noStroke();
+  }
 
   noStroke();
   noFill();
+}
+
+function _crosshair(x, y, size, r, g, b, a) {
+  stroke(r, g, b, a);
+  strokeWeight(Math.max(1, Math.round(uiScale)));
+  noFill();
+  const hs  = size * 0.5;
+  const gap = size * 0.18;
+  line(x - hs, y, x - gap, y);
+  line(x + gap, y, x + hs, y);
+  line(x, y - hs, x, y - gap);
+  line(x, y + gap, x, y + hs);
+  noStroke();
 }
 
 // Face targeting reticle — green normally, red in alarm mode

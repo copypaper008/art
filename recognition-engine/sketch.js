@@ -9,7 +9,7 @@ const STATES = {
 
 const IDLE_BEFORE_SCAN = 1500;  // ms of presence before scan triggers
 const SCAN_DURATION    = 5000;  // ms the scan takes
-const STRAIGHT_HOLD    = 10000;  // ms STRAIGHT result stays on screen
+const STRAIGHT_HOLD    = 10000; // ms STRAIGHT result stays on screen
 const ALARM_HOLD       = 9000;  // ms ALARM stays on screen
 
 let state   = STATES.IDLE;
@@ -17,37 +17,63 @@ let stateAt = 0;
 let uiScale = 1;
 
 // Scan counter — gay detection fires every 2 scans (TESTING — change to random(10,16) for exhibition)
-let scanCount        = 0;
-let nextGayAt        = 0; // set in setup()
+let scanCount       = 0;
+let nextGayAt       = 0; // set in setup()
 
 // Fallback: if too many idle cycles pass without a completed scan triggering
 // the alarm naturally, force the next completed scan to be gay.
-let idlesSinceAlarm  = 0;
+let idlesSinceAlarm = 0;
 const FORCE_GAY_AFTER_IDLES = 15;
 
 // Rotating status line during scanning
 let scanLine      = "";
 let scanLineTimer = 0;
-const SCAN_LINE_INTERVAL = 2200;  // ms between scan status line changes
+const SCAN_LINE_INTERVAL = 2200;
 
 // Alarm text slots
-let alarmPrimary  = "";           // picked once on entering ALARM, held for full duration
-let alarmSub      = "";           // rotates during ALARM
+let alarmPrimary  = "";
+let alarmSub      = "";
 let alarmSubTimer = 0;
-const ALARM_SUB_INTERVAL = 3500;  // ms between alarm sub-line changes
+const ALARM_SUB_INTERVAL = 3500;
 
 // Result text slots — picked on state entry, held for full duration
 let straightPhrase = "";
 let straightSub    = "";
 
 // Idle phrase — held for several seconds, then quietly swapped
-let idlePhrase     = "";
+let idlePhrase      = "";
 let idlePhraseTimer = 0;
 const IDLE_PHRASE_INTERVAL = 4000;
 
 // Confidence displayed with result
 let displayedConfidence = 0;
 let targetConfidence    = 0;
+
+// ── Scanning HUD state (populated on SCANNING entry) ──────────────────────
+let hudSessionId  = "";
+let hudEnvLight   = "";
+let hudEnvNoise   = "";
+let hudEnvThreat  = "";
+let hudPosture    = "";
+let hudEnergy     = "";
+let hudExpression = "";
+let hudVisionCore = 0;
+let hudDataStr    = 0;
+let hudAlgorithm  = 0;
+let hudMemory     = 0;
+let hudLogLines   = [];
+let hudLogTimer   = 0;
+let hudDataTicker = "";
+let hudDataTimer  = 0;
+
+const HUD_LOG_SEQ = [
+  "SYSTEM BOOT",
+  "CAMERA LINK: OK",
+  "FACE DETECTED",
+  "ORIENTATION: SCANNING",
+  "CROSS-REF DATABASE",
+  "AWAITING CLARITY",
+];
 
 let cam;
 let detectionGraphics;
@@ -86,14 +112,13 @@ function draw() {
   updateState();
   updateConfidence();
 
-  // Mirror + overlays
   drawDistortedMirror(cam, detection.motionAmount, state);
 
   if (state === STATES.ALARM) {
     drawAlarmOverlay();
-    drawPinkTriangle(true);   // triangle + lens replaces face reticle
+    drawPinkTriangle(true);
   } else if (state === STATES.SCANNING) {
-    drawPinkTriangle(false);  // triangle + lens replaces face reticle
+    drawPinkTriangle(false);
   } else {
     drawFaceOverlays(detection.faces, state, detection.personCount, false);
   }
@@ -122,24 +147,30 @@ function updateState() {
   }
 
   if (state === STATES.SCANNING) {
-    // Rotate scanning text
     if (now - scanLineTimer > SCAN_LINE_INTERVAL) {
       scanLine      = getRandomPhrase("scanning");
       scanLineTimer = now;
     }
 
-    // Abort if subject left before scan completed — doesn't count
+    // Progress log lines
+    if (hudLogLines.length < HUD_LOG_SEQ.length && now - hudLogTimer > 750) {
+      hudLogLines.push(_hhmmss() + " " + HUD_LOG_SEQ[hudLogLines.length]);
+      hudLogTimer = now;
+    }
+
+    // Refresh data stream ticker
+    if (now - hudDataTimer > 320) {
+      hudDataTicker = _randomHex(120);
+      hudDataTimer  = now;
+    }
+
     if (!present && elapsed > 1000) {
       enterState(STATES.IDLE);
       return;
     }
 
     if (elapsed > SCAN_DURATION) {
-      // Only count as a completed scan if subject is still present
-      if (!present) {
-        enterState(STATES.IDLE);
-        return;
-      }
+      if (!present) { enterState(STATES.IDLE); return; }
       scanCount++;
       if (scanCount >= nextGayAt) {
         nextGayAt = scanCount + 2; // TESTING — change to + floor(random(10, 16)) for exhibition
@@ -157,7 +188,6 @@ function updateState() {
   }
 
   if (state === STATES.ALARM) {
-    // Rotate alarm sub-line
     if (now - alarmSubTimer > ALARM_SUB_INTERVAL) {
       alarmSub      = getRandomPhrase("alarmSub");
       alarmSubTimer = now;
@@ -175,6 +205,24 @@ function enterState(newState) {
     scanLine      = getRandomPhrase("scanning");
     scanLineTimer = millis();
     targetConfidence = 0;
+
+    // Populate HUD panels
+    const rndId = () => hex(floor(random(65536)), 4);
+    hudSessionId  = "G4Y-" + rndId() + "-" + rndId();
+    hudEnvLight   = random(["LOW", "MEDIUM", "MODERATE"]);
+    hudEnvNoise   = random(["MINIMAL", "LOW", "MODERATE"]);
+    hudEnvThreat  = "UNKNOWN";
+    hudPosture    = random(["NEUTRAL", "CASUAL", "GUARDED", "RELAXED"]);
+    hudEnergy     = random(["RESERVED", "ELEVATED", "RELAXED", "UNCERTAIN"]);
+    hudExpression = random(["UNREADABLE", "NEUTRAL", "TENSE", "AMBIGUOUS"]);
+    hudVisionCore = floor(random(72, 95));
+    hudDataStr    = floor(random(55, 74));
+    hudAlgorithm  = floor(random(64, 85));
+    hudMemory     = floor(random(60, 80));
+    hudLogLines   = [];
+    hudLogTimer   = millis();
+    hudDataTicker = _randomHex(120);
+    hudDataTimer  = millis();
   }
 
   if (newState === STATES.STRAIGHT) {
@@ -188,7 +236,7 @@ function enterState(newState) {
     alarmSub         = getRandomPhrase("alarmSub");
     alarmSubTimer    = millis();
     targetConfidence = 99;
-    idlesSinceAlarm  = 0; // alarm fired — reset the fallback counter
+    idlesSinceAlarm  = 0;
   }
 
   if (newState === STATES.IDLE) {
@@ -196,17 +244,13 @@ function enterState(newState) {
     idlePhraseTimer  = millis();
     targetConfidence = 0;
     idlesSinceAlarm++;
-    // If too many idles have passed without a gay result, guarantee the
-    // next completed scan triggers it. The scan must still complete —
-    // someone has to stay through the full scan for it to count.
     if (idlesSinceAlarm >= FORCE_GAY_AFTER_IDLES) {
-      nextGayAt = scanCount; // next completed scan will be gay
+      nextGayAt = scanCount;
     }
   }
 }
 
 function updateConfidence() {
-  // During scan: confidence builds with progress
   if (state === STATES.SCANNING) {
     const progress = constrain((millis() - stateAt) / SCAN_DURATION, 0, 1);
     targetConfidence = floor(progress * 94);
@@ -221,27 +265,32 @@ function drawUI() {
   const pad = Math.round(24 * uiScale);
   const sm  = Math.round(11 * uiScale);
   const md  = Math.round(14 * uiScale);
-  const lg  = Math.round(36 * uiScale);
   const xl  = Math.round(44 * uiScale);
   const lh  = Math.round(20 * uiScale);
 
-  const isAlarm = state === STATES.ALARM;
+  const isAlarm   = state === STATES.ALARM;
+  const headerCol = isAlarm ? color(255, 60, 60) : color(0, 255, 120);
+  const hR = red(headerCol), hG = green(headerCol), hB = blue(headerCol);
 
   // ── Header ───────────────────────────────────────────────────────────────
   noStroke();
   textAlign(LEFT, TOP);
-
-  const headerCol = isAlarm ? color(255, 60, 60) : color(0, 255, 120);
-
-  fill(red(headerCol), green(headerCol), blue(headerCol), 180);
+  fill(hR, hG, hB, 180);
   textSize(sm);
   text("GAYDAR DETECTION SYSTEM / ACTIVE", pad, pad * 0.8);
+
+  if (state === STATES.SCANNING) {
+    fill(hR, hG, hB, 100);
+    textSize(Math.max(7, Math.round(9 * uiScale)));
+    text("SESSION ID: " + hudSessionId, pad, pad * 0.8 + lh * 1.1);
+    text("BUILD: 2.7.9 // OS: GDS-CORE",   pad, pad * 0.8 + lh * 1.85);
+  }
 
   // Confidence — top right
   if (displayedConfidence > 1) {
     textAlign(RIGHT, TOP);
     textSize(md);
-    fill(red(headerCol), green(headerCol), blue(headerCol), 220);
+    fill(hR, hG, hB, 220);
     text("CONFIDENCE: " + Math.round(displayedConfidence) + "%", width - pad, pad * 0.8);
 
     const barW = Math.round(160 * uiScale);
@@ -249,11 +298,11 @@ function drawUI() {
     const barX = width - pad - barW;
     const barY = Math.round(pad * 0.8 + lh * 1.4);
     noFill();
-    stroke(red(headerCol), green(headerCol), blue(headerCol), 50);
+    stroke(hR, hG, hB, 50);
     strokeWeight(1);
     rect(barX, barY, barW, barH);
     noStroke();
-    fill(red(headerCol), green(headerCol), blue(headerCol), 180);
+    fill(hR, hG, hB, 180);
     rect(barX, barY, barW * (displayedConfidence / 100), barH);
   }
 
@@ -272,32 +321,11 @@ function drawUI() {
 
   // ── SCANNING ─────────────────────────────────────────────────────────────
   if (state === STATES.SCANNING) {
-    const elapsed  = millis() - stateAt;
-    const progress = constrain(elapsed / SCAN_DURATION, 0, 1);
-
-    // Rotating status line
-    fill(0, 255, 120, 220);
-    textSize(md);
-    text(scanLine, width * 0.5, height * 0.38);
-
-    // Progress bar
-    const barW = Math.round(320 * uiScale);
-    const barH = Math.max(3, Math.round(4 * uiScale));
-    const barX = width * 0.5 - barW / 2;
-    const barY = height * 0.46;
-    noFill();
-    stroke(0, 255, 120, 50);
-    strokeWeight(1);
-    rect(barX, barY, barW, barH);
-    noStroke();
     fill(0, 255, 120, 200);
-    rect(barX, barY, barW * progress, barH);
+    textSize(md);
+    text(scanLine, width * 0.5, height * 0.25);
 
-    // Percentage ticker
-    fill(0, 255, 120, 140);
-    textSize(sm);
-    text(Math.round(progress * 94) + "%", width * 0.5, height * 0.46 + barH + Math.round(16 * uiScale));
-
+    drawScanningHUD();
     textAlign(LEFT, TOP);
     return;
   }
@@ -318,25 +346,21 @@ function drawUI() {
 
   // ── ALARM ─────────────────────────────────────────────────────────────────
   if (state === STATES.ALARM) {
-    const flash = sin(millis() * 0.012) > 0; // ~1Hz flash
+    const flash = sin(millis() * 0.012) > 0;
     const textA = flash ? 255 : 200;
 
-    // Primary alarm line
     fill(255, 255, 255, textA);
     textSize(xl);
     text(alarmPrimary, width * 0.5, height * 0.38);
 
-    // Rotating sub-line
     fill(255, 60, 60, textA * 0.9);
     textSize(Math.round(22 * uiScale));
     text(alarmSub, width * 0.5, height * 0.52);
 
-    // CONFIDENCE: 99%
     fill(255, 60, 60, 200);
     textSize(md);
     text("CONFIDENCE: 99%", width * 0.5, height * 0.62);
 
-    // Flashing ALERT in corners
     if (flash) {
       textAlign(LEFT, TOP);
       textSize(sm);
@@ -349,6 +373,196 @@ function drawUI() {
     textAlign(LEFT, TOP);
     return;
   }
+}
+
+// ─────────────────────────────────────────────
+// Scanning HUD panels
+
+function drawScanningHUD() {
+  const pad    = Math.round(24 * uiScale);
+  const sm     = Math.round(10 * uiScale);
+  const xs     = Math.round(9  * uiScale);
+  const lh     = Math.round(16 * uiScale);
+  const col    = [0, 255, 120];
+  const panelW = Math.min(Math.round(200 * uiScale), width * 0.21);
+  const rightX = width - pad - panelW;
+  const progress = constrain((millis() - stateAt) / SCAN_DURATION, 0, 1);
+
+  // ── LEFT: ENVIRONMENT ANALYSIS ──────────────────────────────────────────
+  const envY = Math.round(110 * uiScale);
+  _hudLabel("ENVIRONMENT ANALYSIS", pad, envY, sm, col);
+  _hudRows([
+    ["LIGHT",  hudEnvLight],
+    ["NOISE",  hudEnvNoise],
+    ["CROWD",  String(detection.personCount).padStart(2, "0")],
+    ["THREAT", hudEnvThreat],
+  ], pad, envY + lh * 1.4, xs, lh, col, panelW);
+
+  // ── LEFT: ORIENTATION ANALYSIS ──────────────────────────────────────────
+  const oriY = Math.round(310 * uiScale);
+  _hudLabel("ORIENTATION ANALYSIS", pad, oriY, sm, col);
+  const certainty = progress < 0.3 ? "LOW" : progress < 0.7 ? "PARTIAL" : "BUILDING";
+  _hudRows([
+    ["FACE",          detection.faceDetected ? "DETECTED" : "PARTIAL"],
+    ["POSTURE",       hudPosture],
+    ["ENERGY",        hudEnergy],
+    ["EXPRESSION",    hudExpression],
+    ["VULNERABILITY", "UNKNOWN"],
+    ["CERTAINTY",     certainty],
+    ["FLUIDITY",      "??"],
+    ["ALIGNMENT",     "UNDETERMINED"],
+  ], pad, oriY + lh * 1.4, xs, lh, col, panelW);
+
+  // ── LEFT: WARNING ────────────────────────────────────────────────────────
+  const warnY = Math.round(680 * uiScale);
+  noStroke();
+  fill(255, 80, 80, 200);
+  textAlign(LEFT, TOP);
+  textSize(sm);
+  text("WARNING", pad, warnY);
+  fill(255, 80, 80, 130);
+  textSize(xs);
+  text("SUBJECT REMAINS", pad, warnY + lh * 1.3);
+  text("OUTSIDE OF",      pad, warnY + lh * 2.1);
+  text("RECOGNITION LIMITS", pad, warnY + lh * 2.9);
+
+  // ── LEFT: LOG OUTPUT ─────────────────────────────────────────────────────
+  const logY = Math.round(820 * uiScale);
+  _hudLabel("LOG OUTPUT", pad, logY, sm, col);
+  fill(0, 255, 120, 95);
+  textSize(xs);
+  textAlign(LEFT, TOP);
+  hudLogLines.slice(-5).forEach((line, i) => {
+    text(line, pad, logY + lh * 1.4 + i * lh);
+  });
+
+  // ── RIGHT: DATA STREAM ───────────────────────────────────────────────────
+  const dsY = Math.round(420 * uiScale);
+  _hudLabel("DATA STREAM", rightX, dsY, sm, col);
+  fill(0, 255, 120, 50);
+  textSize(xs);
+  textAlign(LEFT, TOP);
+  const dataChunks = hudDataTicker.match(/.{1,22}/g) || [];
+  dataChunks.slice(0, 5).forEach((chunk, i) => {
+    text(chunk, rightX, dsY + lh * 1.4 + i * lh);
+  });
+
+  // ── RIGHT: PATTERN MATCH ─────────────────────────────────────────────────
+  const pmY = Math.round(610 * uiScale);
+  _hudLabel("PATTERN MATCH", rightX, pmY, sm, col);
+  fill(0, 255, 120, 170);
+  textSize(Math.round(26 * uiScale));
+  textAlign(LEFT, TOP);
+  text("00%", rightX, pmY + lh * 1.4);
+
+  // ── RIGHT: SYSTEM HEALTH ─────────────────────────────────────────────────
+  const shY  = Math.round(720 * uiScale);
+  const barH = Math.max(2, Math.round(3 * uiScale));
+  _hudLabel("SYSTEM HEALTH", rightX, shY, sm, col);
+  [
+    ["VISION CORE", hudVisionCore],
+    ["DATA STREAM", hudDataStr],
+    ["ALGORITHM",   hudAlgorithm],
+    ["MEMORY",      hudMemory],
+  ].forEach(([label, pct], i) => {
+    const rowY = shY + lh * 1.4 + i * lh * 2.1;
+    noStroke();
+    fill(0, 255, 120, 115);
+    textSize(xs);
+    textAlign(LEFT, TOP);
+    text(label, rightX, rowY);
+    textAlign(RIGHT, TOP);
+    fill(0, 255, 120, 115);
+    text(pct + "%", rightX + panelW, rowY);
+    noFill();
+    stroke(0, 255, 120, 30);
+    strokeWeight(1);
+    rect(rightX, rowY + lh * 0.9, panelW, barH);
+    noStroke();
+    fill(0, 255, 120, 120);
+    rect(rightX, rowY + lh * 0.9, panelW * (pct / 100), barH);
+  });
+
+  // ── BOTTOM CENTER: STATUS BOX ────────────────────────────────────────────
+  const stW = Math.round(320 * uiScale);
+  const stX = width * 0.5 - stW / 2;
+  const stY = Math.round(848 * uiScale);
+  const stH = Math.round(96 * uiScale);
+  noFill();
+  stroke(0, 255, 120, 55);
+  strokeWeight(1);
+  rect(stX, stY, stW, stH);
+  noStroke();
+  textAlign(CENTER, TOP);
+  fill(0, 255, 120, 95);
+  textSize(xs);
+  text("STATUS", width * 0.5, stY + Math.round(10 * uiScale));
+  fill(0, 255, 120, 210);
+  textSize(Math.round(19 * uiScale));
+  text("IDENTITY UNRESOLVED", width * 0.5, stY + Math.round(28 * uiScale));
+  fill(0, 255, 120, 120);
+  textSize(xs);
+  text("CONTINUING OBSERVATION", width * 0.5, stY + Math.round(56 * uiScale));
+
+  // Small pink triangle icon above tagline
+  const triY = Math.round(958 * uiScale);
+  const triSz = Math.round(10 * uiScale);
+  noFill();
+  stroke(255, 20, 147, 80);
+  strokeWeight(1);
+  triangle(width * 0.5, triY + triSz, width * 0.5 - triSz, triY, width * 0.5 + triSz, triY);
+  noStroke();
+
+  // ── BOTTOM TAGLINE ───────────────────────────────────────────────────────
+  textAlign(CENTER, BOTTOM);
+  fill(0, 255, 120, 60);
+  textSize(xs);
+  text("◆  NOTHING IS EVER FULLY SEEN  ◆", width * 0.5, height - Math.round(10 * uiScale));
+}
+
+// ── HUD helpers ──────────────────────────────────────────────────────────────
+
+function _hudLabel(label, x, y, size, col) {
+  noStroke();
+  fill(col[0], col[1], col[2], 155);
+  textSize(size);
+  textAlign(LEFT, TOP);
+  text(label, x, y);
+  stroke(col[0], col[1], col[2], 55);
+  strokeWeight(1);
+  line(x, y + size + Math.round(3 * uiScale),
+       x + Math.round(textWidth(label) + 8 * uiScale),
+       y + size + Math.round(3 * uiScale));
+  noStroke();
+}
+
+function _hudRows(rows, x, y, size, lh, col, panelW) {
+  const keyX = x;
+  const valX = x + Math.round(panelW * 0.58);
+  textSize(size);
+  textAlign(LEFT, TOP);
+  for (let i = 0; i < rows.length; i++) {
+    const ry = y + i * lh;
+    fill(col[0], col[1], col[2], 90);
+    text(rows[i][0] + ":", keyX, ry);
+    fill(col[0], col[1], col[2], 195);
+    text(rows[i][1], valX, ry);
+  }
+}
+
+function _randomHex(n) {
+  const chars = "0123456789ABCDEF ";
+  let s = "";
+  for (let i = 0; i < n; i++) s += chars[floor(random(chars.length))];
+  return s;
+}
+
+function _hhmmss() {
+  const d = new Date();
+  return "[" +
+    String(d.getHours()).padStart(2, "0") + ":" +
+    String(d.getMinutes()).padStart(2, "0") + ":" +
+    String(d.getSeconds()).padStart(2, "0") + "]";
 }
 
 function windowResized() {
