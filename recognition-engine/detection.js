@@ -151,11 +151,19 @@ async function initMediaPipe() {
       return;
     }
 
-    const vision = await FilesetResolver.forVisionTasks("./vendor/mediapipe/wasm");
+    const _cdnBase = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+    const wasmPath  = window._mp_localVendor
+      ? "./vendor/mediapipe/wasm"
+      : _cdnBase + "/wasm";
+    const modelPath = window._mp_localVendor
+      ? "./vendor/mediapipe/models/blaze_face_short_range.tflite"
+      : "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite";
+
+    const vision = await FilesetResolver.forVisionTasks(wasmPath);
 
     faceDetector = await FaceDetector.createFromOptions(vision, {
       baseOptions: {
-        modelAssetPath: "./vendor/mediapipe/models/blaze_face_short_range.tflite",
+        modelAssetPath: modelPath,
         delegate: "GPU",
       },
       runningMode: "VIDEO",
