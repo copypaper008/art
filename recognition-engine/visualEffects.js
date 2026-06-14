@@ -103,7 +103,10 @@ function drawScanLines() {
 
   const sweepY = (frameCount * (isAlarm ? 1.5 : 0.5)) % height;
   if (isAlarm) {
-    stroke(255, 0, 0, 25);
+    const sweepHue = (millis() * 0.3) % 360;
+    colorMode(HSB, 360, 100, 100, 255);
+    stroke(sweepHue, 100, 100, 25);
+    colorMode(RGB, 255);
   } else {
     stroke(0, 255, 120, 12);
   }
@@ -119,8 +122,11 @@ function drawAlarmOverlay() {
   fill(0, 0, 0, 12 + pulse * 20);
   rect(0, 0, width, height);
 
-  const borderA = 90 + pulse * 130;
-  stroke(255, 0, 0, borderA);
+  const borderA   = 90 + pulse * 130;
+  const borderHue = (millis() * 0.3) % 360;
+  colorMode(HSB, 360, 100, 100, 255);
+  stroke(borderHue, 100, 100, borderA);
+  colorMode(RGB, 255);
   strokeWeight(Math.max(3, Math.round(6 * uiScale)));
   noFill();
   rect(0, 0, width, height);

@@ -258,19 +258,39 @@ function drawUI() {
   const xl  = Math.round(44 * uiScale);
   const lh  = Math.round(20 * uiScale);
 
-  const isAlarm   = state === STATES.ALARM;
-  const headerCol = isAlarm ? color(255, 60, 60) : color(0, 255, 120);
-  const hR = red(headerCol), hG = green(headerCol), hB = blue(headerCol);
+  const isAlarm = state === STATES.ALARM;
+
+  // Header colour helpers: rainbow cycling in alarm, green otherwise
+  function _hFill(a) {
+    if (isAlarm) {
+      const h = (millis() * 0.2) % 360;
+      colorMode(HSB, 360, 100, 100, 255);
+      fill(h, 90, 100, a);
+      colorMode(RGB, 255);
+    } else {
+      fill(0, 255, 120, a);
+    }
+  }
+  function _hStroke(a) {
+    if (isAlarm) {
+      const h = (millis() * 0.2 + 60) % 360;
+      colorMode(HSB, 360, 100, 100, 255);
+      stroke(h, 90, 100, a);
+      colorMode(RGB, 255);
+    } else {
+      stroke(0, 255, 120, a);
+    }
+  }
 
   // ── Header ───────────────────────────────────────────────────────────────
   noStroke();
   textAlign(LEFT, TOP);
-  fill(hR, hG, hB, 180);
+  _hFill(180);
   textSize(sm);
   text("GAYDAR DETECTION SYSTEM / ACTIVE", pad, pad * 0.8);
 
   if (state === STATES.SCANNING) {
-    fill(hR, hG, hB, 100);
+    _hFill(100);
     textSize(Math.max(7, Math.round(9 * uiScale)));
     text("SESSION ID: " + hudSessionId, pad, pad * 0.8 + lh * 1.1);
     text("BUILD: 2.7.9 // OS: GDS-CORE",   pad, pad * 0.8 + lh * 1.85);
@@ -280,7 +300,7 @@ function drawUI() {
   if (displayedConfidence > 1) {
     textAlign(RIGHT, TOP);
     textSize(md);
-    fill(hR, hG, hB, 220);
+    _hFill(220);
     text("CONFIDENCE: " + Math.round(displayedConfidence) + "%", width - pad, pad * 0.8);
 
     const barW = Math.round(160 * uiScale);
@@ -288,11 +308,11 @@ function drawUI() {
     const barX = width - pad - barW;
     const barY = Math.round(pad * 0.8 + lh * 1.4);
     noFill();
-    stroke(hR, hG, hB, 50);
+    _hStroke(50);
     strokeWeight(1);
     rect(barX, barY, barW, barH);
     noStroke();
-    fill(hR, hG, hB, 180);
+    _hFill(180);
     rect(barX, barY, barW * (displayedConfidence / 100), barH);
   }
 
@@ -339,38 +359,49 @@ function drawUI() {
     const flash  = sin(millis() * 0.012) > 0;
     const flash2 = sin(millis() * 0.018) > 0;
     const textA  = flash ? 255 : 190;
+    const t      = millis();
 
-    // Primary headline — extra large
+    // Primary headline — extra large, bright white
     fill(255, 255, 255, textA);
     textSize(Math.round(52 * uiScale));
     text(alarmPrimary, width * 0.5, height * 0.36);
 
-    // Rotating sub-line
-    fill(255, 55, 55, textA);
+    // Rotating sub-line — rainbow cycling
+    colorMode(HSB, 360, 100, 100, 255);
+    fill((t * 0.25) % 360, 90, 100, textA);
+    colorMode(RGB, 255);
     textSize(Math.round(24 * uiScale));
     text(alarmSub, width * 0.5, height * 0.51);
 
-    // Confidence
-    fill(255, 55, 55, flash2 ? 230 : 140);
+    // Confidence — rainbow offset by 90°
+    colorMode(HSB, 360, 100, 100, 255);
+    fill((t * 0.25 + 90) % 360, 90, 100, flash2 ? 230 : 140);
+    colorMode(RGB, 255);
     textSize(md);
     text("CONFIDENCE: 99%", width * 0.5, height * 0.62);
 
-    // Corner alerts — both flash independently
+    // Corner alerts — celebratory, rainbow, independently flashing
     textAlign(LEFT, TOP);
     textSize(sm);
     if (flash) {
-      fill(255, 55, 55, 255);
-      text("⚠ ALERT ⚠", pad, pad * 0.8 + Math.round(lh * 1.8));
+      colorMode(HSB, 360, 100, 100, 255);
+      fill((t * 0.3) % 360, 90, 100, 255);
+      colorMode(RGB, 255);
+      text("★ PRIDE ★", pad, pad * 0.8 + Math.round(lh * 1.8));
     }
     if (flash2) {
       textAlign(RIGHT, TOP);
-      fill(255, 55, 55, 255);
-      text("⚠ ALERT ⚠", width - pad, pad * 0.8 + Math.round(lh * 1.8));
+      colorMode(HSB, 360, 100, 100, 255);
+      fill((t * 0.3 + 120) % 360, 90, 100, 255);
+      colorMode(RGB, 255);
+      text("★ PRIDE ★", width - pad, pad * 0.8 + Math.round(lh * 1.8));
     }
 
-    // Bottom — protocol line
+    // Bottom — protocol line — rainbow
     textAlign(CENTER, BOTTOM);
-    fill(255, 55, 55, flash ? 180 : 80);
+    colorMode(HSB, 360, 100, 100, 255);
+    fill((t * 0.2 + 180) % 360, 85, 100, flash ? 180 : 80);
+    colorMode(RGB, 255);
     textSize(Math.round(10 * uiScale));
     text("PRIDE RESPONSE PROTOCOL INITIATED — ALL UNITS RESPOND", width * 0.5, height - Math.round(12 * uiScale));
 
