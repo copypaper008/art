@@ -25,19 +25,25 @@ let nextGayAt        = 0; // set in setup()
 let idlesSinceAlarm  = 0;
 const FORCE_GAY_AFTER_IDLES = 15;
 
-// Rotating text during scanning
+// Rotating status line during scanning
 let scanLine      = "";
 let scanLineTimer = 0;
-const SCAN_LINE_INTERVAL = 750;
+const SCAN_LINE_INTERVAL = 2200;  // ms between scan status line changes
 
-// Rotating sub-line during alarm
-let alarmSub      = "";
+// Alarm text slots
+let alarmPrimary  = "";           // picked once on entering ALARM, held for full duration
+let alarmSub      = "";           // rotates during ALARM
 let alarmSubTimer = 0;
-const ALARM_SUB_INTERVAL = 2200;
+const ALARM_SUB_INTERVAL = 3500;  // ms between alarm sub-line changes
 
-// Result held across state
-let resultIsStraight = true;
-let straightSub      = "";
+// Result text slots — picked on state entry, held for full duration
+let straightPhrase = "";
+let straightSub    = "";
+
+// Idle phrase — held for several seconds, then quietly swapped
+let idlePhrase     = "";
+let idlePhraseTimer = 0;
+const IDLE_PHRASE_INTERVAL = 4000;
 
 // Confidence displayed with result
 let displayedConfidence = 0;
@@ -64,9 +70,11 @@ function setup() {
   textFont("monospace");
   stateAt = millis();
 
-  nextGayAt = floor(random(10, 16));
-  scanLine  = getRandomPhrase("scanning");
-  alarmSub  = getRandomPhrase("alarmSub");
+  nextGayAt       = floor(random(10, 16));
+  scanLine        = getRandomPhrase("scanning");
+  alarmSub        = getRandomPhrase("alarmSub");
+  idlePhrase      = getRandomPhrase("idle");
+  idlePhraseTimer = millis();
   initMediaPipe();
 }
 
@@ -84,8 +92,10 @@ function draw() {
   if (state === STATES.ALARM) {
     drawAlarmOverlay();
     drawFaceOverlays(detection.faces, state, detection.personCount, true);
+    drawPinkTriangle(true);
   } else {
     drawFaceOverlays(detection.faces, state, detection.personCount, false);
+    if (state === STATES.SCANNING) drawPinkTriangle(false);
   }
 
   drawScanLines();
@@ -101,6 +111,10 @@ function updateState() {
   const present = detection.personDetected;
 
   if (state === STATES.IDLE) {
+    if (now - idlePhraseTimer > IDLE_PHRASE_INTERVAL) {
+      idlePhrase      = getRandomPhrase("idle");
+      idlePhraseTimer = now;
+    }
     if (present && elapsed > IDLE_BEFORE_SCAN) {
       enterState(STATES.SCANNING);
     }
@@ -164,11 +178,13 @@ function enterState(newState) {
   }
 
   if (newState === STATES.STRAIGHT) {
+    straightPhrase   = getRandomPhrase("straight");
     straightSub      = getRandomPhrase("straightSub");
     targetConfidence = floor(random(92, 98));
   }
 
   if (newState === STATES.ALARM) {
+    alarmPrimary     = getRandomPhrase("alarm");
     alarmSub         = getRandomPhrase("alarmSub");
     alarmSubTimer    = millis();
     targetConfidence = 99;
@@ -176,6 +192,8 @@ function enterState(newState) {
   }
 
   if (newState === STATES.IDLE) {
+    idlePhrase       = getRandomPhrase("idle");
+    idlePhraseTimer  = millis();
     targetConfidence = 0;
     idlesSinceAlarm++;
     // If too many idles have passed without a gay result, guarantee the
@@ -247,7 +265,7 @@ function drawUI() {
     const pulse = (sin(millis() * 0.002) + 1) / 2;
     fill(0, 255, 120, 80 + pulse * 80);
     textSize(md);
-    text(getRandomPhrase("idle"), width * 0.5, height * 0.44);
+    text(idlePhrase, width * 0.5, height * 0.44);
     textAlign(LEFT, TOP);
     return;
   }
@@ -288,7 +306,7 @@ function drawUI() {
   if (state === STATES.STRAIGHT) {
     fill(0, 255, 120, 255);
     textSize(xl);
-    text(getRandomPhrase("straight"), width * 0.5, height * 0.40);
+    text(straightPhrase, width * 0.5, height * 0.40);
 
     fill(0, 255, 120, 180);
     textSize(md);
@@ -306,7 +324,7 @@ function drawUI() {
     // Primary alarm line
     fill(255, 255, 255, textA);
     textSize(xl);
-    text(getRandomPhrase("alarm"), width * 0.5, height * 0.38);
+    text(alarmPrimary, width * 0.5, height * 0.38);
 
     // Rotating sub-line
     fill(255, 60, 60, textA * 0.9);

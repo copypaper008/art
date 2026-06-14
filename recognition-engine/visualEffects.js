@@ -121,6 +121,36 @@ function clearGhostTrails() {
   ghostTrails.length = 0;
 }
 
+// Downward-pointing pink triangle — ACT UP / SILENCE=DEATH symbol
+// Used as the scan frame (SCANNING) and alarm overlay element (ALARM)
+function drawPinkTriangle(alarmMode) {
+  const cx      = width * 0.5;
+  const top     = height * 0.10;
+  const bottom  = height * 0.90;
+  const halfBase = Math.min(width, height) * 0.42;
+
+  // Vertices: top-left, top-right, bottom-centre (pointing down)
+  const x1 = cx - halfBase, y1 = top;
+  const x2 = cx + halfBase, y2 = top;
+  const x3 = cx,            y3 = bottom;
+
+  if (alarmMode) {
+    const pulse = (sin(millis() * 0.006) + 1) / 2;
+    fill(255, 20, 147, 30 + pulse * 45);
+    stroke(255, 20, 147, 160 + pulse * 95);
+    strokeWeight(Math.max(2, Math.round(3 * uiScale)));
+  } else {
+    noFill();
+    const scanProgress = constrain((millis() - stateAt) / SCAN_DURATION, 0, 1);
+    stroke(255, 105, 180, 30 + scanProgress * 110);
+    strokeWeight(Math.max(1, Math.round(1.5 * uiScale)));
+  }
+
+  triangle(x1, y1, x2, y2, x3, y3);
+  noStroke();
+  noFill();
+}
+
 // Face targeting reticle — green normally, red in alarm mode
 function drawFaceOverlays(faces, state, personCount, alarmMode = false) {
   if (!faces || faces.length === 0) return;
