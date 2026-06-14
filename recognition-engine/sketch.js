@@ -167,12 +167,30 @@ function drawSubjectOverlay(s) {
   }
 
   if (s.state === 'STRAIGHT') {
+    const xlS  = Math.max(14, Math.round(20 * uiScale));
+    const mdS  = Math.max(10, Math.round(13 * uiScale));
+    const smS  = Math.max(7,  Math.round(9  * uiScale));
+    const gap  = Math.round(8 * uiScale);
+    const subN = (s.straightSub.match(/\n/g) || []).length + 1;
+    const subH = Math.round(mdS * 1.4 * subN);
+
+    const baseY = tly - Math.round(10 * uiScale);
+
+    // Dismissal — closest to face
+    fill(0, 255, 120, 130);
+    textSize(smS);
+    text(s.straightNext, s.x, baseY);
+
+    // Middle description (1–2 lines)
+    fill(0, 255, 120, 200);
+    textSize(mdS);
+    textLeading(Math.round(mdS * 1.4));
+    text(s.straightSub, s.x, baseY - Math.round(smS * 1.4 + gap));
+
+    // Headline — topmost, largest
     fill(0, 255, 120, 255);
-    textSize(xl);
-    text(s.straightPhrase, s.x, textAbove - Math.round(20 * uiScale));
-    fill(0, 255, 120, 175);
-    textSize(sm);
-    text(s.straightSub, s.x, textAbove);
+    textSize(xlS);
+    text(s.straightPhrase, s.x, baseY - Math.round(smS * 1.4 + gap) - subH - gap);
   }
 
   if (s.state === 'ALARM') {

@@ -27,6 +27,7 @@ class Subject {
     this.alarmSubTimer  = 0;
     this.straightPhrase = '';
     this.straightSub    = '';
+    this.straightNext   = '';
 
     // Confidence
     this.confidence       = 0;
@@ -65,6 +66,7 @@ class Subject {
     if (s === 'STRAIGHT') {
       this.straightPhrase   = getRandomPhrase('straight');
       this.straightSub      = getRandomPhrase('straightSub');
+      this.straightNext     = getRandomPhrase('straightNext');
       this.targetConfidence = floor(random(92, 98));
       triggerFlash();
     }
