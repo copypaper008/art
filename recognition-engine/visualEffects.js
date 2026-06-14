@@ -161,13 +161,14 @@ function drawPinkTriangle(alarmMode) {
   noStroke();
 
   // ── Sci-fi surveillance eye ───────────────────────────────────────────────
-  const maxR     = faceSize * 0.32;
-  const irisOuter = maxR * 0.58;
-  const pupilR   = maxR * 0.26;
+  const maxR      = faceSize * 0.19;   // smaller
+  const irisOuter = maxR * 0.60;
+  const pupilR    = maxR * 0.27;
 
-  // Pupil drifts slowly — camera tracking effect
-  const driftX = sin(t * 0.27) * maxR * 0.08;
-  const driftY = cos(t * 0.35) * maxR * 0.05;
+  // Pupil scans up and down — deliberate surveillance sweep (~8s cycle)
+  // Tiny horizontal sway to feel alive; dominant vertical scan
+  const driftX = sin(t * 0.18) * maxR * 0.07;
+  const driftY = sin(t * 0.78) * irisOuter * 0.44;
   const px = fcx + driftX;
   const py = fcy + driftY;
 
