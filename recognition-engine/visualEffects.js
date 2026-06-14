@@ -99,3 +99,71 @@ function clearGhostTrails() {
   for (const g of ghostTrails) g.remove();
   ghostTrails.length = 0;
 }
+
+// ─────────────────────────────────────────────
+// Face overlays (Phase 2)
+// Draws subtle glow boundaries around detected faces and a connection
+// line between subjects in the RELATIONAL state.
+
+function drawFaceOverlays(faces, state, personCount) {
+  if (!faces || faces.length === 0) return;
+
+  noFill();
+  strokeWeight(1);
+
+  // Soft glow rectangle around each face
+  for (const face of faces) {
+    const flicker = state === "MISREADING" ? random(0.4, 1.0) : random(0.8, 1.0);
+
+    // Outer soft halo
+    stroke(0, 255, 120, 12 * flicker);
+    strokeWeight(8);
+    rect(face.x - face.w * 0.6, face.y - face.h * 0.65, face.w * 1.2, face.h * 1.3, 4);
+
+    // Inner line
+    stroke(0, 255, 120, 25 * flicker);
+    strokeWeight(1);
+    rect(face.x - face.w * 0.55, face.y - face.h * 0.6, face.w * 1.1, face.h * 1.2, 2);
+
+    // Corner tick marks (top-left and bottom-right only, like a targeting reticle)
+    const tlx = face.x - face.w * 0.55;
+    const tly = face.y - face.h * 0.6;
+    const brx = tlx + face.w * 1.1;
+    const bry = tly + face.h * 1.2;
+    const tick = 10;
+    stroke(0, 255, 120, 50 * flicker);
+    strokeWeight(1);
+    // top-left
+    line(tlx, tly, tlx + tick, tly);
+    line(tlx, tly, tlx, tly + tick);
+    // bottom-right
+    line(brx - tick, bry, brx, bry);
+    line(brx, bry - tick, brx, bry);
+  }
+
+  // RELATIONAL: connection line between face centres
+  if (personCount >= 2 && faces.length >= 2) {
+    const t = millis() * 0.001;
+    for (let i = 0; i < faces.length - 1; i++) {
+      const a = faces[i];
+      const b = faces[i + 1];
+
+      // Animated dashed connection — draw short segments that travel between faces
+      const segments = 12;
+      for (let s = 0; s < segments; s++) {
+        const tStart = (s / segments + t * 0.1) % 1;
+        const tEnd   = tStart + 0.04;
+        const x1 = lerp(a.x, b.x, tStart);
+        const y1 = lerp(a.y, b.y, tStart);
+        const x2 = lerp(a.x, b.x, min(tEnd, 1));
+        const y2 = lerp(a.y, b.y, min(tEnd, 1));
+        const segAlpha = 40 * sin(s / segments * PI);
+        stroke(255, 255, 255, segAlpha);
+        strokeWeight(1);
+        line(x1, y1, x2, y2);
+      }
+    }
+  }
+
+  noStroke();
+}
