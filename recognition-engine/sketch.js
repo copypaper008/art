@@ -59,7 +59,7 @@ function setup() {
   textFont("monospace");
   stateAt = millis();
 
-  nextGayAt = floor(random(20, 26));
+  nextGayAt = floor(random(10, 16));
   scanLine  = getRandomPhrase("scanning");
   alarmSub  = getRandomPhrase("alarmSub");
   initMediaPipe();
@@ -109,11 +109,21 @@ function updateState() {
       scanLineTimer = now;
     }
 
+    // Abort if subject left before scan completed — doesn't count
+    if (!present && elapsed > 1000) {
+      enterState(STATES.IDLE);
+      return;
+    }
+
     if (elapsed > SCAN_DURATION) {
-      // Determine result at moment of reveal
+      // Only count as a completed scan if subject is still present
+      if (!present) {
+        enterState(STATES.IDLE);
+        return;
+      }
       scanCount++;
       if (scanCount >= nextGayAt) {
-        nextGayAt = scanCount + floor(random(20, 26));
+        nextGayAt = scanCount + floor(random(10, 16));
         enterState(STATES.ALARM);
       } else {
         enterState(STATES.STRAIGHT);
