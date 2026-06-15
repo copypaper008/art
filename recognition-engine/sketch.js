@@ -1,38 +1,32 @@
-// Recognition Engine — Phase 2 (motion detection + MediaPipe face detection)
+// Recognition Engine — Gaydar Detector (per-face edition)
 
-const STATES = {
-  EMPTY:         "EMPTY",
-  APPROACHING:   "APPROACHING",
-  DETECTED:      "DETECTED",
-  OBSERVING:     "OBSERVING",
-  MISREADING:    "MISREADING",
-  CONTRADICTING: "CONTRADICTING",
-  RELATIONAL:    "RELATIONAL",
-  FADING:        "FADING",
-};
+// Timing constants — referenced by faceTracker.js Subject methods at runtime
+const IDLE_BEFORE_SCAN = 800;
+const SCAN_DURATION    = 5000;
+const STRAIGHT_HOLD    = 7500;
+const ALARM_HOLD       = 9000;
 
-let state = STATES.EMPTY;
-let prevState = null;
-let stateEnteredAt = 0;
+// Log sequence — referenced by Subject.tick() at runtime
+const HUD_LOG_SEQ = [
+  "SYSTEM BOOT",
+  "CAMERA LINK: OK",
+  "FACE DETECTED",
+  "ORIENTATION: SCANNING",
+  "CROSS-REF DATABASE",
+  "AWAITING CLARITY",
+];
 
+let uiScale = 1;
 let cam;
 let detectionGraphics;
 
-let activeLabels = [];
-let diagnosticText = "";
-let confidence = 40;
+// Global session header
+let hudSessionId = "";
 
-let lastPhraseUpdate = 0;
-const PHRASE_INTERVAL = 3500;
-
-let currentContradiction = null;
-
-let fadingStartTime = 0;
-const FADING_DURATION = 5000;
-
-// Scales all UI text and element sizes proportionally to the display.
-// Calibrated to 1080p; a 4K screen at native res gets 2×, a 720p laptop gets 0.67×.
-let uiScale = 1;
+// Idle phrase shown when no subjects are in frame
+let idlePhrase      = "";
+let idlePhraseTimer = 0;
+const IDLE_PHRASE_INTERVAL = 4000;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -44,352 +38,358 @@ function setup() {
   initVisuals(width, height);
 
   cam = createCapture(VIDEO);
-  // iOS Safari requires playsinline or it intercepts the stream for fullscreen
   cam.elt.setAttribute('playsinline', '');
   cam.elt.setAttribute('webkit-playsinline', '');
   cam.size(640, 480);
   cam.hide();
 
   textFont("monospace");
-  stateEnteredAt = millis();
 
-  // Start async MediaPipe load — runs in background, detection falls back
-  // to motion-only until it resolves
+  const rndId  = () => Math.floor(Math.random() * 65536).toString(16).toUpperCase().padStart(4, '0');
+  hudSessionId = "G4Y-" + rndId() + "-" + rndId();
+
+  idlePhrase      = getRandomPhrase("idle");
+  idlePhraseTimer = millis();
   initMediaPipe();
 }
 
 function draw() {
   background(0);
-
   uiScale = height / 1080;
 
   runDetection(cam);
-  updateState();
-  updateConfidence();
+  faceTracker.update(detection.faces || []);
 
-  drawDistortedMirror(cam, detection.motionAmount, state);
-  drawFaceOverlays(detection.faces, state, detection.personCount);
+  // Camera filter uses aggregate state across all subjects
+  const anyAlarm    = faceTracker.hasAlarm();
+  const allStraight = faceTracker.allStraight();
+  const visualState = anyAlarm ? 'ALARM' : allStraight ? 'STRAIGHT' : 'OTHER';
+
+  drawDistortedMirror(cam, visualState);
+
+  if (anyAlarm) {
+    drawAlarmOverlay();
+    drawParticles();
+  }
+
+  if (faceTracker.subjects.length > 0) {
+    drawSpectrumScan(anyAlarm);
+    drawAllSubjectOverlays();
+  } else {
+    // No tracked subjects — show raw detection reticles
+    drawFaceOverlays(detection.faces, 'IDLE', detection.personCount, false);
+  }
+
   drawScanLines();
-
-  updatePhrases();
-  drawSystemHeader();
-  drawFloatingLabels();
-  drawDiagnosticBar();
+  drawGlobalHUD();
+  drawTransitionFlash();
 }
 
 // ─────────────────────────────────────────────
-// State machine
+// Per-face overlay: reticle + state-specific text + confidence bar
 
-function updateState() {
-  const now = millis();
-  const pd  = detection.presenceDuration;
-  const ma  = detection.motionAmount;
-  const present = detection.personDetected;
-  const count   = detection.personCount;
+function drawSubjectOverlay(s) {
+  const tlx  = s.x - s.w * 0.55;
+  const tly  = s.y - s.h * 0.6;
+  const brx  = tlx + s.w * 1.1;
+  const bry  = tly + s.h * 1.2;
+  const tick = Math.round(10 * uiScale);
+  const t    = millis();
 
-  prevState = state;
-
-  // RELATIONAL overrides most states — checked first
-  if (count >= 2 && present && state !== STATES.FADING) {
-    if (state !== STATES.RELATIONAL) enterState(STATES.RELATIONAL);
-    return;
-  }
-
-  // Drop out of RELATIONAL if person count falls
-  if (state === STATES.RELATIONAL) {
-    if (!present) {
-      enterState(STATES.FADING);
-      fadingStartTime = now;
-    } else {
-      enterState(STATES.DETECTED);
-    }
-    return;
-  }
-
-  // FADING / EMPTY
-  if (!present && state !== STATES.FADING && state !== STATES.EMPTY) {
-    enterState(STATES.FADING);
-    fadingStartTime = now;
-    return;
-  }
-
-  if (state === STATES.FADING) {
-    if (present) { enterState(STATES.APPROACHING); return; }
-    if (now - fadingStartTime > FADING_DURATION) enterState(STATES.EMPTY);
-    return;
-  }
-
-  if (state === STATES.EMPTY) {
-    if (present) enterState(STATES.APPROACHING);
-    return;
-  }
-
-  if (state === STATES.APPROACHING) {
-    if (pd >= 3) enterState(STATES.DETECTED);
-    return;
-  }
-
-  // Active presence states
-  if (
-    state === STATES.DETECTED  ||
-    state === STATES.OBSERVING ||
-    state === STATES.MISREADING
-  ) {
-    if (pd > 12) {
-      enterState(ma > 0.05 ? STATES.MISREADING : STATES.CONTRADICTING);
-      return;
-    }
-    if (pd > 8) {
-      enterState(ma > 0.05 ? STATES.MISREADING : STATES.OBSERVING);
-      return;
-    }
-    if (ma > 0.06) { enterState(STATES.MISREADING); return; }
-    if (state === STATES.MISREADING && ma < 0.03) {
-      enterState(pd > 8 ? STATES.OBSERVING : STATES.DETECTED);
-    }
-    return;
-  }
-
-  if (state === STATES.CONTRADICTING) {
-    if (ma > 0.06)  { enterState(STATES.MISREADING); return; }
-    if (!present)   { enterState(STATES.FADING); fadingStartTime = now; }
-    return;
-  }
-}
-
-function enterState(newState) {
-  if (newState === state) return;
-  state = newState;
-  stateEnteredAt = millis();
-  activeLabels = [];
-  diagnosticText = getDiagnosticSentence(state.toLowerCase());
-  currentContradiction = state === STATES.CONTRADICTING ? getContradictionPair() : null;
-}
-
-// ─────────────────────────────────────────────
-// Confidence
-
-function updateConfidence() {
-  let target = 40;
-  if (detection.personDetected)       target += 10;
-  if (detection.personCount >= 2)     target += 8;
-  if (detection.faceDetected)         target += 6;
-  if (detection.stillnessDuration > 5) target += 15;
-  if (detection.motionAmount > 0.06)  target -= 20;
-  if (detection.presenceDuration > 20) target -= 10;
-  if (detection.gazeApproximation === "away") target -= 12;
-  if (state === STATES.CONTRADICTING) target -= 8;
-  if (state === STATES.MISREADING)    target -= 15;
-  if (state === STATES.OBSERVING)     target += 8;
-  if (state === STATES.RELATIONAL)    target += 5;
-
-  target = constrain(target, 12, 89);
-  confidence += (target - confidence) * 0.02;
-}
-
-// ─────────────────────────────────────────────
-// Phrase system
-
-function updatePhrases() {
-  const now = millis();
-  if (now - lastPhraseUpdate < PHRASE_INTERVAL) return;
-  lastPhraseUpdate = now;
-
-  activeLabels = [];
-
-  // Primary centred label
-  let primary = "";
-  if (state === STATES.EMPTY)         primary = getRandomPhrase("empty");
-  if (state === STATES.APPROACHING)   primary = getRandomPhrase("approaching");
-  if (state === STATES.DETECTED)      primary = getRandomPhrase("detected");
-  if (state === STATES.OBSERVING)     primary = getRandomPhrase("observing");
-  if (state === STATES.MISREADING)    primary = getRandomPhrase("moving");
-  if (state === STATES.CONTRADICTING) primary = getRandomPhrase("detected");
-  if (state === STATES.RELATIONAL)    primary = getRandomPhrase("relational");
-  if (state === STATES.FADING)        primary = getRandomPhrase("fading");
-
-  if (primary) pushLabel(primary, width * 0.5, height * 0.38, 220);
-
-  // Motion / stillness qualifier
-  if (detection.motionAmount > 0.04) {
-    pushLabel(getRandomPhrase("moving"), width * 0.5, height * 0.46, 180);
-  } else if (detection.stillnessDuration > 4 && detection.personDetected) {
-    pushLabel(getRandomPhrase("still"), width * 0.5, height * 0.46, 180);
-  }
-
-  // Distance qualifier (only when we have face data for reliability)
-  if (detection.faceDetected) {
-    if (detection.distanceEstimate < 0.3) {
-      pushLabel(getRandomPhrase("close"), width * 0.5, height * 0.54, 150);
-    } else if (detection.distanceEstimate > 0.7) {
-      pushLabel(getRandomPhrase("distant"), width * 0.5, height * 0.54, 150);
-    }
-  }
-
-  // Face-anchored labels — positioned near each detected face
-  for (let i = 0; i < detection.faces.length; i++) {
-    const face = detection.faces[i];
-    let facePhrase = "";
-    if (i === 0) {
-      facePhrase = state === STATES.RELATIONAL
-        ? getRandomPhrase("relational")
-        : getRandomPhrase("still");
-    } else {
-      // Second person gets a different phrase to emphasise distributed reading
-      facePhrase = getRandomPhrase("relational");
-    }
-    if (facePhrase) {
-      pushLabel(facePhrase, face.x, face.y - face.h * 0.7, 160);
-    }
-  }
-
-  if (state === STATES.CONTRADICTING) {
-    currentContradiction = getContradictionPair();
-  }
-
-  // Gaze-reactive secondary label
-  if (detection.gazeApproximation === "away" && detection.personDetected) {
-    pushLabel("GAZE UNCONFIRMED", width * 0.5, height * 0.62, 120);
-  }
-
-  diagnosticText = getDiagnosticSentence(
-    state === STATES.MISREADING    ? "misreading"    :
-    state === STATES.CONTRADICTING ? "contradicting" :
-    state === STATES.RELATIONAL    ? "relational"    :
-    state.toLowerCase()
-  );
-}
-
-function pushLabel(text, x, y, alpha) {
-  activeLabels.push({
-    text,
-    x: x + random(-20, 20),
-    y,
-    alpha,
-    drift: random(-0.3, 0.3),
-  });
-}
-
-// ─────────────────────────────────────────────
-// Drawing
-
-function drawSystemHeader() {
-  const flicker = state === STATES.MISREADING ? random(140, 255) : 200;
-  const pad  = Math.round(24 * uiScale);
-  const sm   = Math.round(11 * uiScale);
-  const med  = Math.round(13 * uiScale);
-  const lh   = Math.round(18 * uiScale); // line height between status rows
-
-  noStroke();
-  textAlign(LEFT, TOP);
-
-  fill(0, 255, 120, flicker * 0.7);
-  textSize(sm);
-  text("RECOGNITION ENGINE / ACTIVE", pad, pad * 0.8);
-  text("SURFACE TENSION SYSTEM v2.0",  pad, pad * 0.8 + lh);
-
-  fill(0, 255, 120, flicker * 0.5);
-  text("STATE: " + state, pad, pad * 0.8 + lh * 2.4);
-
-  if (mediaPipeReady) {
-    fill(0, 255, 120, flicker * 0.45);
-    text("SUBJECTS: " + detection.personCount,                    pad, pad * 0.8 + lh * 3.6);
-    text("GAZE: " + detection.gazeApproximation.toUpperCase(),   pad, pad * 0.8 + lh * 4.8);
-  }
-
-  // Confidence block — top right
-  textAlign(RIGHT, TOP);
-  textSize(med);
-  fill(0, 255, 120, flicker * 0.8);
-  text("CONFIDENCE: " + Math.round(confidence) + "%", width - pad, pad * 0.8);
-
-  const barW = Math.round(160 * uiScale);
-  const barH = Math.max(2, Math.round(4 * uiScale));
-  const barX = width - pad - barW;
-  const barY = Math.round(pad * 0.8 + lh * 1.5);
   noFill();
-  stroke(0, 255, 120, 60);
-  strokeWeight(1);
-  rect(barX, barY, barW, barH);
-  noStroke();
-  fill(0, 255, 120, flicker * 0.6);
-  rect(barX, barY, barW * (confidence / 100), barH);
 
-  fill(0, 255, 120, 100);
-  textSize(sm);
-  const motionPct = (detection.motionAmount * 1000 / 10).toFixed(1);
-  text("MOTION: " + motionPct + "%", width - pad, pad * 0.8 + lh * 2.6);
+  if (s.state === 'ALARM') {
+    const hue     = (t * 0.3 + s.id * 60) % 360;
+    const flicker = random(0.7, 1.0);
+    colorMode(HSB, 360, 100, 100, 255);
 
-  textAlign(LEFT, TOP);
-}
+    stroke(hue, 80, 100, 18 * flicker);
+    strokeWeight(8);
+    rect(s.x - s.w * 0.6, s.y - s.h * 0.65, s.w * 1.2, s.h * 1.3, 4);
 
-function drawFloatingLabels() {
-  noStroke();
-  textAlign(CENTER, CENTER);
+    stroke(hue, 100, 100, 80 * flicker);
+    strokeWeight(2);
+    rect(tlx, tly, s.w * 1.1, s.h * 1.2, 2);
 
-  for (const label of activeLabels) {
-    const flicker = state === STATES.MISREADING ? random(0.6, 1.0) : 1.0;
-    const drift = sin(frameCount * 0.01 + label.drift * 10) * 3;
-    fill(255, 255, 255, label.alpha * flicker);
-    textSize(Math.round(18 * uiScale));
-    text(label.text, label.x + drift, label.y);
-  }
-
-  // Contradiction pair — centred, stacked, large
-  if (state === STATES.CONTRADICTING && currentContradiction) {
-    const cy = height * 0.48;
-    const offset = Math.round(80 * uiScale);
+    stroke((hue + 30) % 360, 100, 100, 200 * flicker);
+    strokeWeight(Math.max(1, Math.round(uiScale)));
+    line(tlx, tly, tlx + tick, tly);
+    line(tlx, tly, tlx, tly + tick);
+    line(brx - tick, bry, brx, bry);
+    line(brx, bry - tick, brx, bry);
+    colorMode(RGB, 255);
+  } else {
     const flicker = random(0.85, 1.0);
-    textSize(Math.round(22 * uiScale));
-    fill(255, 255, 255, 200 * flicker);
-    text(currentContradiction[0], width * 0.5 - offset, cy);
-    fill(180, 180, 180, 150 * flicker);
-    text(currentContradiction[1], width * 0.5 + offset, cy + Math.round(28 * uiScale));
+    stroke(0, 255, 120, 35 * flicker);
+    strokeWeight(8);
+    rect(s.x - s.w * 0.6, s.y - s.h * 0.65, s.w * 1.2, s.h * 1.3, 4);
+    stroke(0, 255, 120, 55 * flicker);
+    strokeWeight(1);
+    rect(tlx, tly, s.w * 1.1, s.h * 1.2, 2);
+    stroke(0, 255, 120, 80 * flicker);
+    strokeWeight(Math.max(1, Math.round(uiScale)));
+    line(tlx, tly, tlx + tick, tly);
+    line(tlx, tly, tlx, tly + tick);
+    line(brx - tick, bry, brx, bry);
+    line(brx, bry - tick, brx, bry);
+  }
+  noStroke();
+
+  // ── Per-state text ────────────────────────────────────────────────────────
+  const textAbove = tly - Math.round(10 * uiScale);
+  const textBelow = bry + Math.round(8  * uiScale);
+  const xl        = Math.max(12, Math.round(20 * uiScale));
+  const md        = Math.max(9,  Math.round(12 * uiScale));
+  const sm        = Math.max(7,  Math.round(9  * uiScale));
+
+  textFont("monospace");
+  noStroke();
+  textAlign(CENTER, BOTTOM);
+
+  if (s.state === 'IDLE') {
+    const pulse = (sin(t * 0.004) + 1) / 2;
+    fill(0, 255, 120, 70 + pulse * 60);
+    textSize(Math.max(7, Math.round(9 * uiScale)));
+    text("STAND BY", s.x, tly - Math.round(10 * uiScale));
   }
 
-  // RELATIONAL — midpoint label between the two subjects
-  if (state === STATES.RELATIONAL && detection.faces.length >= 2) {
-    const mx = (detection.faces[0].x + detection.faces[1].x) / 2;
-    const my = (detection.faces[0].y + detection.faces[1].y) / 2;
-    fill(255, 255, 255, 160 * random(0.9, 1.0));
-    textSize(Math.round(14 * uiScale));
-    text("BOUNDARY UNSTABLE", mx, my);
+  if (s.state === 'SCANNING') {
+    fill(0, 255, 120, 200);
+    textSize(md);
+    text(s.scanLine, s.x, textAbove);
+
+    if (s.confidence > 1) {
+      const barW = Math.min(s.w * 1.4, Math.round(200 * uiScale));
+      const barH = Math.max(2, Math.round(3 * uiScale));
+      const barX = s.x - barW * 0.5;
+      noFill();
+      stroke(0, 255, 120, 60);
+      strokeWeight(1);
+      rect(barX, textBelow, barW, barH);
+      noStroke();
+      fill(0, 255, 120, 160);
+      rect(barX, textBelow, barW * (s.confidence / 100), barH);
+      noFill();
+    }
   }
 
-  // FADING — decaying ghost text
-  if (state === STATES.FADING) {
-    const alpha = map(millis() - fadingStartTime, 0, FADING_DURATION, 200, 0, true);
-    fill(255, 255, 255, alpha);
-    textSize(Math.round(20 * uiScale));
-    text(getRandomPhrase("fading"), width * 0.5, height * 0.5);
+  if (s.state === 'STRAIGHT') {
+    const xlS  = Math.max(14, Math.round(20 * uiScale));
+    const mdS  = Math.max(10, Math.round(13 * uiScale));
+    const smS  = Math.max(7,  Math.round(9  * uiScale));
+    const gap  = Math.round(8 * uiScale);
+    const subN = (s.straightSub.match(/\n/g) || []).length + 1;
+    const subH = Math.round(mdS * 1.4 * subN);
+
+    const baseY = tly - Math.round(10 * uiScale);
+
+    // Dismissal — closest to face
+    fill(0, 255, 120, 130);
+    textSize(smS);
+    text(s.straightNext, s.x, baseY);
+
+    // Middle description (1–2 lines)
+    fill(0, 255, 120, 200);
+    textSize(mdS);
+    textLeading(Math.round(mdS * 1.4));
+    text(s.straightSub, s.x, baseY - Math.round(smS * 1.4 + gap));
+
+    // Headline — topmost, largest
+    fill(0, 255, 120, 255);
+    textSize(xlS);
+    text(s.straightPhrase, s.x, baseY - Math.round(smS * 1.4 + gap) - subH - gap);
   }
 
-  textAlign(LEFT, TOP);
+  if (s.state === 'ALARM') {
+    const flash = sin(t * 0.012) > 0;
+    const textA = flash ? 255 : 190;
+    const xlS   = Math.max(14, Math.round(22 * uiScale));
+    const mdS   = Math.max(10, Math.round(13 * uiScale));
+    const smS   = Math.max(9,  Math.round(11 * uiScale));
+    const gap   = Math.round(8 * uiScale);
+    const subN  = (s.alarmSub.match(/\n/g) || []).length + 1;
+    const subH  = Math.round(mdS * 1.4 * subN);
+
+    const baseY = tly - Math.round(10 * uiScale);
+
+    // Closer — bottom, punchy, cycling rainbow
+    colorMode(HSB, 360, 100, 100, 255);
+    fill((t * 0.3 + s.id * 30) % 360, 95, 100, textA);
+    colorMode(RGB, 255);
+    textSize(smS);
+    text(s.alarmNext, s.x, baseY);
+
+    // Sub description — middle, rainbow offset
+    colorMode(HSB, 360, 100, 100, 255);
+    fill((t * 0.25 + s.id * 45 + 120) % 360, 90, 100, textA);
+    colorMode(RGB, 255);
+    textSize(mdS);
+    textLeading(Math.round(mdS * 1.4));
+    text(s.alarmSub, s.x, baseY - Math.round(smS * 1.4 + gap));
+
+    // Headline — top, large, white flash
+    fill(255, 255, 255, textA);
+    textSize(xlS);
+    text(s.alarmPrimary, s.x, baseY - Math.round(smS * 1.4 + gap) - subH - gap);
+  }
 }
 
-function drawDiagnosticBar() {
-  if (!diagnosticText) return;
-  const barAlpha = state === STATES.MISREADING ? random(160, 240) : 200;
-  const pad     = Math.round(24 * uiScale);
-  const barH    = Math.round(60 * uiScale);
+function drawAllSubjectOverlays() {
+  for (const s of faceTracker.subjects) drawSubjectOverlay(s);
+}
 
-  fill(0, 0, 0, 120);
-  noStroke();
-  rect(0, height - barH, width, barH);
+// ─────────────────────────────────────────────
+// Global HUD: header + idle phrase + multi-subject list + bottom tagline
 
-  textAlign(CENTER, CENTER);
-  textSize(Math.round(13 * uiScale));
-  fill(0, 255, 120, barAlpha * 0.9);
-  text(diagnosticText, width * 0.5, height - barH * 0.5);
+function drawGlobalHUD() {
+  const pad      = Math.round(24 * uiScale);
+  const sm       = Math.max(8,  Math.round(11 * uiScale));
+  const md       = Math.max(10, Math.round(14 * uiScale));
+  const xs       = Math.max(7,  Math.round(9  * uiScale));
+  const lh       = Math.round(20 * uiScale);
+  const anyAlarm = faceTracker.hasAlarm();
+  const t        = millis();
 
-  if (detection.personDetected) {
-    textAlign(LEFT, BOTTOM);
-    textSize(Math.round(10 * uiScale));
-    fill(0, 255, 120, 80);
-    text("DURATION: " + detection.presenceDuration.toFixed(1) + "s", pad, height - Math.round(10 * uiScale));
+  function _hFill(a) {
+    if (anyAlarm) {
+      colorMode(HSB, 360, 100, 100, 255);
+      fill((t * 0.2) % 360, 90, 100, a);
+      colorMode(RGB, 255);
+    } else {
+      fill(0, 255, 120, a);
+    }
   }
 
+  // ── Header ───────────────────────────────────────────────────────────────
+  noStroke();
+  textFont("monospace");
   textAlign(LEFT, TOP);
+  _hFill(180);
+  textSize(sm);
+  text("GAYDAR DETECTION SYSTEM / ACTIVE", pad, pad * 0.8);
+  _hFill(100);
+  textSize(xs);
+  text("SESSION: " + hudSessionId, pad, pad * 0.8 + lh * 1.1);
+
+  // Subject count — top right
+  textAlign(RIGHT, TOP);
+  _hFill(180);
+  textSize(sm);
+  text("SUBJECTS: " + String(faceTracker.subjects.length).padStart(2, '0'), width - pad, pad * 0.8);
+
+  // ── Alarm global extras ───────────────────────────────────────────────────
+  if (anyAlarm) {
+    const flash  = sin(t * 0.012) > 0;
+    const flash2 = sin(t * 0.018) > 0;
+    textSize(sm);
+
+    if (flash) {
+      textAlign(LEFT, TOP);
+      colorMode(HSB, 360, 100, 100, 255);
+      fill((t * 0.3) % 360, 90, 100, 255);
+      colorMode(RGB, 255);
+      text("★ PRIDE ★", pad, pad * 0.8 + Math.round(lh * 1.8));
+    }
+    if (flash2) {
+      textAlign(RIGHT, TOP);
+      colorMode(HSB, 360, 100, 100, 255);
+      fill((t * 0.3 + 120) % 360, 90, 100, 255);
+      colorMode(RGB, 255);
+      text("★ PRIDE ★", width - pad, pad * 0.8 + Math.round(lh * 1.8));
+    }
+
+    textAlign(CENTER, BOTTOM);
+    colorMode(HSB, 360, 100, 100, 255);
+    fill((t * 0.2 + 180) % 360, 85, 100, flash ? 180 : 80);
+    colorMode(RGB, 255);
+    textSize(Math.max(7, Math.round(10 * uiScale)));
+    text("PRIDE RESPONSE PROTOCOL INITIATED — ALL UNITS RESPOND", width * 0.5, height - Math.round(12 * uiScale));
+  }
+
+  // ── No subjects: idle phrase ──────────────────────────────────────────────
+  if (faceTracker.subjects.length === 0) {
+    const now = millis();
+    if (now - idlePhraseTimer > IDLE_PHRASE_INTERVAL) {
+      idlePhrase      = getRandomPhrase("idle");
+      idlePhraseTimer = now;
+    }
+    const pulse = (sin(now * 0.002) + 1) / 2;
+    noStroke();
+    fill(0, 255, 120, 80 + pulse * 80);
+    textSize(md);
+    textAlign(CENTER, CENTER);
+    text(idlePhrase, width * 0.5, height * 0.44);
+  }
+
+  // ── Multi-subject state list (left panel, only when >1 subject) ───────────
+  if (faceTracker.subjects.length > 1) {
+    const listY = Math.round(130 * uiScale);
+    const lineH = Math.round(18 * uiScale);
+    _hudLabel("ACTIVE SUBJECTS", pad, listY, sm, [0, 255, 120]);
+    textAlign(LEFT, TOP);
+    textFont("monospace");
+    for (let i = 0; i < faceTracker.subjects.length; i++) {
+      const s    = faceTracker.subjects[i];
+      const rowY = listY + Math.round(sm * 1.6) + Math.round(lineH * 1.2) + i * lineH;
+      fill(0, 255, 120, 90);
+      textSize(xs);
+      text("SUBJ " + String(i + 1).padStart(2, '0') + ":", pad, rowY);
+      if (s.state === 'ALARM') {
+        colorMode(HSB, 360, 100, 100, 255);
+        fill((t * 0.25 + i * 60) % 360, 90, 100, 220);
+        colorMode(RGB, 255);
+      } else {
+        fill(0, 255, 120, 200);
+      }
+      const confStr = s.confidence > 1 ? "  " + Math.round(s.confidence) + "%" : "";
+      text(s.state + confStr, pad + Math.round(55 * uiScale), rowY);
+    }
+  }
+
+  // ── Bottom tagline ────────────────────────────────────────────────────────
+  if (!anyAlarm) {
+    noStroke();
+    fill(0, 255, 120, 55);
+    textSize(xs);
+    textAlign(CENTER, BOTTOM);
+    text("◆  NOTHING IS EVER FULLY SEEN  ◆", width * 0.5, height - Math.round(12 * uiScale));
+  }
+
+  noStroke();
+  noFill();
+}
+
+// ── HUD helpers ───────────────────────────────────────────────────────────────
+
+function _hudLabel(label, x, y, size, col) {
+  noStroke();
+  fill(col[0], col[1], col[2], 155);
+  textSize(size);
+  textAlign(LEFT, TOP);
+  textFont("monospace");
+  text(label, x, y);
+  stroke(col[0], col[1], col[2], 55);
+  strokeWeight(1);
+  line(x, y + size + Math.round(3 * uiScale),
+       x + Math.round(textWidth(label) + 8 * uiScale),
+       y + size + Math.round(3 * uiScale));
+  noStroke();
+}
+
+// Referenced by Subject.tick() — must be global
+function _randomHex(n) {
+  const chars = "0123456789ABCDEF ";
+  let s = "";
+  for (let i = 0; i < n; i++) s += chars[floor(random(chars.length))];
+  return s;
+}
+
+function _hhmmss() {
+  const d = new Date();
+  return "[" +
+    String(d.getHours()).padStart(2, "0") + ":" +
+    String(d.getMinutes()).padStart(2, "0") + ":" +
+    String(d.getSeconds()).padStart(2, "0") + "]";
 }
 
 function windowResized() {
