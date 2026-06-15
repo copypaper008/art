@@ -1,7 +1,7 @@
 // Recognition Engine — Gaydar Detector (per-face edition)
 
 // Timing constants — referenced by faceTracker.js Subject methods at runtime
-const IDLE_BEFORE_SCAN = 1500;
+const IDLE_BEFORE_SCAN = 800;
 const SCAN_DURATION    = 5000;
 const STRAIGHT_HOLD    = 7500;
 const ALARM_HOLD       = 9000;
@@ -120,13 +120,13 @@ function drawSubjectOverlay(s) {
     colorMode(RGB, 255);
   } else {
     const flicker = random(0.85, 1.0);
-    stroke(0, 255, 120, 18 * flicker);
+    stroke(0, 255, 120, 35 * flicker);
     strokeWeight(8);
     rect(s.x - s.w * 0.6, s.y - s.h * 0.65, s.w * 1.2, s.h * 1.3, 4);
-    stroke(0, 255, 120, 25 * flicker);
+    stroke(0, 255, 120, 55 * flicker);
     strokeWeight(1);
     rect(tlx, tly, s.w * 1.1, s.h * 1.2, 2);
-    stroke(0, 255, 120, 50 * flicker);
+    stroke(0, 255, 120, 80 * flicker);
     strokeWeight(Math.max(1, Math.round(uiScale)));
     line(tlx, tly, tlx + tick, tly);
     line(tlx, tly, tlx, tly + tick);
@@ -145,6 +145,13 @@ function drawSubjectOverlay(s) {
   textFont("monospace");
   noStroke();
   textAlign(CENTER, BOTTOM);
+
+  if (s.state === 'IDLE') {
+    const pulse = (sin(t * 0.004) + 1) / 2;
+    fill(0, 255, 120, 70 + pulse * 60);
+    textSize(Math.max(7, Math.round(9 * uiScale)));
+    text("STAND BY", s.x, tly - Math.round(10 * uiScale));
+  }
 
   if (s.state === 'SCANNING') {
     fill(0, 255, 120, 200);

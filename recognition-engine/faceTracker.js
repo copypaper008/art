@@ -2,7 +2,7 @@
 // Constants IDLE_BEFORE_SCAN, SCAN_DURATION, etc. are defined in sketch.js
 // and are available at call time (both files share global scope).
 
-const STALE_FRAMES    = 45;   // frames before removing a subject no longer in frame (~1.5s at 30fps)
+const STALE_FRAMES    = 90;   // frames before removing a subject no longer in frame (~3s at 30fps)
 const MATCH_DIST_MULT = 1.8;  // max matching distance = face.w * this
 
 class Subject {
@@ -112,7 +112,7 @@ class Subject {
         this.hudDataTimer  = now;
       }
 
-      if (!present && elapsed > 1000) { this.enterState('IDLE'); return; }
+      if (!present && elapsed > 2500) { this.enterState('IDLE'); return; }
 
       if (elapsed > SCAN_DURATION) {
         if (!present) { this.enterState('IDLE'); return; }

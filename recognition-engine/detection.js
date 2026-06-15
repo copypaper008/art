@@ -184,8 +184,8 @@ async function initMediaPipe() {
         delegate: "GPU",
       },
       runningMode: "VIDEO",
-      minDetectionConfidence: 0.5,
-      minSuppressionThreshold: 0.3,
+      minDetectionConfidence: 0.35,
+      minSuppressionThreshold: 0.5,
     });
 
     mediaPipeReady = true;
