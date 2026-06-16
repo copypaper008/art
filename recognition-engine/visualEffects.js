@@ -35,13 +35,14 @@ function drawDistortedMirror(videoCapture, currentState) {
   if (currentState === "ALARM") {
     const hue = (millis() * 0.18) % 360;
     filterStr = `hue-rotate(${hue}deg) saturate(220%) brightness(1.1)`;
-    camAlpha  = 0.72;
+    camAlpha  = 0.78;
   } else if (currentState === "STRAIGHT") {
-    filterStr = "grayscale(100%) brightness(0.38) contrast(1.5)";
-    camAlpha  = 0.50;
+    filterStr = "grayscale(100%) brightness(0.68) contrast(1.25)";
+    camAlpha  = 0.65;
   } else {
-    filterStr = "saturate(8%) brightness(0.55) contrast(1.6)";
-    camAlpha  = 0.45;
+    // Scanning: desaturated but bright enough to read the face
+    filterStr = "saturate(15%) brightness(0.92) contrast(1.2)";
+    camAlpha  = 0.65;
   }
 
   // Draw camera flipped into mirrorBuffer with color filter baked in
