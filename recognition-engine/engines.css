@@ -1,0 +1,254 @@
+/* ── Alarm overlay wrapper ───────────────────────────────────────────────── */
+.alarm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", system-ui, sans-serif;
+}
+
+.alarm-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Engine card ─────────────────────────────────────────────────────────── */
+.alarm-overlay .engine-card {
+  --a: var(--e-hot);
+  --b: var(--e-cyan);
+  --c: var(--e-yellow);
+  --d: var(--e-green);
+  --e-hot:    #ff1493;
+  --e-cyan:   #00f5ff;
+  --e-yellow: #fff000;
+  --e-green:  #6dff00;
+  --e-paper:  #080808;
+  --e-ink:    #ffffff;
+
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border: 4px solid var(--a);
+  background:
+    linear-gradient(rgba(255,255,255,.035) 50%, rgba(0,0,0,.09) 50%) 0 0 / 100% 6px,
+    radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--a), transparent 60%), transparent 38%),
+    var(--e-paper);
+  box-shadow: 0 0 0 3px #000 inset, 0 0 22px color-mix(in srgb, var(--a), transparent 25%);
+  padding: 14px;
+  overflow-y: auto;
+  isolation: isolate;
+  color: var(--e-ink);
+}
+
+.alarm-overlay .engine-card::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(circle, var(--b) 0 2px, transparent 3px) 0 0 / 28px 28px,
+    radial-gradient(circle, var(--c) 0 2px, transparent 3px) 11px 17px / 34px 34px;
+  opacity: .16;
+  transform: rotate(-9deg);
+  z-index: -1;
+}
+
+.alarm-overlay .engine-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255,255,255,.35);
+  pointer-events: none;
+}
+
+/* ── Topbar ──────────────────────────────────────────────────────────────── */
+.alarm-overlay .topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--d);
+  font-family: "Courier New", monospace;
+  font-weight: 900;
+  font-size: clamp(10px, 1.8vw, 13px);
+  letter-spacing: .04em;
+}
+
+.alarm-overlay .engine-id {
+  font-size: clamp(18px, 4vw, 26px);
+  color: white;
+  border: 2px solid currentColor;
+  padding: 0 6px;
+  line-height: 1;
+}
+
+/* ── Title ───────────────────────────────────────────────────────────────── */
+.alarm-overlay .title-block h1 {
+  margin: 12px 0 0;
+  font-size: clamp(38px, 13vw, 82px);
+  line-height: .82;
+  color: var(--a);
+  text-shadow: 4px 4px 0 #000, 7px 7px 0 var(--b);
+  letter-spacing: .02em;
+}
+
+.alarm-overlay .title-block h2 {
+  margin: 4px 0 12px;
+  color: var(--c);
+  font-size: clamp(16px, 3.5vw, 26px);
+  line-height: 1;
+  text-shadow: 3px 3px 0 #000;
+}
+
+/* ── Sections ────────────────────────────────────────────────────────────── */
+.alarm-overlay .label {
+  margin: 0 0 4px;
+  color: var(--b);
+  font-family: "Courier New", monospace;
+  font-size: clamp(10px, 1.6vw, 13px);
+  font-weight: 900;
+}
+
+.alarm-overlay .diagnostic,
+.alarm-overlay .indicators,
+.alarm-overlay .result-box {
+  border: 2px solid color-mix(in srgb, var(--a), transparent 20%);
+  background: rgba(0,0,0,.62);
+  padding: 10px;
+  box-shadow: 6px 6px 0 rgba(0,0,0,.5);
+}
+
+.alarm-overlay .classification {
+  margin: 0;
+  font-size: clamp(16px, 4.5vw, 26px);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+/* ── Figure stage ────────────────────────────────────────────────────────── */
+.alarm-overlay .figure-stage {
+  position: relative;
+  height: clamp(180px, 32vh, 280px);
+  margin: 14px 0;
+  display: grid;
+  place-items: center;
+}
+
+.alarm-overlay .burst {
+  position: absolute;
+  width: clamp(150px, 28vh, 240px);
+  height: clamp(150px, 28vh, 240px);
+  background: conic-gradient(var(--a), var(--b), var(--c), var(--d), var(--a));
+  clip-path: polygon(50% 0,58% 34%,94% 18%,70% 48%,100% 62%,64% 63%,78% 100%,50% 74%,22% 100%,36% 63%,0 62%,30% 48%,6% 18%,42% 34%);
+  filter: drop-shadow(0 0 16px var(--a));
+  animation: e-slowSpin 9s linear infinite;
+  opacity: .86;
+}
+
+.alarm-overlay .figure {
+  width: clamp(120px, 20vh, 190px);
+  height: clamp(140px, 24vh, 230px);
+  border-radius: 48% 48% 24% 24%;
+  background:
+    radial-gradient(circle at 50% 18%, var(--c) 0 38px, transparent 39px),
+    linear-gradient(135deg, var(--a), var(--b));
+  border: 5px solid #000;
+  display: grid;
+  place-items: end center;
+  padding-bottom: 18px;
+  color: #000;
+  font-size: clamp(16px, 3vw, 22px);
+  text-align: center;
+  box-shadow: 12px 12px 0 #000;
+  filter: contrast(1.25) saturate(1.5);
+}
+
+.alarm-overlay .figure span {
+  background: white;
+  border: 3px solid #000;
+  padding: 4px 7px;
+  transform: rotate(-6deg);
+}
+
+.alarm-overlay .reticle {
+  position: absolute;
+  width: clamp(150px, 28vh, 220px);
+  height: clamp(150px, 28vh, 220px);
+  border: 2px solid var(--b);
+  box-shadow: 0 0 20px var(--b);
+  clip-path: polygon(0 0,28% 0,28% 4%,4% 4%,4% 28%,0 28%,0 0,72% 0,100% 0,100% 28%,96% 28%,96% 4%,72% 4%,72% 0,100% 72%,100% 100%,72% 100%,72% 96%,96% 96%,96% 72%,100% 72%,28% 100%,0 100%,0 72%,4% 72%,4% 96%,28% 96%,28% 100%);
+}
+
+/* ── Indicators ──────────────────────────────────────────────────────────── */
+.alarm-overlay .indicators ul {
+  margin: 0;
+  padding-left: 18px;
+  font-family: "Courier New", monospace;
+  font-size: clamp(10px, 1.8vw, 13px);
+  font-weight: 800;
+}
+
+.alarm-overlay .indicators li { margin: 5px 0; }
+
+/* ── Result ──────────────────────────────────────────────────────────────── */
+.alarm-overlay .result-box {
+  margin-top: 12px;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.alarm-overlay .result-box strong {
+  display: block;
+  color: var(--a);
+  font-size: clamp(22px, 6vw, 34px);
+  line-height: .95;
+  text-align: center;
+  text-shadow: 3px 3px 0 #000, 0 0 12px var(--a);
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.alarm-overlay footer {
+  margin-top: auto;
+  padding-top: 10px;
+  color: var(--b);
+  font-family: "Courier New", monospace;
+  font-size: clamp(9px, 1.4vw, 11px);
+  text-align: center;
+}
+
+/* ── Scanline ────────────────────────────────────────────────────────────── */
+.alarm-overlay .scanline {
+  position: absolute;
+  left: 0; right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, transparent, var(--b), white, var(--a), transparent);
+  top: -10%;
+  opacity: .85;
+  animation: e-scan 3.2s linear infinite;
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* ── Themes ──────────────────────────────────────────────────────────────── */
+.alarm-overlay .theme-warhol   { --a:#ff1493; --b:#00eaff; --c:#fff000; --d:#78ff00; }
+.alarm-overlay .theme-haring   { --a:#ff2b00; --b:#ffffff; --c:#ffe600; --d:#ff2b00; }
+.alarm-overlay .theme-disco    { --a:#b200ff; --b:#00eaff; --c:#ffffff; --d:#ff6eff; }
+.alarm-overlay .theme-leather  { --a:#ff2b00; --b:#c0c0c0; --c:#ffffff; --d:#ff2b00; }
+.alarm-overlay .theme-drag     { --a:#ff4fd8; --b:#ffb3f0; --c:#ffd700; --d:#ffffff; }
+.alarm-overlay .theme-camp     { --a:#ff7f6e; --b:#74d2c6; --c:#ffd6b3; --d:#ff99c8; }
+.alarm-overlay .theme-faerie   { --a:#7dff5c; --b:#b366ff; --c:#ffe66d; --d:#7dff5c; }
+.alarm-overlay .theme-ballroom { --a:#d4af37; --b:#ffffff; --c:#ffd700; --d:#d4af37; }
+.alarm-overlay .theme-archive  { --a:#111111; --b:#ff3355; --c:#f2e2bd; --d:#00a6a6; --e-paper:#ead8b5; --e-ink:#111; }
+.alarm-overlay .theme-gene     { --a:#ff00ff; --b:#00ffff; --c:#fff000; --d:#6dff00; }
+
+/* ── Animations ──────────────────────────────────────────────────────────── */
+@keyframes e-scan {
+  from { top: -10%; }
+  to   { top: 110%; }
+}
+
+@keyframes e-slowSpin {
+  to { transform: rotate(360deg); }
+}

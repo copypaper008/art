@@ -79,13 +79,9 @@ function draw() {
   drawDistortedMirror(cam, visualState);
   drawGrid();
 
-  if (anyAlarm) {
-    drawAlarmOverlay();
-    _launchFirework();
-    drawFireworks();
-    drawShootingStars();
-    drawParticles();
-  }
+  // HTML engine card overlay takes over the screen during ALARM
+  if (anyAlarm && !alarmOverlayActive) showAlarmScreen();
+  if (!anyAlarm && alarmOverlayActive) hideAlarmScreen();
 
   if (faceTracker.subjects.length > 0) {
     drawAllSubjectOverlays();
