@@ -25,14 +25,27 @@ function _ensureOverlay() {
 function showAlarmScreen() {
   const el  = _ensureOverlay();
   const slug = ENGINE_SLUGS[Math.floor(Math.random() * ENGINE_SLUGS.length)];
-  const img  = el.querySelector('.poster-img');
-  img.src = `posters/${slug}.png`;
 
-  el.getBoundingClientRect(); // force reflow
-  el.classList.add('visible');
-  alarmOverlayActive = true;
-
-  _startAnimation(img, el.querySelector('.color-flash'));
+  if (slug === 'warhol') {
+    el.innerHTML = renderWarholCard();
+    el.getBoundingClientRect();
+    el.classList.add('visible');
+    alarmOverlayActive = true;
+    // CSS animations in warhol-card.css handle all motion — no JS loop needed
+  } else {
+    el.innerHTML = `
+      <img class="poster-img" src="posters/${slug}.png" />
+      <div class="scanline"></div>
+      <div class="color-flash"></div>
+    `;
+    el.getBoundingClientRect();
+    el.classList.add('visible');
+    alarmOverlayActive = true;
+    _startAnimation(
+      el.querySelector('.poster-img'),
+      el.querySelector('.color-flash')
+    );
+  }
 }
 
 function hideAlarmScreen() {
