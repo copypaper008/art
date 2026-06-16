@@ -253,15 +253,15 @@ function drawSpectrumScan(alarmMode) {
   } else {
     // Red scan glow
     for (let dy = 0; dy < glowSpan; dy++) {
-      const a = map(dy, 0, glowSpan, 55 * fade, 0);
+      const a = map(dy, 0, glowSpan, 70 * fade, 0);
       stroke(M_RED[0], M_RED[1], M_RED[2], a);
       strokeWeight(1);
       if (scanY + dy < height) line(0, scanY + dy, width, scanY + dy);
       if (scanY - dy >= 0)     line(0, scanY - dy, width, scanY - dy);
     }
     // Hard white scan line
-    stroke(255, 255, 255, 180 * fade);
-    strokeWeight(Math.max(2, Math.round(3 * uiScale)));
+    stroke(255, 255, 255, 220 * fade);
+    strokeWeight(Math.max(2, Math.round(4 * uiScale)));
     line(0, scanY, width, scanY);
   }
   noStroke();
@@ -318,9 +318,9 @@ function drawSpectrumScan(alarmMode) {
   textFont("monospace");
   textStyle(NORMAL);
   textAlign(RIGHT, BOTTOM);
-  textSize(Math.max(6, Math.round(8 * uiScale)));
+  textSize(Math.max(8, Math.round(11 * uiScale)));
   text("PRIDE", barX - Math.round(6 * uiScale), barTop + Math.round(barH * 0.4));
-  text("SPECTRUM", barX - Math.round(6 * uiScale), barTop + Math.round(barH * 0.4) + Math.round(10 * uiScale));
+  text("SPECTRUM", barX - Math.round(6 * uiScale), barTop + Math.round(barH * 0.4) + Math.round(14 * uiScale));
 
   // Wavelength readout
   const wavelength = Math.round(map(scanY, height * 0.1, height * 0.9, 380, 700));
@@ -330,23 +330,25 @@ function drawSpectrumScan(alarmMode) {
     fill((t * 80) % 360, 80, 100, 200 * fade);
     colorMode(RGB, 255);
   } else {
-    fill(M_RED[0], M_RED[1], M_RED[2], 190 * fade);
+    fill(M_RED[0], M_RED[1], M_RED[2], 200 * fade);
   }
   textFont("monospace");
+  textStyle(BOLD);
   textAlign(LEFT, CENTER);
-  textSize(Math.max(8, Math.round(10 * uiScale)));
-  text("λ " + wavelength + "nm", pad, scanY - Math.round(18 * uiScale));
+  textSize(Math.max(11, Math.round(15 * uiScale)));
+  text("λ " + wavelength + "nm", pad, scanY - Math.round(20 * uiScale));
+  textStyle(NORMAL);
 
   const chromIdx = (sin(t * 0.6) * 0.5 + 0.5);
-  fill(M_RED[0], M_RED[1], M_RED[2], 120 * fade);
-  textSize(Math.max(7, Math.round(9 * uiScale)));
-  text("CHROMATIC INDEX  " + chromIdx.toFixed(3), pad, scanY + Math.round(20 * uiScale));
+  fill(M_RED[0], M_RED[1], M_RED[2], 130 * fade);
+  textSize(Math.max(9, Math.round(12 * uiScale)));
+  text("CHROMATIC INDEX  " + chromIdx.toFixed(3), pad, scanY + Math.round(22 * uiScale));
 
   // Bottom accumulating bar
   const readBarY = height * 0.91;
   const readBarW = width * 0.55;
   const readBarX = width * 0.5 - readBarW / 2;
-  const readBarH = Math.max(3, Math.round(5 * uiScale));
+  const readBarH = Math.max(4, Math.round(7 * uiScale));
 
   noFill();
   stroke(M_RED[0], M_RED[1], M_RED[2], 40 * fade);
@@ -375,11 +377,11 @@ function drawSpectrumScan(alarmMode) {
 
   // Bottom bar label
   noStroke();
-  fill(M_RED[0], M_RED[1], M_RED[2], 85 * fade);
+  fill(M_RED[0], M_RED[1], M_RED[2], 100 * fade);
   textFont("monospace");
   textAlign(CENTER, BOTTOM);
-  textSize(Math.max(6, Math.round(8 * uiScale)));
-  text("ORIENTATION SPECTRUM ANALYSIS", width * 0.5, readBarY - Math.round(4 * uiScale));
+  textSize(Math.max(9, Math.round(12 * uiScale)));
+  text("ORIENTATION SPECTRUM ANALYSIS", width * 0.5, readBarY - Math.round(6 * uiScale));
 
   noStroke();
   noFill();
