@@ -84,7 +84,6 @@ function draw() {
   }
 
   if (faceTracker.subjects.length > 0) {
-    drawSpectrumScan(anyAlarm);
     drawAllSubjectOverlays();
   } else {
     drawFaceOverlays(detection.faces, 'IDLE', detection.personCount, false);
@@ -105,6 +104,9 @@ function drawSubjectOverlay(s) {
   const bry  = tly + s.h * 1.2;
   const tick = Math.max(16, Math.round(22 * uiScale));
   const t    = millis();
+
+  // Glow under everything — lifts face from dark background
+  drawFaceGlow(s);
 
   noFill();
 

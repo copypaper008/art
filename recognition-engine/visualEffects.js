@@ -127,29 +127,12 @@ function drawGrid() {
   noStroke();
 }
 
-// ── Scan lines — bold red sweep on fine horizontal texture ────────────────────
+// ── Scan lines — fine horizontal CRT texture only, no sweep ──────────────────
 function drawScanLines() {
-  const isAlarm = faceTracker.hasAlarm();
-
-  // Fine horizontal texture
-  stroke(isAlarm ? 0 : M_RED[0], 0, 0, 14);
+  stroke(M_RED[0], 0, 0, 10);
   strokeWeight(1);
   const spacing = Math.max(3, Math.round(5 * uiScale));
   for (let y = 0; y < height; y += spacing) line(0, y, width, y);
-  noStroke();
-
-  // Sweep line — bold red (machine) or rainbow (alarm)
-  const sweepY = (frameCount * (isAlarm ? 1.8 : 0.7)) % height;
-  if (isAlarm) {
-    const sweepHue = (millis() * 0.3) % 360;
-    colorMode(HSB, 360, 100, 100, 255);
-    stroke(sweepHue, 100, 100, 45);
-    colorMode(RGB, 255);
-  } else {
-    stroke(M_RED[0], M_RED[1], M_RED[2], 80);
-  }
-  strokeWeight(Math.max(2, Math.round(3 * uiScale)));
-  line(0, sweepY, width, sweepY);
   noStroke();
 }
 
@@ -219,125 +202,39 @@ function drawParticles() {
   noFill();
 }
 
-// ── Spectrum scanner — right-side bar only, no full-screen sweep ──────────────
-function drawSpectrumScan(alarmMode) {
-  const t = millis() * 0.001;
-  let scanProgress = 0;
-  if (alarmMode) {
-    scanProgress = 1;
-  } else {
-    for (const s of faceTracker.subjects) {
-      if (s.state === 'SCANNING') {
-        const p = constrain((millis() - s.stateAt) / SCAN_DURATION, 0, 1);
-        if (p > scanProgress) scanProgress = p;
-      }
-    }
-  }
-  const fade = alarmMode ? 1.0 : 0.15 + scanProgress * 0.85;
+// ── Face glow — spotlight that lifts the subject from the dark background ────
+function drawFaceGlow(s) {
+  const t       = millis();
+  const glowR   = Math.max(s.w, s.h) * 2.0;
+  const steps   = 22;
 
-  const pad    = Math.round(24 * uiScale);
-  const barW   = Math.max(10, Math.round(14 * uiScale));
-  const barX   = width - pad - barW;
-  const barTop = height * 0.12;
-  const barBot = height * 0.88;
-  const barH   = barBot - barTop;
-
-  // Right side: pride spectrum bar (violet→red, top→bottom)
-  colorMode(HSB, 360, 100, 100, 255);
-  for (let y = 0; y < barH; y++) {
-    const hue  = map(y, 0, barH, 270, 0);
-    const sat  = alarmMode ? 95 : 85;
-    const bri  = alarmMode ? 100 : 90;
-    stroke(hue, sat, bri, 130 * fade);
-    strokeWeight(1);
-    line(barX, barTop + y, barX + barW, barTop + y);
-  }
-  colorMode(RGB, 255);
-
-  noFill();
-  stroke(M_RED[0], M_RED[1], M_RED[2], 70 * fade);
-  strokeWeight(1);
-  rect(barX, barTop, barW, barH);
+  blendMode(SCREEN);
   noStroke();
 
-  // Position indicator — tracks scan progress up the bar
-  const specPos = barBot - scanProgress * barH;
-  if (alarmMode) {
+  if (s.state === 'ALARM') {
+    // Rainbow halo during alarm
     colorMode(HSB, 360, 100, 100, 255);
-    stroke((t * 120) % 360, 80, 100, 220);
-    colorMode(RGB, 255);
-  } else {
-    stroke(255, 255, 255, 200 * fade);
-  }
-  strokeWeight(Math.max(2, Math.round(2 * uiScale)));
-  const tick = Math.round(5 * uiScale);
-  line(barX - tick, specPos, barX + barW + tick, specPos);
-  noStroke();
-
-  // Face markers on bar
-  for (const s of faceTracker.subjects) {
-    const fPos = constrain(map(s.y, height * 0.1, height * 0.9, barTop, barBot), barTop, barBot);
-    if (s.state === 'ALARM') {
-      colorMode(HSB, 360, 100, 100, 255);
-      stroke((t * 90) % 360, 100, 100, 210);
-      colorMode(RGB, 255);
-    } else {
-      stroke(M_RED[0], M_RED[1], M_RED[2], 160 * fade);
-    }
-    strokeWeight(Math.max(1, Math.round(2 * uiScale)));
-    line(barX - tick, fPos, barX, fPos);
-    line(barX + barW, fPos, barX + barW + tick, fPos);
-    noStroke();
-  }
-
-  // Spectrum bar labels
-  noStroke();
-  fill(M_RED[0], M_RED[1], M_RED[2], 110 * fade);
-  textFont("monospace");
-  textStyle(NORMAL);
-  textAlign(RIGHT, BOTTOM);
-  textSize(Math.max(8, Math.round(11 * uiScale)));
-  text("PRIDE", barX - Math.round(6 * uiScale), barTop + Math.round(barH * 0.4));
-  text("SPECTRUM", barX - Math.round(6 * uiScale), barTop + Math.round(barH * 0.4) + Math.round(14 * uiScale));
-
-  // Bottom accumulating progress bar
-  const readBarY = height * 0.91;
-  const readBarW = width * 0.55;
-  const readBarX = width * 0.5 - readBarW / 2;
-  const readBarH = Math.max(4, Math.round(7 * uiScale));
-
-  noFill();
-  stroke(M_RED[0], M_RED[1], M_RED[2], 40 * fade);
-  strokeWeight(1);
-  rect(readBarX, readBarY, readBarW, readBarH);
-
-  if (alarmMode) {
-    colorMode(HSB, 360, 100, 100, 255);
-    for (let x = 0; x < readBarW; x++) {
-      stroke(map(x, 0, readBarW, 0, 300), 90, 100, 190);
-      strokeWeight(1);
-      line(readBarX + x, readBarY, readBarX + x, readBarY + readBarH);
+    const hue = (t * 0.25 + s.id * 40) % 360;
+    for (let i = steps; i > 0; i--) {
+      const r = glowR * (i / steps);
+      fill(hue, 70, 100, map(i, 0, steps, 0, 38));
+      ellipse(s.x, s.y, r, r * 1.3);
     }
     colorMode(RGB, 255);
   } else {
-    const filledW = readBarW * scanProgress;
-    stroke(M_RED[0], M_RED[1], M_RED[2], 160 * fade);
-    strokeWeight(1);
-    line(readBarX, readBarY, readBarX + filledW, readBarY);
-    line(readBarX, readBarY + readBarH, readBarX + filledW, readBarY + readBarH);
-    for (let x = 0; x < filledW; x += Math.round(4 * uiScale)) {
-      line(readBarX + x, readBarY, readBarX + x, readBarY + readBarH);
+    // Warm white spotlight — lifts face from dark bunker background
+    const pulse = s.state === 'SCANNING'
+      ? 0.88 + sin(t * 0.005) * 0.12   // subtle breathe during scan
+      : 1.0;
+    for (let i = steps; i > 0; i--) {
+      const r = glowR * (i / steps);
+      const a = map(i, 0, steps, 0, 52 * pulse);
+      fill(255, 248, 225, a);
+      ellipse(s.x, s.y, r, r * 1.3);
     }
   }
 
-  noStroke();
-  fill(M_RED[0], M_RED[1], M_RED[2], 100 * fade);
-  textFont("monospace");
-  textAlign(CENTER, BOTTOM);
-  textSize(Math.max(9, Math.round(12 * uiScale)));
-  text("ORIENTATION SPECTRUM ANALYSIS", width * 0.5, readBarY - Math.round(6 * uiScale));
-
-  noStroke();
+  blendMode(BLEND);
   noFill();
 }
 
