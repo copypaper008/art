@@ -26,10 +26,31 @@ function initVisuals(w, h) {
 function drawDistortedMirror(videoCapture, currentState) {
   if (!videoCapture || !mirrorBuffer) return;
 
+  // Determine color filter and camera opacity per state.
+  // Filter is applied to mirrorBuffer at draw time (baked into pixels before
+  // applyRipple reads them). Opacity is then applied via tint() when blitting
+  // to the main canvas — this is reliable across mobile browsers, unlike
+  // globalAlpha + CSS filter combined on the main context.
+  let filterStr, camAlpha;
+  if (currentState === "ALARM") {
+    const hue = (millis() * 0.18) % 360;
+    filterStr = `hue-rotate(${hue}deg) saturate(220%) brightness(1.1)`;
+    camAlpha  = 0.72;
+  } else if (currentState === "STRAIGHT") {
+    filterStr = "grayscale(100%) brightness(0.38) contrast(1.5)";
+    camAlpha  = 0.50;
+  } else {
+    filterStr = "saturate(8%) brightness(0.55) contrast(1.6)";
+    camAlpha  = 0.45;
+  }
+
+  // Draw camera flipped into mirrorBuffer with color filter baked in
   mirrorBuffer.push();
   mirrorBuffer.translate(mirrorBuffer.width, 0);
   mirrorBuffer.scale(-1, 1);
+  mirrorBuffer.drawingContext.filter = filterStr;
   mirrorBuffer.image(videoCapture, 0, 0, mirrorBuffer.width, mirrorBuffer.height);
+  mirrorBuffer.drawingContext.filter = "none";
   mirrorBuffer.pop();
 
   const motionAmount = detection.motionAmount;
@@ -37,6 +58,7 @@ function drawDistortedMirror(videoCapture, currentState) {
   ripplePhase += 0.04;
   applyRipple(mirrorBuffer, rippleBuffer, amplitude);
 
+  // Ghost motion trails — very faint, add camera persistence effect
   for (let i = 0; i < ghostTrails.length; i++) {
     const alpha = map(i, 0, ghostTrails.length, 4, 18);
     tint(255, alpha);
@@ -44,31 +66,10 @@ function drawDistortedMirror(videoCapture, currentState) {
   }
   noTint();
 
-  // Camera composited semi-transparently over the background image.
-  // The viewer becomes a ghost in the machine's architecture.
-  if (currentState === "ALARM") {
-    // Rainbow fully visible — the architecture is overwhelmed by pride
-    drawingContext.globalAlpha = 0.72;
-    const hue = (millis() * 0.18) % 360;
-    drawingContext.filter = `hue-rotate(${hue}deg) saturate(220%) brightness(1.1)`;
-    image(rippleBuffer, 0, 0);
-    drawingContext.filter = "none";
-    drawingContext.globalAlpha = 1.0;
-  } else if (currentState === "STRAIGHT") {
-    // Dark monochrome ghost — the bunker dominates, cold and institutional
-    drawingContext.globalAlpha = 0.50;
-    drawingContext.filter = "grayscale(100%) brightness(0.38) contrast(1.5)";
-    image(rippleBuffer, 0, 0);
-    drawingContext.filter = "none";
-    drawingContext.globalAlpha = 1.0;
-  } else {
-    // Scanning: viewer is a reflection the machine can't fully see through
-    drawingContext.globalAlpha = 0.45;
-    drawingContext.filter = "saturate(8%) brightness(0.55) contrast(1.6)";
-    image(rippleBuffer, 0, 0);
-    drawingContext.filter = "none";
-    drawingContext.globalAlpha = 1.0;
-  }
+  // Composite camera over background image at partial opacity
+  tint(255, Math.round(camAlpha * 255));
+  image(rippleBuffer, 0, 0);
+  noTint();
 
   if (frameCount % 3 === 0) {
     if (ghostTrails.length >= GHOST_FRAMES) ghostTrails.shift();
