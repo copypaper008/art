@@ -1,4 +1,4 @@
-/* ── Alarm overlay — full-screen poster display ──────────────────────────── */
+/* ── Alarm overlay — full-screen animated poster ─────────────────────────── */
 .alarm-overlay {
   position: fixed;
   inset: 0;
@@ -8,8 +8,9 @@
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.3s ease;
   pointer-events: none;
+  overflow: hidden;
 }
 
 .alarm-overlay.visible {
@@ -23,17 +24,28 @@
   object-fit: cover;
   object-position: center top;
   display: block;
+  will-change: transform, filter;
 }
 
-/* Scanline sweep over the poster for the machine aesthetic */
+/* Screen-blend colour flash — sits over poster, driven by JS opacity */
+.alarm-overlay .color-flash {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: screen;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Scanline sweep */
 .alarm-overlay .scanline {
   position: absolute;
   left: 0; right: 0;
   height: 6px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
   top: -10%;
   animation: e-scan 2.8s linear infinite;
   pointer-events: none;
+  z-index: 2;
 }
 
 @keyframes e-scan {
