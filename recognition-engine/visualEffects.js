@@ -136,22 +136,93 @@ function drawScanLines() {
   noStroke();
 }
 
+// ── Pop-art shape helpers ─────────────────────────────────────────────────────
+function _drawStar(cx, cy, r, angle) {
+  beginShape();
+  for (let i = 0; i < 10; i++) {
+    const a  = (i * PI / 5) - HALF_PI + angle;
+    const rv = i % 2 === 0 ? r : r * 0.42;
+    vertex(cx + cos(a) * rv, cy + sin(a) * rv);
+  }
+  endShape(CLOSE);
+}
+
+function _drawHeart(cx, cy, r) {
+  const sc = r / 16;
+  beginShape();
+  for (let a = 0; a < TWO_PI; a += 0.12) {
+    const hx = 16 * pow(sin(a), 3) * sc;
+    const hy = -(13*cos(a) - 5*cos(2*a) - 2*cos(3*a) - cos(4*a)) * sc;
+    vertex(cx + hx, cy + hy);
+  }
+  endShape(CLOSE);
+}
+
 // ── Alarm overlay ─────────────────────────────────────────────────────────────
 function drawAlarmOverlay() {
-  const pulse = (sin(millis() * 0.008) + 1) / 2;
+  const t     = millis();
+  const pulse = (sin(t * 0.008) + 1) / 2;
+
   noStroke();
-  fill(0, 0, 0, 10 + pulse * 18);
+  fill(0, 0, 0, 8 + pulse * 14);
   rect(0, 0, width, height);
 
-  const borderA   = 100 + pulse * 140;
-  const borderHue = (millis() * 0.3) % 360;
+  // Thick cycling rainbow border
+  const borderHue = (t * 0.3) % 360;
   colorMode(HSB, 360, 100, 100, 255);
-  stroke(borderHue, 100, 100, borderA);
+  stroke(borderHue, 100, 100, 130 + pulse * 120);
   colorMode(RGB, 255);
-  strokeWeight(Math.max(4, Math.round(7 * uiScale)));
+  strokeWeight(Math.max(8, Math.round(14 * uiScale)));
   noFill();
   rect(0, 0, width, height);
   noStroke();
+
+  // ── Pop-art gay iconography ───────────────────────────────────────────────
+  const starR  = Math.max(22, Math.round(52 * uiScale));
+  const heartR = Math.max(16, Math.round(38 * uiScale));
+  const bW     = Math.max(3,  Math.round(5  * uiScale));
+
+  // Corner stars — each rotates and cycles through rainbow
+  const stars = [
+    { x: width*0.10, y: height*0.11, rot:  t*0.0004,  hue: (t*0.08)      %360 },
+    { x: width*0.90, y: height*0.11, rot: -t*0.00035, hue: (t*0.08+80)   %360 },
+    { x: width*0.10, y: height*0.89, rot:  t*0.00045, hue: (t*0.08+160)  %360 },
+    { x: width*0.90, y: height*0.89, rot: -t*0.0004,  hue: (t*0.08+240)  %360 },
+  ];
+  colorMode(HSB, 360, 100, 100, 255);
+  for (const st of stars) {
+    // Black drop shadow
+    fill(0, 0, 0, 200);
+    noStroke();
+    _drawStar(st.x + bW, st.y + bW, starR, st.rot);
+    // Coloured star with black outline
+    fill(st.hue, 95, 100, 240);
+    stroke(0, 0, 0, 220);
+    strokeWeight(bW);
+    _drawStar(st.x, st.y, starR, st.rot);
+  }
+
+  // Floating hearts — pulsing scale
+  const hearts = [
+    { x: width*0.20, y: height*0.20, hue: (t*0.1+300)%360, ph: 0    },
+    { x: width*0.80, y: height*0.20, hue: (t*0.1+60) %360, ph: 1.1  },
+    { x: width*0.50, y: height*0.83, hue: (t*0.1+180)%360, ph: 2.2  },
+  ];
+  for (const h of hearts) {
+    const r = heartR * (1 + sin(t * 0.003 + h.ph) * 0.22);
+    // Shadow
+    fill(0, 0, 0, 185);
+    noStroke();
+    _drawHeart(h.x + bW, h.y + bW, r);
+    // Colour fill
+    fill(h.hue, 90, 100, 230);
+    stroke(0, 0, 0, 200);
+    strokeWeight(bW);
+    _drawHeart(h.x, h.y, r);
+  }
+  colorMode(RGB, 255);
+  noStroke();
+  noFill();
 }
 
 function clearGhostTrails() {
@@ -202,38 +273,28 @@ function drawParticles() {
   noFill();
 }
 
-// ── Face glow — spotlight that lifts the subject from the dark background ────
+// ── Face glow — subtle spotlight, tight around the face ──────────────────────
 function drawFaceGlow(s) {
-  const t       = millis();
-  const glowR   = Math.max(s.w, s.h) * 2.0;
-  const steps   = 22;
-
+  const t     = millis();
+  const glowR = Math.max(s.w, s.h) * 0.85; // stays close to face
+  const steps = 16;
   blendMode(SCREEN);
   noStroke();
-
   if (s.state === 'ALARM') {
-    // Rainbow halo during alarm
     colorMode(HSB, 360, 100, 100, 255);
     const hue = (t * 0.25 + s.id * 40) % 360;
     for (let i = steps; i > 0; i--) {
-      const r = glowR * (i / steps);
-      fill(hue, 70, 100, map(i, 0, steps, 0, 38));
-      ellipse(s.x, s.y, r, r * 1.3);
+      fill(hue, 60, 100, map(i, 0, steps, 0, 18));
+      ellipse(s.x, s.y, glowR * i / steps, glowR * 1.25 * i / steps);
     }
     colorMode(RGB, 255);
   } else {
-    // Warm white spotlight — lifts face from dark bunker background
-    const pulse = s.state === 'SCANNING'
-      ? 0.88 + sin(t * 0.005) * 0.12   // subtle breathe during scan
-      : 1.0;
+    const pulse = s.state === 'SCANNING' ? 0.85 + sin(t * 0.005) * 0.15 : 1.0;
     for (let i = steps; i > 0; i--) {
-      const r = glowR * (i / steps);
-      const a = map(i, 0, steps, 0, 52 * pulse);
-      fill(255, 248, 225, a);
-      ellipse(s.x, s.y, r, r * 1.3);
+      fill(255, 248, 225, map(i, 0, steps, 0, 18 * pulse));
+      ellipse(s.x, s.y, glowR * i / steps, glowR * 1.25 * i / steps);
     }
   }
-
   blendMode(BLEND);
   noFill();
 }

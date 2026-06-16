@@ -318,36 +318,47 @@ function drawSubjectOverlay(s) {
 
   // ── ALARM ─────────────────────────────────────────────────────────────────
   if (s.state === 'ALARM') {
-    const flash  = sin(t * 0.012) > 0;
-    const textA  = flash ? 255 : 200;
-    const xlS    = Math.max(18, Math.round(28 * uiScale));  // closer — large, punchy
-    const mdS    = Math.max(13, Math.round(18 * uiScale));  // sub description
-    const headS  = Math.max(16, Math.round(24 * uiScale));  // headline
-    const gap    = Math.round(12 * uiScale);
-    const subN   = (s.alarmSub.match(/\n/g) || []).length + 1;
-    const subH   = Math.round(mdS * 1.45 * subN);
-    const ruleW  = Math.min(s.w * 2.6, Math.round(340 * uiScale));
+    const flash   = sin(t * 0.012) > 0;
+    const textA   = flash ? 255 : 210;
+    const closeS  = Math.max(28, Math.round(82 * uiScale));   // enormous closer
+    const headS   = Math.max(18, Math.round(36 * uiScale));   // bold headline
+    const subS    = Math.max(13, Math.round(19 * uiScale));   // sub description
+    const gap     = Math.round(14 * uiScale);
+    const outOff  = Math.max(2, Math.round(4 * uiScale));
+    const subN    = (s.alarmSub.match(/\n/g) || []).length + 1;
+    const subH    = Math.round(subS * 1.4 * subN);
+    const ruleW   = Math.min(s.w * 2.8, Math.round(360 * uiScale));
 
-    const baseY  = tly - Math.round(14 * uiScale);
-    const ruleY  = baseY - Math.round(xlS * 1.4) - Math.round(gap * 0.5);
-    const subBot = ruleY - gap;
+    // Bounce animation on the closer
+    const bounce  = sin(t * 0.004 + s.id) * Math.round(7 * uiScale);
+    const baseY   = tly - Math.round(14 * uiScale) + bounce;
+    const ruleY   = baseY - Math.round(closeS * 1.3) - Math.round(gap * 0.4);
+    const subBot  = ruleY - gap;
     const headBot = subBot - subH - gap;
 
-    // Closer — bold, large, cycling rainbow
-    colorMode(HSB, 360, 100, 100, 255);
-    fill((t * 0.3 + s.id * 30) % 360, 95, 100, textA);
-    colorMode(RGB, 255);
-    textFont("monospace");
+    // Closer — pop art: black outline + enormous rainbow text
+    const closeHue = (t * 0.3 + s.id * 30) % 360;
+    textFont("Arial");
     textStyle(BOLD);
     textAlign(CENTER, BOTTOM);
-    textSize(xlS);
+    textSize(closeS);
+    // Black outline (4-direction)
+    fill(0, 0, 0, 220);
+    text(s.alarmNext, s.x - outOff, baseY - outOff);
+    text(s.alarmNext, s.x + outOff, baseY - outOff);
+    text(s.alarmNext, s.x - outOff, baseY + outOff);
+    text(s.alarmNext, s.x + outOff, baseY + outOff);
+    // Rainbow fill
+    colorMode(HSB, 360, 100, 100, 255);
+    fill(closeHue, 95, 100, textA);
+    colorMode(RGB, 255);
     text(s.alarmNext, s.x, baseY);
     textStyle(NORMAL);
 
     // Rainbow rule
     colorMode(HSB, 360, 100, 100, 255);
-    stroke((t * 0.2 + s.id * 40) % 360, 90, 100, 150);
-    strokeWeight(Math.max(1, Math.round(2 * uiScale)));
+    stroke((t * 0.2 + s.id * 40) % 360, 90, 100, 180);
+    strokeWeight(Math.max(2, Math.round(3 * uiScale)));
     line(s.x - ruleW * 0.5, ruleY, s.x + ruleW * 0.5, ruleY);
     noStroke();
     colorMode(RGB, 255);
@@ -357,15 +368,18 @@ function drawSubjectOverlay(s) {
     fill((t * 0.25 + s.id * 45 + 120) % 360, 90, 100, textA);
     colorMode(RGB, 255);
     textFont("monospace");
-    textSize(mdS);
-    textLeading(Math.round(mdS * 1.4));
+    textSize(subS);
+    textLeading(Math.round(subS * 1.4));
     text(s.alarmSub, s.x, subBot);
 
-    // Headline — bold white Arial, flashing
+    // Headline — bold white Arial, pop art black outline
     textFont("Arial");
     textStyle(BOLD);
-    fill(255, 255, 255, textA);
     textSize(headS);
+    fill(0, 0, 0, 200);
+    text(s.alarmPrimary, s.x - outOff, headBot + outOff);
+    text(s.alarmPrimary, s.x + outOff, headBot + outOff);
+    fill(255, 255, 255, textA);
     text(s.alarmPrimary, s.x, headBot);
     textStyle(NORMAL);
     textFont("monospace");
@@ -441,32 +455,44 @@ function drawGlobalHUD() {
   if (anyAlarm) {
     const flash  = sin(t * 0.012) > 0;
     const flash2 = sin(t * 0.018) > 0;
-    const prideS = Math.max(12, Math.round(16 * uiScale));
-    textFont("monospace");
+    const prideS = Math.max(18, Math.round(26 * uiScale));
+    const outOff = Math.max(2, Math.round(3 * uiScale));
 
     if (flash) {
+      textFont("Arial");
+      textStyle(BOLD);
       textAlign(LEFT, TOP);
-      colorMode(HSB, 360, 100, 100, 255);
-      fill((t * 0.3) % 360, 90, 100, 255);
-      colorMode(RGB, 255);
       textSize(prideS);
+      fill(0, 0, 0, 200);
+      text("★ PRIDE ★", pad - outOff, pad * 0.7 + Math.round(lh * 1.9) + outOff);
+      text("★ PRIDE ★", pad + outOff, pad * 0.7 + Math.round(lh * 1.9) + outOff);
+      colorMode(HSB, 360, 100, 100, 255);
+      fill((t * 0.3) % 360, 95, 100, 255);
+      colorMode(RGB, 255);
       text("★ PRIDE ★", pad, pad * 0.7 + Math.round(lh * 1.9));
+      textStyle(NORMAL);
     }
     if (flash2) {
+      textFont("Arial");
+      textStyle(BOLD);
       textAlign(RIGHT, TOP);
-      colorMode(HSB, 360, 100, 100, 255);
-      fill((t * 0.3 + 120) % 360, 90, 100, 255);
-      colorMode(RGB, 255);
       textSize(prideS);
+      fill(0, 0, 0, 200);
+      text("★ PRIDE ★", width - pad + outOff, pad * 0.7 + Math.round(lh * 1.9) + outOff);
+      text("★ PRIDE ★", width - pad - outOff, pad * 0.7 + Math.round(lh * 1.9) + outOff);
+      colorMode(HSB, 360, 100, 100, 255);
+      fill((t * 0.3 + 120) % 360, 95, 100, 255);
+      colorMode(RGB, 255);
       text("★ PRIDE ★", width - pad, pad * 0.7 + Math.round(lh * 1.9));
+      textStyle(NORMAL);
     }
 
+    textFont("monospace");
     textAlign(CENTER, BOTTOM);
     colorMode(HSB, 360, 100, 100, 255);
-    fill((t * 0.2 + 180) % 360, 85, 100, flash ? 200 : 80);
+    fill((t * 0.2 + 180) % 360, 85, 100, flash ? 220 : 90);
     colorMode(RGB, 255);
-    textFont("monospace");
-    textSize(Math.max(9, Math.round(12 * uiScale)));
+    textSize(Math.max(10, Math.round(14 * uiScale)));
     text("PRIDE RESPONSE PROTOCOL INITIATED — ALL UNITS RESPOND", width * 0.5, height - Math.round(14 * uiScale));
   }
 
