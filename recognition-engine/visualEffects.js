@@ -72,7 +72,10 @@ function drawDistortedMirror(videoCapture, currentState) {
   noTint();
 
   if (frameCount % 3 === 0) {
-    if (ghostTrails.length >= GHOST_FRAMES) ghostTrails.shift();
+    if (ghostTrails.length >= GHOST_FRAMES) {
+      const old = ghostTrails.shift();
+      old.remove(); // Free canvas/GPU resources — prevents memory crash on mobile
+    }
     const snapshot = createGraphics(width, height);
     snapshot.image(rippleBuffer, 0, 0);
     ghostTrails.push(snapshot);
@@ -216,19 +219,19 @@ function drawParticles() {
   noFill();
 }
 
-// ── Spectrum scanner ──────────────────────────────────────────────────────────
+// ── Spectrum scanner — right-side bar only, no full-screen sweep ──────────────
 function drawSpectrumScan(alarmMode) {
   const t = millis() * 0.001;
-  let scanProgress = 1;
-  if (!alarmMode) {
-    let maxProg = 0;
+  let scanProgress = 0;
+  if (alarmMode) {
+    scanProgress = 1;
+  } else {
     for (const s of faceTracker.subjects) {
       if (s.state === 'SCANNING') {
         const p = constrain((millis() - s.stateAt) / SCAN_DURATION, 0, 1);
-        if (p > maxProg) maxProg = p;
+        if (p > scanProgress) scanProgress = p;
       }
     }
-    scanProgress = maxProg;
   }
   const fade = alarmMode ? 1.0 : 0.15 + scanProgress * 0.85;
 
@@ -239,90 +242,55 @@ function drawSpectrumScan(alarmMode) {
   const barBot = height * 0.88;
   const barH   = barBot - barTop;
 
-  // Sweeping scan line
-  const speed   = alarmMode ? 1.4 : 0.72;
-  const range   = alarmMode ? height * 0.44 : height * 0.36;
-  const scanY   = height * 0.5 + sin(t * speed) * range;
-  const glowSpan = Math.round(45 * uiScale);
-
-  if (alarmMode) {
-    colorMode(HSB, 360, 100, 100, 255);
-    for (let dy = 0; dy < glowSpan; dy++) {
-      const a   = map(dy, 0, glowSpan, 70, 0);
-      const hue = (t * 80 + dy * 3) % 360;
-      stroke(hue, 80, 100, a);
-      strokeWeight(1);
-      if (scanY + dy < height) line(0, scanY + dy, width, scanY + dy);
-      if (scanY - dy >= 0)     line(0, scanY - dy, width, scanY - dy);
-    }
-    const lineHue = (t * 90) % 360;
-    stroke(lineHue, 60, 100, 240);
-    strokeWeight(Math.max(2, Math.round(3 * uiScale)));
-    line(0, scanY, width, scanY);
-    colorMode(RGB, 255);
-  } else {
-    // Red scan glow
-    for (let dy = 0; dy < glowSpan; dy++) {
-      const a = map(dy, 0, glowSpan, 70 * fade, 0);
-      stroke(M_RED[0], M_RED[1], M_RED[2], a);
-      strokeWeight(1);
-      if (scanY + dy < height) line(0, scanY + dy, width, scanY + dy);
-      if (scanY - dy >= 0)     line(0, scanY - dy, width, scanY - dy);
-    }
-    // Hard white scan line
-    stroke(255, 255, 255, 220 * fade);
-    strokeWeight(Math.max(2, Math.round(4 * uiScale)));
-    line(0, scanY, width, scanY);
-  }
-  noStroke();
-
-  // Right side: spectrum bar
+  // Right side: pride spectrum bar (violet→red, top→bottom)
   colorMode(HSB, 360, 100, 100, 255);
   for (let y = 0; y < barH; y++) {
     const hue  = map(y, 0, barH, 270, 0);
     const sat  = alarmMode ? 95 : 85;
     const bri  = alarmMode ? 100 : 90;
-    const alph = 130 * fade;
-    stroke(hue, sat, bri, alph);
+    stroke(hue, sat, bri, 130 * fade);
     strokeWeight(1);
     line(barX, barTop + y, barX + barW, barTop + y);
   }
   colorMode(RGB, 255);
 
-  // Spectrum bar border
   noFill();
   stroke(M_RED[0], M_RED[1], M_RED[2], 70 * fade);
   strokeWeight(1);
   rect(barX, barTop, barW, barH);
   noStroke();
 
-  // Position indicator
-  const specPos = constrain(map(scanY, height * 0.1, height * 0.9, barTop, barBot), barTop, barBot);
-  stroke(255, 255, 255, 200 * fade);
+  // Position indicator — tracks scan progress up the bar
+  const specPos = barBot - scanProgress * barH;
+  if (alarmMode) {
+    colorMode(HSB, 360, 100, 100, 255);
+    stroke((t * 120) % 360, 80, 100, 220);
+    colorMode(RGB, 255);
+  } else {
+    stroke(255, 255, 255, 200 * fade);
+  }
   strokeWeight(Math.max(2, Math.round(2 * uiScale)));
-  line(barX - Math.round(5 * uiScale), specPos, barX + barW + Math.round(5 * uiScale), specPos);
+  const tick = Math.round(5 * uiScale);
+  line(barX - tick, specPos, barX + barW + tick, specPos);
   noStroke();
 
-  // Face markers on spectrum bar
-  if (faceTracker.subjects.length > 0) {
-    for (const s of faceTracker.subjects) {
-      const fPos = constrain(map(s.y, height * 0.1, height * 0.9, barTop, barBot), barTop, barBot);
-      if (s.state === 'ALARM') {
-        colorMode(HSB, 360, 100, 100, 255);
-        stroke((t * 90) % 360, 100, 100, 210 * fade);
-        colorMode(RGB, 255);
-      } else {
-        stroke(255, 255, 255, 180 * fade);
-      }
-      strokeWeight(Math.max(2, Math.round(2 * uiScale)));
-      const mk = Math.round(5 * uiScale);
-      line(barX - mk, fPos, barX, fPos);
-      line(barX + barW, fPos, barX + barW + mk, fPos);
-      noStroke();
+  // Face markers on bar
+  for (const s of faceTracker.subjects) {
+    const fPos = constrain(map(s.y, height * 0.1, height * 0.9, barTop, barBot), barTop, barBot);
+    if (s.state === 'ALARM') {
+      colorMode(HSB, 360, 100, 100, 255);
+      stroke((t * 90) % 360, 100, 100, 210);
+      colorMode(RGB, 255);
+    } else {
+      stroke(M_RED[0], M_RED[1], M_RED[2], 160 * fade);
     }
+    strokeWeight(Math.max(1, Math.round(2 * uiScale)));
+    line(barX - tick, fPos, barX, fPos);
+    line(barX + barW, fPos, barX + barW + tick, fPos);
+    noStroke();
   }
 
-  // Spectrum bar label
+  // Spectrum bar labels
   noStroke();
   fill(M_RED[0], M_RED[1], M_RED[2], 110 * fade);
   textFont("monospace");
@@ -332,29 +300,7 @@ function drawSpectrumScan(alarmMode) {
   text("PRIDE", barX - Math.round(6 * uiScale), barTop + Math.round(barH * 0.4));
   text("SPECTRUM", barX - Math.round(6 * uiScale), barTop + Math.round(barH * 0.4) + Math.round(14 * uiScale));
 
-  // Wavelength readout
-  const wavelength = Math.round(map(scanY, height * 0.1, height * 0.9, 380, 700));
-  noStroke();
-  if (alarmMode) {
-    colorMode(HSB, 360, 100, 100, 255);
-    fill((t * 80) % 360, 80, 100, 200 * fade);
-    colorMode(RGB, 255);
-  } else {
-    fill(M_RED[0], M_RED[1], M_RED[2], 200 * fade);
-  }
-  textFont("monospace");
-  textStyle(BOLD);
-  textAlign(LEFT, CENTER);
-  textSize(Math.max(11, Math.round(15 * uiScale)));
-  text("λ " + wavelength + "nm", pad, scanY - Math.round(20 * uiScale));
-  textStyle(NORMAL);
-
-  const chromIdx = (sin(t * 0.6) * 0.5 + 0.5);
-  fill(M_RED[0], M_RED[1], M_RED[2], 130 * fade);
-  textSize(Math.max(9, Math.round(12 * uiScale)));
-  text("CHROMATIC INDEX  " + chromIdx.toFixed(3), pad, scanY + Math.round(22 * uiScale));
-
-  // Bottom accumulating bar
+  // Bottom accumulating progress bar
   const readBarY = height * 0.91;
   const readBarW = width * 0.55;
   const readBarX = width * 0.5 - readBarW / 2;
@@ -367,17 +313,16 @@ function drawSpectrumScan(alarmMode) {
 
   if (alarmMode) {
     colorMode(HSB, 360, 100, 100, 255);
-    const filledW = readBarW * scanProgress;
-    for (let x = 0; x < filledW; x++) {
+    for (let x = 0; x < readBarW; x++) {
       stroke(map(x, 0, readBarW, 0, 300), 90, 100, 190);
       strokeWeight(1);
       line(readBarX + x, readBarY, readBarX + x, readBarY + readBarH);
     }
     colorMode(RGB, 255);
   } else {
+    const filledW = readBarW * scanProgress;
     stroke(M_RED[0], M_RED[1], M_RED[2], 160 * fade);
     strokeWeight(1);
-    const filledW = readBarW * scanProgress;
     line(readBarX, readBarY, readBarX + filledW, readBarY);
     line(readBarX, readBarY + readBarH, readBarX + filledW, readBarY + readBarH);
     for (let x = 0; x < filledW; x += Math.round(4 * uiScale)) {
@@ -385,7 +330,6 @@ function drawSpectrumScan(alarmMode) {
     }
   }
 
-  // Bottom bar label
   noStroke();
   fill(M_RED[0], M_RED[1], M_RED[2], 100 * fade);
   textFont("monospace");

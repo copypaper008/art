@@ -156,27 +156,81 @@ function drawSubjectOverlay(s) {
   if (s.state === 'SCANNING') {
     const scanProgress = constrain((t - s.stateAt) / SCAN_DURATION, 0, 1);
     const imminent     = scanProgress > 0.85;
+    const sR = imminent ? 255 : M_RED[0];
+    const sG = imminent ? 80  : M_RED[1];
+    const sB = imminent ? 0   : M_RED[2];
 
-    // Sweep line across face — loops 3× during scan for activity
+    // Fine analysis grid within face box
+    strokeWeight(1);
+    stroke(sR, sG, sB, 20);
+    for (let col = 1; col < 6; col++) {
+      const gx = lerp(tlx, brx, col / 6);
+      line(gx, tly, gx, bry);
+    }
+    for (let row = 1; row < 9; row++) {
+      const gy = lerp(tly, bry, row / 9);
+      line(tlx, gy, brx, gy);
+    }
+
+    // Primary vertical sweep — loops 3× through the scan
     const sweepFrac = (scanProgress * 3) % 1;
     const sweepY    = lerp(tly, bry, sweepFrac);
-
-    // Glow trail above sweep
-    for (let dy = 1; dy <= 20; dy++) {
-      const a = map(dy, 0, 20, imminent ? 100 : 55, 0);
-      stroke(imminent ? 255 : M_RED[0], imminent ? 80 : M_RED[1], imminent ? 0 : M_RED[2], a);
+    for (let dy = 1; dy <= 22; dy++) {
+      stroke(sR, sG, sB, map(dy, 0, 22, imminent ? 100 : 60, 0));
       strokeWeight(1);
       if (sweepY - dy >= tly) line(tlx, sweepY - dy, brx, sweepY - dy);
     }
-    // Hard sweep line
-    stroke(imminent ? 255 : M_RED[0], imminent ? 80 : M_RED[1], imminent ? 0 : M_RED[2], imminent ? 255 : 210);
+    stroke(sR, sG, sB, imminent ? 255 : 210);
     strokeWeight(Math.max(1, Math.round(2 * uiScale)));
     line(tlx, sweepY, brx, sweepY);
+
+    // Secondary horizontal sweep — different rate, crosses the primary
+    const hFrac  = (scanProgress * 1.8 + 0.25) % 1;
+    const hSweepX = lerp(tlx, brx, hFrac);
+    for (let dx = 1; dx <= 14; dx++) {
+      stroke(sR, sG, sB, map(dx, 0, 14, 35, 0));
+      strokeWeight(1);
+      if (hSweepX - dx >= tlx) line(hSweepX - dx, tly, hSweepX - dx, bry);
+    }
+    stroke(sR, sG, sB, 100);
+    strokeWeight(1);
+    line(hSweepX, tly, hSweepX, bry);
+
     noStroke();
 
-    textAlign(CENTER, BOTTOM);
+    // Gapped crosshair at face centre with small centre box
+    const cHalf = Math.round(16 * uiScale);
+    const cGap  = Math.round(5  * uiScale);
+    stroke(sR, sG, sB, 80);
+    strokeWeight(1);
+    line(s.x - cHalf, s.y, s.x - cGap, s.y);
+    line(s.x + cGap,  s.y, s.x + cHalf, s.y);
+    line(s.x, s.y - cHalf, s.x, s.y - cGap);
+    line(s.x, s.y + cGap,  s.x, s.y + cHalf);
+    noFill();
+    stroke(sR, sG, sB, 100);
+    const boxH = Math.round(4 * uiScale);
+    rect(s.x - boxH, s.y - boxH, boxH * 2, boxH * 2);
+    noStroke();
 
-    // Phrase / RESULT IMMINENT above face
+    // Corner micro-labels
+    const microS = Math.max(6, Math.round(8 * uiScale));
+    textFont("monospace");
+    textSize(microS);
+    const pad2 = Math.round(3 * uiScale);
+    fill(sR, sG, sB, 90);
+    textAlign(LEFT, TOP);
+    text("ID:" + String(s.id).padStart(2, '0'), tlx + pad2, tly + pad2);
+    textAlign(RIGHT, TOP);
+    text(Math.round(s.w) + "×" + Math.round(s.h), brx - pad2, tly + pad2);
+    textAlign(LEFT, BOTTOM);
+    text("X:" + Math.round(s.x) + " Y:" + Math.round(s.y), tlx + pad2, bry - pad2);
+    textAlign(RIGHT, BOTTOM);
+    fill(sR, sG, sB, imminent ? 220 : 90);
+    text(Math.round(s.confidence) + "%", brx - pad2, bry - pad2);
+
+    // Scan phrase / RESULT IMMINENT above face
+    textAlign(CENTER, BOTTOM);
     if (imminent) {
       const flashA = sin(t * 0.022) > 0 ? 255 : 120;
       textFont("Arial");
@@ -187,30 +241,27 @@ function drawSubjectOverlay(s) {
       textStyle(NORMAL);
       textFont("monospace");
     } else {
-      fill(M_RED[0], M_RED[1], M_RED[2], 220);
+      fill(sR, sG, sB, 220);
       textFont("monospace");
       textSize(Math.max(11, Math.round(15 * uiScale)));
       text(s.scanLine, s.x, tly - Math.round(12 * uiScale));
     }
 
-    // Below face: hex data ticker then big confidence %
+    // Below face: hex ticker + big confidence %
     textAlign(CENTER, TOP);
     const belowY = bry + Math.round(8 * uiScale);
-
     if (s.hudDataTicker) {
-      fill(M_RED[0], M_RED[1], M_RED[2], 50);
+      fill(sR, sG, sB, 45);
       textFont("monospace");
       textSize(Math.max(6, Math.round(8 * uiScale)));
       text(s.hudDataTicker.substring(0, 36), s.x, belowY);
     }
-
     if (s.confidence > 1) {
-      const confPct = Math.round(s.confidence);
-      fill(M_RED[0], M_RED[1], M_RED[2], imminent ? 255 : 210);
+      fill(sR, sG, sB, imminent ? 255 : 210);
       textFont("monospace");
       textStyle(BOLD);
       textSize(Math.max(22, Math.round(38 * uiScale)));
-      text(confPct + "%", s.x, belowY + Math.round(14 * uiScale));
+      text(Math.round(s.confidence) + "%", s.x, belowY + Math.round(14 * uiScale));
       textStyle(NORMAL);
     }
 
