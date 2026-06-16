@@ -389,11 +389,15 @@ function drawPreCameraSpotlights() {
       intensity = 1.0;
     }
     if (intensity < 0.01) continue;
-    const glowW = s.w * 2.8;
-    const glowH = s.h * 2.8;
-    for (let i = 22; i > 0; i--) {
-      fill(255, 248, 220, map(i, 0, 22, 0, 100 * intensity));
-      ellipse(s.x, s.y, glowW * (i / 22), glowH * (i / 22));
+    // Use face w/h so spotlight matches face proportions
+    const glowW = s.w * 2.0;
+    const glowH = s.h * 2.2;
+    const rings = 28;
+    // Draw smallest ring last so center accumulates the most alpha (brightest)
+    for (let i = 1; i <= rings; i++) {
+      const frac = i / rings;
+      fill(255, 248, 215, map(frac, 0, 1, 120 * intensity, 0));
+      ellipse(s.x, s.y, glowW * frac, glowH * frac);
     }
   }
 }
