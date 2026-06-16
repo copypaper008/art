@@ -20,10 +20,8 @@ let uiScale = 1;
 let cam;
 let detectionGraphics;
 
-// Global session header
 let hudSessionId = "";
 
-// Idle phrase shown when no subjects are in frame
 let idlePhrase      = "";
 let idlePhraseTimer = 0;
 const IDLE_PHRASE_INTERVAL = 4000;
@@ -60,12 +58,12 @@ function draw() {
   runDetection(cam);
   faceTracker.update(detection.faces || []);
 
-  // Camera filter uses aggregate state across all subjects
   const anyAlarm    = faceTracker.hasAlarm();
   const allStraight = faceTracker.allStraight();
   const visualState = anyAlarm ? 'ALARM' : allStraight ? 'STRAIGHT' : 'OTHER';
 
   drawDistortedMirror(cam, visualState);
+  drawGrid();
 
   if (anyAlarm) {
     drawAlarmOverlay();
@@ -76,7 +74,6 @@ function draw() {
     drawSpectrumScan(anyAlarm);
     drawAllSubjectOverlays();
   } else {
-    // No tracked subjects — show raw detection reticles
     drawFaceOverlays(detection.faces, 'IDLE', detection.personCount, false);
   }
 
@@ -86,151 +83,178 @@ function draw() {
 }
 
 // ─────────────────────────────────────────────
-// Per-face overlay: reticle + state-specific text + confidence bar
+// Per-face overlay: reticle + state text + confidence bar
 
 function drawSubjectOverlay(s) {
   const tlx  = s.x - s.w * 0.55;
   const tly  = s.y - s.h * 0.6;
   const brx  = tlx + s.w * 1.1;
   const bry  = tly + s.h * 1.2;
-  const tick = Math.round(10 * uiScale);
+  const tick = Math.max(12, Math.round(18 * uiScale));
   const t    = millis();
 
   noFill();
 
+  // ── Reticle: angular L-brackets ──────────────────────────────────────────
   if (s.state === 'ALARM') {
     const hue     = (t * 0.3 + s.id * 60) % 360;
-    const flicker = random(0.7, 1.0);
+    const flicker = random(0.75, 1.0);
     colorMode(HSB, 360, 100, 100, 255);
-
-    stroke(hue, 80, 100, 18 * flicker);
-    strokeWeight(8);
-    rect(s.x - s.w * 0.6, s.y - s.h * 0.65, s.w * 1.2, s.h * 1.3, 4);
-
-    stroke(hue, 100, 100, 80 * flicker);
-    strokeWeight(2);
-    rect(tlx, tly, s.w * 1.1, s.h * 1.2, 2);
-
-    stroke((hue + 30) % 360, 100, 100, 200 * flicker);
-    strokeWeight(Math.max(1, Math.round(uiScale)));
-    line(tlx, tly, tlx + tick, tly);
-    line(tlx, tly, tlx, tly + tick);
-    line(brx - tick, bry, brx, bry);
-    line(brx, bry - tick, brx, bry);
+    const bW = Math.max(2, Math.round(3 * uiScale));
+    strokeWeight(bW);
+    stroke(hue, 90, 100, 200 * flicker);
+    line(tlx, tly, tlx + tick, tly); line(tlx, tly, tlx, tly + tick);
+    stroke((hue + 90) % 360, 90, 100, 200 * flicker);
+    line(brx - tick, tly, brx, tly); line(brx, tly, brx, tly + tick);
+    stroke((hue + 180) % 360, 90, 100, 200 * flicker);
+    line(tlx, bry - tick, tlx, bry); line(tlx, bry, tlx + tick, bry);
+    stroke((hue + 270) % 360, 90, 100, 200 * flicker);
+    line(brx - tick, bry, brx, bry); line(brx, bry - tick, brx, bry);
+    stroke(hue, 55, 100, 12 * flicker);
+    strokeWeight(1);
+    rect(tlx, tly, s.w * 1.1, s.h * 1.2);
     colorMode(RGB, 255);
   } else {
-    const flicker = random(0.85, 1.0);
-    stroke(0, 255, 120, 35 * flicker);
-    strokeWeight(8);
-    rect(s.x - s.w * 0.6, s.y - s.h * 0.65, s.w * 1.2, s.h * 1.3, 4);
-    stroke(0, 255, 120, 55 * flicker);
+    const flicker = random(0.88, 1.0);
+    const bW = Math.max(2, Math.round(3 * uiScale));
+    strokeWeight(bW);
+    stroke(M_RED[0], M_RED[1], M_RED[2], 140 * flicker);
+    line(tlx, tly, tlx + tick, tly); line(tlx, tly, tlx, tly + tick);
+    line(brx - tick, tly, brx, tly); line(brx, tly, brx, tly + tick);
+    line(tlx, bry - tick, tlx, bry); line(tlx, bry, tlx + tick, bry);
+    line(brx - tick, bry, brx, bry); line(brx, bry - tick, brx, bry);
+    stroke(M_RED[0], M_RED[1], M_RED[2], 16 * flicker);
     strokeWeight(1);
-    rect(tlx, tly, s.w * 1.1, s.h * 1.2, 2);
-    stroke(0, 255, 120, 80 * flicker);
-    strokeWeight(Math.max(1, Math.round(uiScale)));
-    line(tlx, tly, tlx + tick, tly);
-    line(tlx, tly, tlx, tly + tick);
-    line(brx - tick, bry, brx, bry);
-    line(brx, bry - tick, brx, bry);
+    rect(tlx, tly, s.w * 1.1, s.h * 1.2);
   }
   noStroke();
 
   // ── Per-state text ────────────────────────────────────────────────────────
-  const textAbove = tly - Math.round(10 * uiScale);
-  const textBelow = bry + Math.round(8  * uiScale);
-  const xl        = Math.max(12, Math.round(20 * uiScale));
-  const md        = Math.max(9,  Math.round(12 * uiScale));
-  const sm        = Math.max(7,  Math.round(9  * uiScale));
-
-  textFont("monospace");
-  noStroke();
   textAlign(CENTER, BOTTOM);
+  textFont("monospace");
 
   if (s.state === 'IDLE') {
     const pulse = (sin(t * 0.004) + 1) / 2;
-    fill(0, 255, 120, 70 + pulse * 60);
+    fill(M_RED[0], M_RED[1], M_RED[2], 55 + pulse * 75);
     textSize(Math.max(7, Math.round(9 * uiScale)));
-    text("STAND BY", s.x, tly - Math.round(10 * uiScale));
+    text("STAND BY", s.x, tly - Math.round(8 * uiScale));
   }
 
   if (s.state === 'SCANNING') {
-    fill(0, 255, 120, 200);
-    textSize(md);
-    text(s.scanLine, s.x, textAbove);
+    fill(M_RED[0], M_RED[1], M_RED[2], 215);
+    textSize(Math.max(9, Math.round(12 * uiScale)));
+    text(s.scanLine, s.x, tly - Math.round(10 * uiScale));
 
     if (s.confidence > 1) {
       const barW = Math.min(s.w * 1.4, Math.round(200 * uiScale));
-      const barH = Math.max(2, Math.round(3 * uiScale));
+      const barH = Math.max(3, Math.round(4 * uiScale));
       const barX = s.x - barW * 0.5;
+      const barY = bry + Math.round(8 * uiScale);
       noFill();
-      stroke(0, 255, 120, 60);
+      stroke(M_RED[0], M_RED[1], M_RED[2], 45);
       strokeWeight(1);
-      rect(barX, textBelow, barW, barH);
+      rect(barX, barY, barW, barH);
       noStroke();
-      fill(0, 255, 120, 160);
-      rect(barX, textBelow, barW * (s.confidence / 100), barH);
+      fill(M_RED[0], M_RED[1], M_RED[2], 185);
+      rect(barX, barY, barW * (s.confidence / 100), barH);
       noFill();
     }
   }
 
   if (s.state === 'STRAIGHT') {
-    const xlS  = Math.max(14, Math.round(20 * uiScale));
+    const xlS  = Math.max(14, Math.round(22 * uiScale));
     const mdS  = Math.max(10, Math.round(13 * uiScale));
     const smS  = Math.max(7,  Math.round(9  * uiScale));
-    const gap  = Math.round(8 * uiScale);
+    const gap  = Math.round(10 * uiScale);
     const subN = (s.straightSub.match(/\n/g) || []).length + 1;
-    const subH = Math.round(mdS * 1.4 * subN);
+    const subH = Math.round(mdS * 1.45 * subN);
+    const ruleW = Math.min(s.w * 2.4, Math.round(300 * uiScale));
 
-    const baseY = tly - Math.round(10 * uiScale);
+    const baseY  = tly - Math.round(12 * uiScale);
+    const ruleY  = baseY - Math.round(smS * 1.5) - Math.round(gap * 0.6);
+    const subBot = ruleY - gap;
+    const headBot = subBot - subH - gap;
 
-    // Dismissal — closest to face
-    fill(0, 255, 120, 130);
+    // Dismissal — dimmed grey, closest to face
+    fill(180, 180, 180, 80);
+    textFont("monospace");
     textSize(smS);
     text(s.straightNext, s.x, baseY);
 
-    // Middle description (1–2 lines)
-    fill(0, 255, 120, 200);
-    textSize(mdS);
-    textLeading(Math.round(mdS * 1.4));
-    text(s.straightSub, s.x, baseY - Math.round(smS * 1.4 + gap));
+    // Red rule
+    stroke(M_RED[0], M_RED[1], M_RED[2], 70);
+    strokeWeight(1);
+    line(s.x - ruleW * 0.5, ruleY, s.x + ruleW * 0.5, ruleY);
+    noStroke();
 
-    // Headline — topmost, largest
-    fill(0, 255, 120, 255);
+    // Sub description — red monospace
+    fill(M_RED[0], M_RED[1], M_RED[2], 185);
+    textFont("monospace");
+    textSize(mdS);
+    textLeading(Math.round(mdS * 1.45));
+    text(s.straightSub, s.x, subBot);
+
+    // Headline — bold white Arial
+    textFont("Arial");
+    textStyle(BOLD);
+    fill(255, 255, 255, 245);
     textSize(xlS);
-    text(s.straightPhrase, s.x, baseY - Math.round(smS * 1.4 + gap) - subH - gap);
+    text(s.straightPhrase, s.x, headBot);
+    textStyle(NORMAL);
+    textFont("monospace");
   }
 
   if (s.state === 'ALARM') {
     const flash = sin(t * 0.012) > 0;
-    const textA = flash ? 255 : 190;
-    const xlS   = Math.max(14, Math.round(22 * uiScale));
+    const textA = flash ? 255 : 195;
+    const xlS   = Math.max(16, Math.round(24 * uiScale));
     const mdS   = Math.max(10, Math.round(13 * uiScale));
-    const smS   = Math.max(9,  Math.round(11 * uiScale));
-    const gap   = Math.round(8 * uiScale);
+    const smS   = Math.max(10, Math.round(14 * uiScale));
+    const gap   = Math.round(10 * uiScale);
     const subN  = (s.alarmSub.match(/\n/g) || []).length + 1;
-    const subH  = Math.round(mdS * 1.4 * subN);
+    const subH  = Math.round(mdS * 1.45 * subN);
+    const ruleW = Math.min(s.w * 2.4, Math.round(300 * uiScale));
 
-    const baseY = tly - Math.round(10 * uiScale);
+    const baseY  = tly - Math.round(12 * uiScale);
+    const ruleY  = baseY - Math.round(smS * 1.5) - Math.round(gap * 0.6);
+    const subBot = ruleY - gap;
+    const headBot = subBot - subH - gap;
 
-    // Closer — bottom, punchy, cycling rainbow
+    // Closer — large, cycling rainbow
     colorMode(HSB, 360, 100, 100, 255);
     fill((t * 0.3 + s.id * 30) % 360, 95, 100, textA);
     colorMode(RGB, 255);
+    textFont("monospace");
+    textStyle(BOLD);
     textSize(smS);
     text(s.alarmNext, s.x, baseY);
+    textStyle(NORMAL);
 
-    // Sub description — middle, rainbow offset
+    // Rainbow rule
+    colorMode(HSB, 360, 100, 100, 255);
+    stroke((t * 0.2 + s.id * 40) % 360, 90, 100, 130);
+    strokeWeight(Math.max(1, Math.round(2 * uiScale)));
+    line(s.x - ruleW * 0.5, ruleY, s.x + ruleW * 0.5, ruleY);
+    noStroke();
+    colorMode(RGB, 255);
+
+    // Sub description — rainbow monospace
     colorMode(HSB, 360, 100, 100, 255);
     fill((t * 0.25 + s.id * 45 + 120) % 360, 90, 100, textA);
     colorMode(RGB, 255);
+    textFont("monospace");
     textSize(mdS);
-    textLeading(Math.round(mdS * 1.4));
-    text(s.alarmSub, s.x, baseY - Math.round(smS * 1.4 + gap));
+    textLeading(Math.round(mdS * 1.45));
+    text(s.alarmSub, s.x, subBot);
 
-    // Headline — top, large, white flash
+    // Headline — bold white Arial, flashing
+    textFont("Arial");
+    textStyle(BOLD);
     fill(255, 255, 255, textA);
     textSize(xlS);
-    text(s.alarmPrimary, s.x, baseY - Math.round(smS * 1.4 + gap) - subH - gap);
+    text(s.alarmPrimary, s.x, headBot);
+    textStyle(NORMAL);
+    textFont("monospace");
   }
 }
 
@@ -239,7 +263,7 @@ function drawAllSubjectOverlays() {
 }
 
 // ─────────────────────────────────────────────
-// Global HUD: header + idle phrase + multi-subject list + bottom tagline
+// Global HUD
 
 function drawGlobalHUD() {
   const pad      = Math.round(24 * uiScale);
@@ -256,28 +280,51 @@ function drawGlobalHUD() {
       fill((t * 0.2) % 360, 90, 100, a);
       colorMode(RGB, 255);
     } else {
-      fill(0, 255, 120, a);
+      fill(M_RED[0], M_RED[1], M_RED[2], a);
+    }
+  }
+
+  function _hStroke(a) {
+    if (anyAlarm) {
+      colorMode(HSB, 360, 100, 100, 255);
+      stroke((t * 0.2) % 360, 90, 100, a);
+      colorMode(RGB, 255);
+    } else {
+      stroke(M_RED[0], M_RED[1], M_RED[2], a);
     }
   }
 
   // ── Header ───────────────────────────────────────────────────────────────
   noStroke();
-  textFont("monospace");
   textAlign(LEFT, TOP);
-  _hFill(180);
-  textSize(sm);
-  text("GAYDAR DETECTION SYSTEM / ACTIVE", pad, pad * 0.8);
-  _hFill(100);
+
+  textFont("monospace");
+  textStyle(BOLD);
+  _hFill(210);
+  textSize(Math.max(9, Math.round(13 * uiScale)));
+  text("RECOGNITION ENGINE", pad, pad * 0.8);
+  textStyle(NORMAL);
+
+  _hFill(90);
   textSize(xs);
-  text("SESSION: " + hudSessionId, pad, pad * 0.8 + lh * 1.1);
+  text("GAYDAR DETECTION SYSTEM  /  SESSION: " + hudSessionId, pad, pad * 0.8 + lh * 1.25);
+
+  // Rule under header
+  _hStroke(40);
+  strokeWeight(1);
+  line(pad, pad * 0.8 + lh * 2.1, Math.round(width * 0.44), pad * 0.8 + lh * 2.1);
+  noStroke();
 
   // Subject count — top right
   textAlign(RIGHT, TOP);
-  _hFill(180);
+  textFont("monospace");
+  textStyle(BOLD);
+  _hFill(200);
   textSize(sm);
   text("SUBJECTS: " + String(faceTracker.subjects.length).padStart(2, '0'), width - pad, pad * 0.8);
+  textStyle(NORMAL);
 
-  // ── Alarm global extras ───────────────────────────────────────────────────
+  // ── Alarm extras ─────────────────────────────────────────────────────────
   if (anyAlarm) {
     const flash  = sin(t * 0.012) > 0;
     const flash2 = sin(t * 0.018) > 0;
@@ -300,13 +347,14 @@ function drawGlobalHUD() {
 
     textAlign(CENTER, BOTTOM);
     colorMode(HSB, 360, 100, 100, 255);
-    fill((t * 0.2 + 180) % 360, 85, 100, flash ? 180 : 80);
+    fill((t * 0.2 + 180) % 360, 85, 100, flash ? 180 : 75);
     colorMode(RGB, 255);
     textSize(Math.max(7, Math.round(10 * uiScale)));
+    textFont("monospace");
     text("PRIDE RESPONSE PROTOCOL INITIATED — ALL UNITS RESPOND", width * 0.5, height - Math.round(12 * uiScale));
   }
 
-  // ── No subjects: idle phrase ──────────────────────────────────────────────
+  // ── Idle phrase (no subjects) ─────────────────────────────────────────────
   if (faceTracker.subjects.length === 0) {
     const now = millis();
     if (now - idlePhraseTimer > IDLE_PHRASE_INTERVAL) {
@@ -315,23 +363,24 @@ function drawGlobalHUD() {
     }
     const pulse = (sin(now * 0.002) + 1) / 2;
     noStroke();
-    fill(0, 255, 120, 80 + pulse * 80);
+    fill(M_RED[0], M_RED[1], M_RED[2], 65 + pulse * 90);
     textSize(md);
     textAlign(CENTER, CENTER);
+    textFont("monospace");
     text(idlePhrase, width * 0.5, height * 0.44);
   }
 
-  // ── Multi-subject state list (left panel, only when >1 subject) ───────────
+  // ── Multi-subject list (>1 subject) ──────────────────────────────────────
   if (faceTracker.subjects.length > 1) {
     const listY = Math.round(130 * uiScale);
     const lineH = Math.round(18 * uiScale);
-    _hudLabel("ACTIVE SUBJECTS", pad, listY, sm, [0, 255, 120]);
+    _hudLabel("ACTIVE SUBJECTS", pad, listY, sm, M_RED);
     textAlign(LEFT, TOP);
     textFont("monospace");
     for (let i = 0; i < faceTracker.subjects.length; i++) {
       const s    = faceTracker.subjects[i];
       const rowY = listY + Math.round(sm * 1.6) + Math.round(lineH * 1.2) + i * lineH;
-      fill(0, 255, 120, 90);
+      fill(M_RED[0], M_RED[1], M_RED[2], 75);
       textSize(xs);
       text("SUBJ " + String(i + 1).padStart(2, '0') + ":", pad, rowY);
       if (s.state === 'ALARM') {
@@ -339,7 +388,7 @@ function drawGlobalHUD() {
         fill((t * 0.25 + i * 60) % 360, 90, 100, 220);
         colorMode(RGB, 255);
       } else {
-        fill(0, 255, 120, 200);
+        fill(M_RED[0], M_RED[1], M_RED[2], 185);
       }
       const confStr = s.confidence > 1 ? "  " + Math.round(s.confidence) + "%" : "";
       text(s.state + confStr, pad + Math.round(55 * uiScale), rowY);
@@ -349,9 +398,10 @@ function drawGlobalHUD() {
   // ── Bottom tagline ────────────────────────────────────────────────────────
   if (!anyAlarm) {
     noStroke();
-    fill(0, 255, 120, 55);
+    fill(M_RED[0], M_RED[1], M_RED[2], 35);
     textSize(xs);
     textAlign(CENTER, BOTTOM);
+    textFont("monospace");
     text("◆  NOTHING IS EVER FULLY SEEN  ◆", width * 0.5, height - Math.round(12 * uiScale));
   }
 
