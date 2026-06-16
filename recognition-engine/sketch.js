@@ -244,10 +244,13 @@ function drawSubjectOverlay(s) {
       textStyle(NORMAL);
       textFont("monospace");
     } else {
+      const charsShow = Math.min(s.scanLine.length, Math.floor((t - s.scanLineTimer) / 42));
+      const typedLine = s.scanLine.substring(0, charsShow);
+      const cursor    = charsShow < s.scanLine.length ? '_' : '';
       fill(sR, sG, sB, 220);
       textFont("monospace");
-      textSize(Math.max(11, Math.round(15 * uiScale)));
-      text(s.scanLine, s.x, tly - Math.round(12 * uiScale));
+      textSize(Math.max(14, Math.round(22 * uiScale)));
+      text(typedLine + cursor, s.x, tly - Math.round(16 * uiScale));
     }
 
     // Below face: hex ticker + big confidence %

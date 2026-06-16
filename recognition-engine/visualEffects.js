@@ -389,11 +389,11 @@ function drawPreCameraSpotlights() {
       intensity = 1.0;
     }
     if (intensity < 0.01) continue;
-    const glowR = Math.max(s.w, s.h) * 1.7;
+    const glowW = s.w * 2.8;
+    const glowH = s.h * 2.8;
     for (let i = 22; i > 0; i--) {
-      const r = glowR * (i / 22);
       fill(255, 248, 220, map(i, 0, 22, 0, 100 * intensity));
-      ellipse(s.x, s.y, r, r * 1.4);
+      ellipse(s.x, s.y, glowW * (i / 22), glowH * (i / 22));
     }
   }
 }
