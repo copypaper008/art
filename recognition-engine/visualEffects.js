@@ -44,21 +44,30 @@ function drawDistortedMirror(videoCapture, currentState) {
   }
   noTint();
 
+  // Camera composited semi-transparently over the background image.
+  // The viewer becomes a ghost in the machine's architecture.
   if (currentState === "ALARM") {
+    // Rainbow fully visible — the architecture is overwhelmed by pride
+    drawingContext.globalAlpha = 0.72;
     const hue = (millis() * 0.18) % 360;
-    drawingContext.filter = `hue-rotate(${hue}deg) saturate(200%) brightness(1.05)`;
+    drawingContext.filter = `hue-rotate(${hue}deg) saturate(220%) brightness(1.1)`;
     image(rippleBuffer, 0, 0);
     drawingContext.filter = "none";
+    drawingContext.globalAlpha = 1.0;
   } else if (currentState === "STRAIGHT") {
-    // Punishing: pitch-dark monochrome
-    drawingContext.filter = "grayscale(100%) brightness(0.42) contrast(1.4)";
+    // Dark monochrome ghost — the bunker dominates, cold and institutional
+    drawingContext.globalAlpha = 0.50;
+    drawingContext.filter = "grayscale(100%) brightness(0.38) contrast(1.5)";
     image(rippleBuffer, 0, 0);
     drawingContext.filter = "none";
+    drawingContext.globalAlpha = 1.0;
   } else {
-    // Constructivist scanning: heavily desaturated so red UI elements dominate
-    drawingContext.filter = "saturate(12%) brightness(0.52) contrast(1.5)";
+    // Scanning: viewer is a reflection the machine can't fully see through
+    drawingContext.globalAlpha = 0.45;
+    drawingContext.filter = "saturate(8%) brightness(0.55) contrast(1.6)";
     image(rippleBuffer, 0, 0);
     drawingContext.filter = "none";
+    drawingContext.globalAlpha = 1.0;
   }
 
   if (frameCount % 3 === 0) {

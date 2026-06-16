@@ -19,12 +19,17 @@ const HUD_LOG_SEQ = [
 let uiScale = 1;
 let cam;
 let detectionGraphics;
+let bgImage;
 
 let hudSessionId = "";
 
 let idlePhrase      = "";
 let idlePhraseTimer = 0;
 const IDLE_PHRASE_INTERVAL = 4000;
+
+function preload() {
+  bgImage = loadImage('./bg.png');
+}
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -54,6 +59,14 @@ function setup() {
 function draw() {
   background(0);
   uiScale = height / 1080;
+
+  // Background architecture — the bunker the machine inhabits
+  if (bgImage) {
+    const bScale = Math.max(width / bgImage.width, height / bgImage.height);
+    const bw = bgImage.width  * bScale;
+    const bh = bgImage.height * bScale;
+    image(bgImage, (width - bw) * 0.5, (height - bh) * 0.5, bw, bh);
+  }
 
   runDetection(cam);
   faceTracker.update(detection.faces || []);
