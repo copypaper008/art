@@ -159,6 +159,35 @@ function _drawHeart(cx, cy, r) {
   endShape(CLOSE);
 }
 
+function _drawLips(cx, cy, w) {
+  const h  = w * 0.52;
+  const bW = Math.max(3, Math.round(5 * uiScale));
+  push();
+  translate(cx, cy);
+  strokeWeight(bW);
+  stroke(0, 0, 0, 220);
+  // Bottom lip — fuller
+  colorMode(HSB, 360, 100, 100, 255);
+  fill((millis() * 0.05 + 330) % 360, 85, 95, 235);
+  colorMode(RGB, 255);
+  arc(0, h * 0.12, w * 0.92, h, 0, PI, CHORD);
+  // Top lip — cupid's bow (two bumps)
+  colorMode(HSB, 360, 100, 100, 255);
+  fill((millis() * 0.05 + 350) % 360, 90, 90, 235);
+  colorMode(RGB, 255);
+  arc(-w * 0.24, -h * 0.08, w * 0.52, h * 0.72, PI, TWO_PI, CHORD);
+  arc( w * 0.24, -h * 0.08, w * 0.52, h * 0.72, PI, TWO_PI, CHORD);
+  // Centre divider
+  stroke(0, 0, 0, 160);
+  strokeWeight(Math.max(1, Math.round(2 * uiScale)));
+  line(-w * 0.5, 0, w * 0.5, 0);
+  // Gloss
+  noStroke();
+  fill(255, 255, 255, 55);
+  ellipse(0, h * 0.28, w * 0.38, h * 0.2);
+  pop();
+}
+
 // ── Alarm overlay ─────────────────────────────────────────────────────────────
 function drawAlarmOverlay() {
   const t     = millis();
@@ -179,51 +208,125 @@ function drawAlarmOverlay() {
   noStroke();
 
   // ── Pop-art gay iconography ───────────────────────────────────────────────
-  const starR  = Math.max(22, Math.round(52 * uiScale));
-  const heartR = Math.max(16, Math.round(38 * uiScale));
-  const bW     = Math.max(3,  Math.round(5  * uiScale));
+  const starR  = Math.max(30, Math.round(72 * uiScale));
+  const heartR = Math.max(22, Math.round(58 * uiScale));
+  const lipW   = Math.max(55, Math.round(130 * uiScale));
+  const bW     = Math.max(3,  Math.round(5   * uiScale));
 
-  // Corner stars — each rotates and cycles through rainbow
-  const stars = [
-    { x: width*0.10, y: height*0.11, rot:  t*0.0004,  hue: (t*0.08)      %360 },
-    { x: width*0.90, y: height*0.11, rot: -t*0.00035, hue: (t*0.08+80)   %360 },
-    { x: width*0.10, y: height*0.89, rot:  t*0.00045, hue: (t*0.08+160)  %360 },
-    { x: width*0.90, y: height*0.89, rot: -t*0.0004,  hue: (t*0.08+240)  %360 },
-  ];
   colorMode(HSB, 360, 100, 100, 255);
+
+  // Corner stars — rotating, large
+  const stars = [
+    { x: width*0.10, y: height*0.12, rot:  t*0.00042, hue: (t*0.08)     %360 },
+    { x: width*0.90, y: height*0.12, rot: -t*0.00038, hue: (t*0.08+90)  %360 },
+    { x: width*0.10, y: height*0.88, rot:  t*0.00046, hue: (t*0.08+180) %360 },
+    { x: width*0.90, y: height*0.88, rot: -t*0.00042, hue: (t*0.08+270) %360 },
+  ];
   for (const st of stars) {
-    // Black drop shadow
-    fill(0, 0, 0, 200);
-    noStroke();
+    fill(0, 0, 0, 200); noStroke();
     _drawStar(st.x + bW, st.y + bW, starR, st.rot);
-    // Coloured star with black outline
-    fill(st.hue, 95, 100, 240);
-    stroke(0, 0, 0, 220);
-    strokeWeight(bW);
+    fill(st.hue, 95, 100, 245); stroke(0, 0, 0, 225); strokeWeight(bW);
     _drawStar(st.x, st.y, starR, st.rot);
   }
 
-  // Floating hearts — pulsing scale
+  // Pulsing hearts
   const hearts = [
-    { x: width*0.20, y: height*0.20, hue: (t*0.1+300)%360, ph: 0    },
-    { x: width*0.80, y: height*0.20, hue: (t*0.1+60) %360, ph: 1.1  },
-    { x: width*0.50, y: height*0.83, hue: (t*0.1+180)%360, ph: 2.2  },
+    { x: width*0.18, y: height*0.22, hue: (t*0.1+300)%360, ph: 0   },
+    { x: width*0.82, y: height*0.22, hue: (t*0.1+60) %360, ph: 1.1 },
+    { x: width*0.50, y: height*0.82, hue: (t*0.1+180)%360, ph: 2.2 },
   ];
   for (const h of hearts) {
-    const r = heartR * (1 + sin(t * 0.003 + h.ph) * 0.22);
-    // Shadow
-    fill(0, 0, 0, 185);
-    noStroke();
+    const r = heartR * (1 + sin(t * 0.003 + h.ph) * 0.25);
+    fill(0, 0, 0, 190); noStroke();
     _drawHeart(h.x + bW, h.y + bW, r);
-    // Colour fill
-    fill(h.hue, 90, 100, 230);
-    stroke(0, 0, 0, 200);
-    strokeWeight(bW);
+    fill(h.hue, 92, 100, 235); stroke(0, 0, 0, 210); strokeWeight(bW);
     _drawHeart(h.x, h.y, r);
   }
+
+  // Lips — left and right sides, pulsing
+  colorMode(RGB, 255);
+  const lipPulse = 1 + sin(t * 0.004) * 0.12;
+  _drawLips(width * 0.15, height * 0.48, lipW * lipPulse);
+  _drawLips(width * 0.85, height * 0.48, lipW * (1 + sin(t * 0.004 + 1.5) * 0.12));
+
   colorMode(RGB, 255);
   noStroke();
   noFill();
+}
+
+// ── Shooting stars ────────────────────────────────────────────────────────────
+let _shootStars = [];
+
+function _newShootStar() {
+  const fromLeft = random() < 0.5;
+  const spd = random(9, 18) * uiScale;
+  return {
+    x:     fromLeft ? random(-30, width * 0.25) : random(width * 0.75, width + 30),
+    y:     random(-40, height * 0.55),
+    vx:    fromLeft ?  spd * random(0.9, 1.5) : -spd * random(0.9, 1.5),
+    vy:    spd * random(0.4, 0.9),
+    r:     random(5, 11) * uiScale,
+    hue:   random(360),
+    trail: [],
+  };
+}
+
+function drawShootingStars() {
+  while (_shootStars.length < 7) _shootStars.push(_newShootStar());
+  colorMode(HSB, 360, 100, 100, 255);
+  noStroke();
+  _shootStars = _shootStars.filter(s => {
+    s.x += s.vx; s.y += s.vy;
+    s.trail.unshift({ x: s.x, y: s.y });
+    if (s.trail.length > 22) s.trail.pop();
+    s.hue = (s.hue + 5) % 360;
+    for (let i = 0; i < s.trail.length; i++) {
+      fill((s.hue + i * 16) % 360, 95, 100, map(i, 0, s.trail.length, 210, 0));
+      circle(s.trail[i].x, s.trail[i].y, s.r * map(i, 0, s.trail.length, 1.8, 0.1) * 2);
+    }
+    fill(60, 5, 100, 255); // bright white-yellow head
+    circle(s.x, s.y, s.r * 2.8);
+    return s.x > -100 && s.x < width + 100 && s.y < height + 100;
+  });
+  colorMode(RGB, 255);
+}
+
+// ── Fireworks ─────────────────────────────────────────────────────────────────
+let _fireworks   = [];
+let _lastFwTime  = 0;
+
+function _launchFirework() {
+  const now = millis();
+  if (now - _lastFwTime < random(450, 850)) return;
+  _lastFwTime = now;
+  const hue0 = random(360);
+  _fireworks.push({
+    x: random(width * 0.15, width * 0.85),
+    y: random(height * 0.06, height * 0.52),
+    parts: Array.from({ length: 28 }, (_, i) => ({
+      a:   (i / 28) * TWO_PI,
+      r:   0,
+      spd: random(2.5, 7) * uiScale,
+      hue: (hue0 + i * (360 / 28)) % 360,
+    })),
+    life: 1.0,
+  });
+}
+
+function drawFireworks() {
+  colorMode(HSB, 360, 100, 100, 255);
+  noStroke();
+  _fireworks = _fireworks.filter(fw => fw.life > 0.04);
+  for (const fw of _fireworks) {
+    fw.life -= 0.015;
+    const sz = map(fw.life, 0, 1, 2, 7) * uiScale;
+    for (const p of fw.parts) {
+      p.r += p.spd * fw.life;
+      fill(p.hue, 92, 100, fw.life * 230);
+      circle(fw.x + cos(p.a) * p.r, fw.y + sin(p.a) * p.r, sz);
+    }
+  }
+  colorMode(RGB, 255);
 }
 
 function clearGhostTrails() {
@@ -274,30 +377,25 @@ function drawParticles() {
   noFill();
 }
 
-// ── Face glow — subtle spotlight, tight around the face ──────────────────────
-function drawFaceGlow(s) {
-  const t     = millis();
-  const glowR = Math.max(s.w, s.h) * 0.85; // stays close to face
-  const steps = 16;
-  blendMode(SCREEN);
+// ── Pre-camera spotlight — drawn BEFORE camera so light shows through opacity ─
+// Builds gradually as the scan progresses — feels like being illuminated
+function drawPreCameraSpotlights() {
   noStroke();
-  if (s.state === 'ALARM') {
-    colorMode(HSB, 360, 100, 100, 255);
-    const hue = (t * 0.25 + s.id * 40) % 360;
-    for (let i = steps; i > 0; i--) {
-      fill(hue, 60, 100, map(i, 0, steps, 0, 18));
-      ellipse(s.x, s.y, glowR * i / steps, glowR * 1.25 * i / steps);
+  for (const s of faceTracker.subjects) {
+    let intensity = 0;
+    if (s.state === 'SCANNING') {
+      intensity = constrain((millis() - s.stateAt) / SCAN_DURATION, 0, 1);
+    } else if (s.state === 'STRAIGHT' || s.state === 'ALARM') {
+      intensity = 1.0;
     }
-    colorMode(RGB, 255);
-  } else {
-    const pulse = s.state === 'SCANNING' ? 0.85 + sin(t * 0.005) * 0.15 : 1.0;
-    for (let i = steps; i > 0; i--) {
-      fill(255, 248, 225, map(i, 0, steps, 0, 18 * pulse));
-      ellipse(s.x, s.y, glowR * i / steps, glowR * 1.25 * i / steps);
+    if (intensity < 0.01) continue;
+    const glowR = Math.max(s.w, s.h) * 1.7;
+    for (let i = 22; i > 0; i--) {
+      const r = glowR * (i / 22);
+      fill(255, 248, 220, map(i, 0, 22, 0, 100 * intensity));
+      ellipse(s.x, s.y, r, r * 1.4);
     }
   }
-  blendMode(BLEND);
-  noFill();
 }
 
 // ── Face targeting brackets — shown when no tracked subjects yet ──────────────

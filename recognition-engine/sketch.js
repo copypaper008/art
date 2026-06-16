@@ -75,11 +75,15 @@ function draw() {
   const allStraight = faceTracker.allStraight();
   const visualState = anyAlarm ? 'ALARM' : allStraight ? 'STRAIGHT' : 'OTHER';
 
+  if (faceTracker.subjects.length > 0) drawPreCameraSpotlights();
   drawDistortedMirror(cam, visualState);
   drawGrid();
 
   if (anyAlarm) {
     drawAlarmOverlay();
+    _launchFirework();
+    drawFireworks();
+    drawShootingStars();
     drawParticles();
   }
 
@@ -104,9 +108,6 @@ function drawSubjectOverlay(s) {
   const bry  = tly + s.h * 1.2;
   const tick = Math.max(16, Math.round(22 * uiScale));
   const t    = millis();
-
-  // Glow under everything — lifts face from dark background
-  drawFaceGlow(s);
 
   noFill();
 
