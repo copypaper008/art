@@ -219,16 +219,18 @@ function addGrain(canvas, amount = 18) {
 // ── Feathered oval mask ───────────────────────────────────────────────────
 
 /**
- * Create an offscreen canvas containing a soft-edged mask from faceOvalPts.
- * White (fully opaque) at the interior, black (transparent) outside, ~15px feather.
+ * Create an offscreen canvas with a feathered oval alpha mask from faceOvalPts.
+ * Fully opaque (alpha=255) inside the oval, fully transparent outside, ~15px feather.
+ * destination-in compositing clips by alpha, so the background must be transparent
+ * (not black) for the feathering to work.
  */
 function createFaceMask(w, h, faceOvalPts) {
+  // Draw the oval on a transparent canvas (no background fill).
+  // When blurred, the alpha channel tapers from 255 inside to 0 outside,
+  // giving a soft edge that works correctly with destination-in.
   const mc = document.createElement('canvas');
   mc.width = w; mc.height = h;
   const mCtx = mc.getContext('2d');
-
-  mCtx.fillStyle = 'black';
-  mCtx.fillRect(0, 0, w, h);
 
   mCtx.beginPath();
   mCtx.moveTo(faceOvalPts[0].x, faceOvalPts[0].y);
@@ -241,7 +243,6 @@ function createFaceMask(w, h, faceOvalPts) {
   mCtx.fillStyle = 'white';
   mCtx.fill();
 
-  // Feather by blurring the whole mask canvas
   const blurred = document.createElement('canvas');
   blurred.width = w; blurred.height = h;
   const bCtx = blurred.getContext('2d');
