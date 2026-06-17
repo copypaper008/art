@@ -9,7 +9,7 @@ class Subject {
   constructor(id, face) {
     this.id           = id;
     this.subjectKey   = random(['warhol', 'haring']);
-    this.capturedFaceDataUrl = null;  // set by sketch.js on first ALARM frame
+    this.determination = null;   // set by _generateAlarmData() on ALARM entry
     this.age = 0;
     this.x = face.x; this.y = face.y;
     this.w = face.w; this.h = face.h;
@@ -79,7 +79,7 @@ class Subject {
       this.alarmNext        = getRandomPhrase('alarmNext');
       this.alarmSubTimer    = millis();
       this.targetConfidence = 99;
-      this.capturedFaceDataUrl = null;  // reset so sketch.js re-captures on each ALARM
+      this.determination    = _generateAlarmData();
       triggerFlash();
     }
     if (s === 'IDLE') {
