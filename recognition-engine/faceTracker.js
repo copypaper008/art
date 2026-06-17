@@ -7,7 +7,8 @@ const MATCH_DIST_MULT = 1.8;  // max matching distance = face.w * this
 
 class Subject {
   constructor(id, face) {
-    this.id  = id;
+    this.id         = id;
+    this.subjectKey = random(['warhol', 'haring']);
     this.age = 0;
     this.x = face.x; this.y = face.y;
     this.w = face.w; this.h = face.h;

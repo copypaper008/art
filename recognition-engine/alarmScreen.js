@@ -66,7 +66,7 @@ function _addSubjectOverlay(subject) {
   iframe.src      = 'poster/index.html?kiosk=1';
   iframe.style.cssText = 'flex:1;border:none;display:block;height:100%;min-width:0;';
   iframe.addEventListener('load', () => {
-    iframe.contentWindow?.postMessage({ type: 'KIOSK_INIT', subjectKey: 'warhol' }, '*');
+    iframe.contentWindow?.postMessage({ type: 'KIOSK_INIT', subjectKey: subject.subjectKey }, '*');
   });
   container.appendChild(iframe);
   _subjectOverlays.set(subject.id, { iframe, subject });
