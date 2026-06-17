@@ -630,7 +630,8 @@ function _placeholderPortrait(w = 684, h = 816) {
  * @param {HTMLCanvasElement|string|null} compositedPortrait
  */
 async function renderPoster(canvas, config, determination, compositedPortrait = null) {
-  await document.fonts.ready;
+  // Give fonts up to 4s; on mobile they may never fully resolve otherwise
+  await Promise.race([document.fonts.ready, new Promise(r => setTimeout(r, 4000))]);
 
   canvas.width  = POSTER_W;
   canvas.height = POSTER_H;

@@ -70,50 +70,60 @@ function _ovalPath(ctx, oval) {
 }
 
 // ── Build composited portrait: captured face composited into face oval ────────
+// Returns null on any failure — renderPoster will fall back to the portrait URL.
 function _buildCompositedPortrait(portImg, anchors, capturedSnap, faceInfo) {
-  const c   = document.createElement('canvas');
-  c.width   = portImg.width;
-  c.height  = portImg.height;
-  const ctx = c.getContext('2d');
+  try {
+    // p5.Image stores pixel data on .canvas (HTMLCanvasElement)
+    const portSrc = portImg.canvas || portImg.elt || null;
+    if (!portSrc) return null;
 
-  // Portrait base — greyscale + slight contrast
-  ctx.filter = 'grayscale(1) contrast(1.05)';
-  ctx.drawImage(portImg.canvas, 0, 0);
-  ctx.filter = 'none';
+    const c   = document.createElement('canvas');
+    c.width   = portImg.width;
+    c.height  = portImg.height;
+    const ctx = c.getContext('2d');
 
-  if (capturedSnap && faceInfo) {
-    // Align captured face eyes to portrait face-anchor eyes
-    const portEyeMidX = (anchors.leftEye.x + anchors.rightEye.x) / 2;
-    const portEyeMidY = (anchors.leftEye.y + anchors.rightEye.y) / 2;
-    const portEyeDist = Math.hypot(
-      anchors.rightEye.x - anchors.leftEye.x,
-      anchors.rightEye.y - anchors.leftEye.y,
-    );
-
-    const captEyeX    = faceInfo.x;
-    const captEyeY    = faceInfo.y - faceInfo.h * 0.18;
-    const faceEyeDist = faceInfo.w * 0.46;
-    const faceScale   = portEyeDist / faceEyeDist;
-
-    const dx = portEyeMidX - captEyeX * faceScale;
-    const dy = portEyeMidY - captEyeY * faceScale;
-
-    ctx.save();
-    ctx.beginPath();
-    _ovalPath(ctx, anchors.faceOval);
-    ctx.clip();
+    // Portrait base — greyscale + slight contrast
     ctx.filter = 'grayscale(1) contrast(1.05)';
-    ctx.drawImage(
-      capturedSnap.elt,
-      dx, dy,
-      capturedSnap.width  * faceScale,
-      capturedSnap.height * faceScale,
-    );
+    ctx.drawImage(portSrc, 0, 0);
     ctx.filter = 'none';
-    ctx.restore();
-  }
 
-  return c;
+    if (capturedSnap && faceInfo && capturedSnap.elt) {
+      // Align captured face eyes to portrait face-anchor eyes
+      const portEyeMidX = (anchors.leftEye.x + anchors.rightEye.x) / 2;
+      const portEyeMidY = (anchors.leftEye.y + anchors.rightEye.y) / 2;
+      const portEyeDist = Math.hypot(
+        anchors.rightEye.x - anchors.leftEye.x,
+        anchors.rightEye.y - anchors.leftEye.y,
+      );
+
+      const captEyeX    = faceInfo.x;
+      const captEyeY    = faceInfo.y - faceInfo.h * 0.18;
+      const faceEyeDist = faceInfo.w * 0.46;
+      const faceScale   = portEyeDist / faceEyeDist;
+
+      const dx = portEyeMidX - captEyeX * faceScale;
+      const dy = portEyeMidY - captEyeY * faceScale;
+
+      ctx.save();
+      ctx.beginPath();
+      _ovalPath(ctx, anchors.faceOval);
+      ctx.clip();
+      ctx.filter = 'grayscale(1) contrast(1.05)';
+      ctx.drawImage(
+        capturedSnap.elt,
+        dx, dy,
+        capturedSnap.width  * faceScale,
+        capturedSnap.height * faceScale,
+      );
+      ctx.filter = 'none';
+      ctx.restore();
+    }
+
+    return c;
+  } catch (e) {
+    console.warn('GalleryReveal: portrait compositing failed, using plain portrait.', e);
+    return null;
+  }
 }
 
 // ── GalleryReveal ─────────────────────────────────────────────────────────────
@@ -132,39 +142,46 @@ class GalleryReveal {
     if (this.active || this._rendering) return;
     this._rendering = true;
 
-    // Freeze a mirrored camera frame so face coords match tracking space
-    if (this.capturedSnap) { this.capturedSnap.remove(); this.capturedSnap = null; }
-    const snap = createGraphics(width, height);
-    snap.pixelDensity(1);
-    if (typeof cam !== 'undefined' && cam && cam.elt && cam.elt.readyState >= 2) {
-      const sctx = snap.drawingContext;
-      sctx.save();
-      sctx.translate(width, 0);
-      sctx.scale(-1, 1);
-      sctx.drawImage(cam.elt, 0, 0, width, height);
-      sctx.restore();
+    try {
+      // Freeze a mirrored camera frame so face coords match tracking space
+      if (this.capturedSnap) { this.capturedSnap.remove(); this.capturedSnap = null; }
+      const snap = createGraphics(width, height);
+      snap.pixelDensity(1);
+      if (typeof cam !== 'undefined' && cam && cam.elt && cam.elt.readyState >= 2) {
+        const sctx = snap.drawingContext;
+        sctx.save();
+        sctx.translate(width, 0);
+        sctx.scale(-1, 1);
+        sctx.drawImage(cam.elt, 0, 0, width, height);
+        sctx.restore();
+      }
+      this.capturedSnap = snap;
+      this.faceInfo     = { x: subject.x, y: subject.y, w: subject.w, h: subject.h };
+      this.cardKey      = subject.subjectKey;
+
+      const config  = GALLERY_CONFIGS[this.cardKey];
+      const portImg = _portraitImages[this.cardKey];
+
+      // Composite captured face into portrait oval (returns null on failure)
+      let composited = null;
+      if (portImg && portImg.width > 0) {
+        composited = _buildCompositedPortrait(portImg, config.faceAnchors, snap, this.faceInfo);
+      }
+
+      // Render the full 1024×1536 poster
+      const canvas = document.createElement('canvas');
+      await renderPoster(canvas, config, generateDetermination(), composited);
+      this.posterCanvas = canvas;
+    } catch (err) {
+      console.error('GalleryReveal: poster render failed.', err);
+    } finally {
+      // Always clear _rendering — never leave the system stuck
+      this._rendering = false;
+      if (this.posterCanvas) {
+        this.startMs = millis();
+        this.active  = true;
+      }
     }
-    this.capturedSnap = snap;
-    this.faceInfo     = { x: subject.x, y: subject.y, w: subject.w, h: subject.h };
-    this.cardKey      = subject.subjectKey;
-
-    const config  = GALLERY_CONFIGS[this.cardKey];
-    const portImg = _portraitImages[this.cardKey];
-
-    // Composite captured face into portrait oval
-    let composited = null;
-    if (portImg && portImg.width > 0) {
-      composited = _buildCompositedPortrait(portImg, config.faceAnchors, snap, this.faceInfo);
-    }
-
-    // Render the full 1024×1536 poster
-    const canvas = document.createElement('canvas');
-    await renderPoster(canvas, config, generateDetermination(), composited);
-
-    this.posterCanvas = canvas;
-    this.startMs      = millis();
-    this.active       = true;
-    this._rendering   = false;
   }
 
   draw() {
