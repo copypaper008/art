@@ -15,9 +15,9 @@ class Subject {
     this.state   = 'IDLE';
     this.stateAt = millis();
 
-    // Scan counter + gay threshold (TESTING: every 2nd scan; change to floor(random(10,16)) for exhibition)
+    // Scan counter + gay threshold (TESTING: every scan = ALARM; change to floor(random(10,16)) for exhibition)
     this.scanCount = 0;
-    this.nextGayAt = 2;
+    this.nextGayAt = 1;
 
     // Text slots
     this.scanLine       = '';
@@ -118,7 +118,7 @@ class Subject {
         if (!present) { this.enterState('IDLE'); return; }
         this.scanCount++;
         if (this.scanCount >= this.nextGayAt) {
-          this.nextGayAt = this.scanCount + 2; // TESTING — change to + floor(random(10,16)) for exhibition
+          this.nextGayAt = this.scanCount + 1; // TESTING — change to + floor(random(10,16)) for exhibition
           this.enterState('ALARM');
         } else {
           this.enterState('STRAIGHT');
