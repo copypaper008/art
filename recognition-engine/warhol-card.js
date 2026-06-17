@@ -26,28 +26,9 @@ function renderWarholCard() {
       <div class="wc-reticle-tr"></div>
       <div class="wc-reticle-bl"></div>
       <div class="wc-reticle-br"></div>
-      <img class="wc-face" src="posters/warhol.png" />
     </div>
 
-    <div class="wc-cans">
-      ${[0, 200, 300, 330].map((hue, i) => `
-        <div class="wc-can" style="filter:hue-rotate(${hue}deg)">
-          <div class="wc-can-top"></div>
-          <div class="wc-can-body">
-            <div class="wc-can-red-top"></div>
-            <div class="wc-can-gold-band"></div>
-            <div class="wc-can-label">
-              <div class="wc-can-campbells">Campbell's</div>
-              <div class="wc-can-condensed">CONDENSED</div>
-              <div class="wc-can-soup">Tomato<br>SOUP</div>
-            </div>
-            <div class="wc-can-gold-band"></div>
-            <div class="wc-can-red-bot"></div>
-          </div>
-          <div class="wc-can-bottom"></div>
-        </div>
-      `).join('')}
-    </div>
+    <div class="wc-cans-frame"></div>
 
     <div class="wc-indicators">
       <span class="wc-label">INDICATORS DETECTED:</span>
@@ -69,4 +50,3 @@ function renderWarholCard() {
     </footer>
   </article>`;
 }
-

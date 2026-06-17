@@ -14,7 +14,7 @@
   box-shadow: 0 0 28px rgba(0,229,255,0.35);
 }
 
-/* Cyan dot grid over the whole card */
+/* Cyan dot grid over whole card */
 .wc-card::before {
   content: "";
   position: absolute;
@@ -24,7 +24,6 @@
   z-index: 0;
 }
 
-/* All direct children sit above the dot grid */
 .wc-card > * { position: relative; z-index: 1; }
 
 /* Scanline */
@@ -70,11 +69,12 @@
   font-family: Impact, sans-serif;
 }
 
-/* Title */
+/* Title — centred */
 .wc-hero {
   padding: 6px 10px 4px;
   flex-shrink: 0;
   line-height: 1;
+  text-align: center;
 }
 
 .wc-hero h1 {
@@ -123,29 +123,24 @@
   text-transform: uppercase;
 }
 
-/* Figure stage */
+/* ── Figure stage — poster cropped to face only ───────────────────────────
+   The poster (614×1024) is scaled to 130% width and anchored so that
+   only the portrait area (≈ y 26-64% of the original) is visible.      */
 .wc-figure-stage {
   position: relative;
   flex: 1;
   min-height: 0;
   margin: 0 10px;
   overflow: hidden;
-}
-
-/* The poster image crops to show the Warhol portrait section */
-.wc-face {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 32%;
+  background: url('posters/warhol.png') no-repeat;
+  background-size: 130% auto;
+  background-position: center 44%;
   animation: wc-face-pulse 2.4s ease-in-out infinite alternate;
 }
 
 @keyframes wc-face-pulse {
-  from { filter: brightness(0.92) saturate(1.1); }
-  to   { filter: brightness(1.06) saturate(1.3) drop-shadow(0 0 14px rgba(255,20,147,0.5)); }
+  from { filter: brightness(0.92) saturate(1.05); }
+  to   { filter: brightness(1.06) saturate(1.25) drop-shadow(0 0 14px rgba(255,20,147,0.4)); }
 }
 
 /* Corner reticle brackets */
@@ -154,95 +149,22 @@
   width: 20px; height: 20px;
   border: 2px solid #00e5ff;
   box-shadow: 0 0 6px rgba(0,229,255,0.6);
+  z-index: 2;
 }
 .wc-reticle-tl { top: 6px;    left: 6px;    border-right: none; border-bottom: none; }
 .wc-reticle-tr { top: 6px;    right: 6px;   border-left: none;  border-bottom: none; }
 .wc-reticle-bl { bottom: 6px; left: 6px;    border-right: none; border-top: none; }
 .wc-reticle-br { bottom: 6px; right: 6px;   border-left: none;  border-top: none; }
 
-/* Soup cans row */
-.wc-cans {
-  display: flex;
-  gap: 5px;
-  padding: 6px 10px;
+/* ── Soup cans strip — poster cropped to cans row (≈ y 63-71%) ───────── */
+.wc-cans-frame {
+  margin: 0 10px 6px;
   flex-shrink: 0;
-  justify-content: center;
-}
-
-.wc-can {
-  flex: 1;
-  max-width: 68px;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-}
-
-/* Elliptical lid + base */
-.wc-can-top,
-.wc-can-bottom {
-  height: 6px;
-  background: linear-gradient(to bottom, #e8c840, #b09020);
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.wc-can-top    { border-radius: 50% 50% 0 0 / 100% 100% 0 0; }
-.wc-can-bottom { border-radius: 0 0 50% 50% / 0 0 100% 100%; }
-
-.wc-can-body {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
+  height: clamp(55px, 13vw, 90px);
+  background: url('posters/warhol.png') no-repeat;
+  background-size: 100% auto;
+  background-position: center 67%;
   overflow: hidden;
-}
-
-.wc-can-red-top,
-.wc-can-red-bot {
-  background: #cc1111;
-  flex: 1.2;
-}
-
-.wc-can-gold-band {
-  height: 5px;
-  background: linear-gradient(to bottom, #e8c840, #b09020);
-  flex-shrink: 0;
-}
-
-.wc-can-label {
-  flex: 2.5;
-  background: #f5f5f0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2px 1px;
-  gap: 0;
-}
-
-.wc-can-campbells {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(5px, 1.3vw, 9px);
-  color: #cc1111;
-  font-weight: bold;
-  font-style: italic;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.wc-can-condensed {
-  font-family: "Arial Narrow", Arial, sans-serif;
-  font-size: clamp(3.5px, 0.8vw, 5.5px);
-  color: #111;
-  letter-spacing: 0.06em;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
-.wc-can-soup {
-  font-family: Impact, sans-serif;
-  font-size: clamp(4px, 1vw, 7px);
-  color: #111;
-  text-align: center;
-  line-height: 1.1;
 }
 
 /* Indicators */
