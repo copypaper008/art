@@ -123,9 +123,10 @@
   text-transform: uppercase;
 }
 
-/* ── Figure stage — poster cropped to face only ───────────────────────────
-   The poster (614×1024) is scaled to 130% width and anchored so that
-   only the portrait area (≈ y 26-64% of the original) is visible.      */
+/* ── Figure stage — poster cropped to portrait only ───────────────────────
+   The poster has a two-column layout: indicators text LEFT, face RIGHT.
+   background-size: 200% + background-position: 100% shows only the right
+   half of the poster (the Warhol portrait), at 38% vertical (the face).  */
 .wc-figure-stage {
   position: relative;
   flex: 1;
@@ -133,8 +134,8 @@
   margin: 0 10px;
   overflow: hidden;
   background: url('posters/warhol.png') no-repeat;
-  background-size: 130% auto;
-  background-position: center 44%;
+  background-size: 200% auto;
+  background-position: 100% 38%;
   animation: wc-face-pulse 2.4s ease-in-out infinite alternate;
 }
 
@@ -156,14 +157,14 @@
 .wc-reticle-bl { bottom: 6px; left: 6px;    border-right: none; border-top: none; }
 .wc-reticle-br { bottom: 6px; right: 6px;   border-left: none;  border-top: none; }
 
-/* ── Soup cans strip — poster cropped to cans row (≈ y 63-71%) ───────── */
+/* ── Soup cans strip — poster cropped to cans row (≈ y 62-70%) ───────── */
 .wc-cans-frame {
   margin: 0 10px 6px;
   flex-shrink: 0;
-  height: clamp(55px, 13vw, 90px);
+  height: clamp(60px, 10vw, 100px);
   background: url('posters/warhol.png') no-repeat;
   background-size: 100% auto;
-  background-position: center 67%;
+  background-position: center 65%;
   overflow: hidden;
 }
 
