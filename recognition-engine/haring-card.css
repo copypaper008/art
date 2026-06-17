@@ -1,0 +1,212 @@
+/* ── Haring Recognition Engine card — fully coded ────────────────────────── */
+
+.hc-card {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #050505;
+  display: flex;
+  flex-direction: column;
+  font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif;
+  color: #fff;
+  overflow: hidden;
+  border: 3px solid #ff2b00;
+  box-shadow: 0 0 28px rgba(255,43,0,0.4);
+}
+
+/* ── Scanline ─────────────────────────────────────────────────────────────── */
+.hc-scanline {
+  position: absolute;
+  left: 0; right: 0; height: 5px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+  top: -5%;
+  animation: hc-scan 2.8s linear infinite;
+  z-index: 10;
+  pointer-events: none;
+}
+@keyframes hc-scan {
+  from { top: -5%; } to { top: 105%; }
+}
+
+/* ── Top bar ──────────────────────────────────────────────────────────────── */
+.hc-topbar {
+  background: #0d0505;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px;
+  height: 38px;
+  flex-shrink: 0;
+  border-bottom: 2px solid #ff2b00;
+  font-family: "Courier New", monospace;
+  font-size: clamp(9px, 1.6vw, 12px);
+  font-weight: 900;
+  color: #ff2b00;
+  letter-spacing: 0.06em;
+}
+
+.hc-id {
+  font-size: clamp(18px, 3.5vw, 26px);
+  color: #fff;
+  border: 2px solid #fff;
+  padding: 0 5px;
+  line-height: 1;
+  font-family: Impact, sans-serif;
+}
+
+/* ── Title ────────────────────────────────────────────────────────────────── */
+.hc-hero {
+  padding: 8px 12px 6px;
+  flex-shrink: 0;
+}
+
+.hc-hero h1 {
+  margin: 0;
+  font-size: clamp(58px, 18vw, 112px);
+  line-height: 0.82;
+  color: #ffffff;
+  text-shadow:
+    4px 4px 0 #ff2b00,
+    8px 8px 0 #000;
+  letter-spacing: -0.01em;
+}
+
+.hc-hero h2 {
+  margin: 4px 0 0;
+  font-size: clamp(14px, 4vw, 26px);
+  color: #ff2b00;
+  text-shadow: 2px 2px 0 #000;
+  line-height: 1;
+}
+
+/* ── Classification ───────────────────────────────────────────────────────── */
+.hc-classification {
+  margin: 0 10px 6px;
+  border: 2px solid rgba(255,43,0,0.7);
+  background: rgba(0,0,0,0.7);
+  padding: 7px 10px;
+  box-shadow: 5px 5px 0 rgba(0,0,0,0.5);
+  flex-shrink: 0;
+}
+
+.hc-label {
+  display: block;
+  font-family: "Courier New", monospace;
+  font-size: clamp(9px, 1.5vw, 11px);
+  font-weight: 900;
+  color: #ff2b00;
+  letter-spacing: 0.05em;
+  margin-bottom: 3px;
+}
+
+.hc-class {
+  font-size: clamp(14px, 4.5vw, 26px);
+  color: #fff;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+/* ── Figure stage ─────────────────────────────────────────────────────────── */
+.hc-figure-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  margin: 0 10px;
+  background: #0a0000;
+  overflow: hidden;
+}
+
+/* Corner Haring decorative figures */
+.hc-deco {
+  position: absolute;
+  opacity: 0.85;
+}
+.hc-deco-tl { top: 4px;  left: 4px; }
+.hc-deco-tr { top: 4px;  right: 4px; transform: scaleX(-1); }
+.hc-deco-bl { bottom: 4px; left: 4px; transform: scaleY(-1); }
+.hc-deco-br { bottom: 4px; right: 4px; transform: scale(-1,-1); }
+
+.hc-face {
+  width: 62%;
+  max-width: 200px;
+  height: auto;
+  display: block;
+  animation: hc-dance 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes hc-dance {
+  from { transform: rotate(-2deg) translateY(0px);   }
+  to   { transform: rotate(2deg)  translateY(-6px);  }
+}
+
+/* Corner reticle */
+.hc-reticle-tl, .hc-reticle-tr, .hc-reticle-bl, .hc-reticle-br {
+  position: absolute;
+  width: 20px; height: 20px;
+  border: 2px solid #ff2b00;
+  box-shadow: 0 0 6px rgba(255,43,0,0.6);
+}
+.hc-reticle-tl { top: 6px; left: 6px;   border-right: none; border-bottom: none; }
+.hc-reticle-tr { top: 6px; right: 6px;  border-left: none;  border-bottom: none; }
+.hc-reticle-bl { bottom: 6px; left: 6px;  border-right: none; border-top: none; }
+.hc-reticle-br { bottom: 6px; right: 6px; border-left: none;  border-top: none; }
+
+/* ── Indicators ───────────────────────────────────────────────────────────── */
+.hc-indicators {
+  margin: 6px 10px;
+  border: 2px solid rgba(255,43,0,0.7);
+  background: rgba(0,0,0,0.7);
+  padding: 7px 10px;
+  box-shadow: 5px 5px 0 rgba(0,0,0,0.5);
+  flex-shrink: 0;
+}
+
+.hc-indicators ul {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  font-family: "Courier New", monospace;
+  font-size: clamp(9px, 1.7vw, 12px);
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.5;
+}
+.hc-indicators li { margin: 2px 0; }
+
+/* ── Result ───────────────────────────────────────────────────────────────── */
+.hc-result {
+  margin: 0 10px 8px;
+  border: 2px solid rgba(255,43,0,0.7);
+  background: rgba(0,0,0,0.7);
+  padding: 8px 10px;
+  box-shadow: 5px 5px 0 rgba(0,0,0,0.5);
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.hc-result strong {
+  display: block;
+  margin-top: 4px;
+  font-size: clamp(18px, 6vw, 40px);
+  color: #ffe600;
+  text-shadow: 3px 3px 0 #000, 0 0 14px rgba(255,230,0,0.5);
+  line-height: 0.9;
+  animation: hc-result-pulse 1.0s ease-in-out infinite alternate;
+}
+
+@keyframes hc-result-pulse {
+  from { text-shadow: 3px 3px 0 #000, 0 0 8px rgba(255,230,0,0.3); }
+  to   { text-shadow: 3px 3px 0 #000, 0 0 22px rgba(255,230,0,0.9), 0 0 40px rgba(255,43,0,0.4); }
+}
+
+/* ── Footer ───────────────────────────────────────────────────────────────── */
+.hc-footer {
+  text-align: center;
+  padding: 5px 10px;
+  font-family: "Courier New", monospace;
+  font-size: clamp(8px, 1.3vw, 10px);
+  color: #ff2b00;
+  border-top: 1px solid rgba(255,43,0,0.4);
+  flex-shrink: 0;
+}

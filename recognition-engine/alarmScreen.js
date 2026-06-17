@@ -5,6 +5,12 @@ const ENGINE_SLUGS = [
   "camp",   "faerie", "ballroom", "archive", "gene"
 ];
 
+// Slugs that have fully coded HTML/CSS/SVG cards (no PNG needed)
+const CODED_CARDS = {
+  warhol: renderWarholCard,
+  haring: renderHaringCard,
+};
+
 let _alarmOverlay  = null;
 let _animFrame     = null;
 let alarmOverlayActive = false;
@@ -13,25 +19,16 @@ function _ensureOverlay() {
   if (_alarmOverlay) return _alarmOverlay;
   _alarmOverlay = document.createElement('div');
   _alarmOverlay.className = 'alarm-overlay';
-  _alarmOverlay.innerHTML = `
-    <img class="poster-img" src="" alt="" />
-    <div class="scanline"></div>
-    <div class="color-flash"></div>
-  `;
   document.body.appendChild(_alarmOverlay);
   return _alarmOverlay;
 }
 
-function showAlarmScreen() {
-  const el  = _ensureOverlay();
-  const slug = ENGINE_SLUGS[Math.floor(Math.random() * ENGINE_SLUGS.length)];
+function _showSlug(slug) {
+  const el = _ensureOverlay();
+  if (_animFrame) { cancelAnimationFrame(_animFrame); _animFrame = null; }
 
-  if (slug === 'warhol') {
-    el.innerHTML = renderWarholCard();
-    el.getBoundingClientRect();
-    el.classList.add('visible');
-    alarmOverlayActive = true;
-    // CSS animations in warhol-card.css handle all motion — no JS loop needed
+  if (CODED_CARDS[slug]) {
+    el.innerHTML = CODED_CARDS[slug]();
   } else {
     el.innerHTML = `
       <img class="poster-img" src="posters/${slug}.png" />
@@ -39,13 +36,20 @@ function showAlarmScreen() {
       <div class="color-flash"></div>
     `;
     el.getBoundingClientRect();
-    el.classList.add('visible');
-    alarmOverlayActive = true;
     _startAnimation(
       el.querySelector('.poster-img'),
       el.querySelector('.color-flash')
     );
   }
+
+  el.getBoundingClientRect(); // force reflow before transition
+  el.classList.add('visible');
+  alarmOverlayActive = true;
+}
+
+function showAlarmScreen() {
+  const slug = ENGINE_SLUGS[Math.floor(Math.random() * ENGINE_SLUGS.length)];
+  _showSlug(slug);
 }
 
 function hideAlarmScreen() {
@@ -55,13 +59,33 @@ function hideAlarmScreen() {
   if (_animFrame) { cancelAnimationFrame(_animFrame); _animFrame = null; }
 }
 
-// ── Animation loop ────────────────────────────────────────────────────────────
+// ── Preview mode ──────────────────────────────────────────────────────────────
+// Add ?preview=SLUG to the URL to see a coded card immediately without scanning.
+// e.g. /recognition-engine/?preview=warhol  or  ?preview=haring
+// Press Escape or tap the overlay to dismiss.
+(function _initPreview() {
+  const slug = new URLSearchParams(window.location.search).get('preview');
+  if (!slug) return;
+  // Wait for p5.js and card scripts to be ready
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      _showSlug(slug);
+      // Tap/click or Escape dismisses preview
+      _alarmOverlay.addEventListener('click', hideAlarmScreen, { once: true });
+      document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') hideAlarmScreen();
+      }, { once: true });
+    }, 400);
+  });
+})();
+
+// ── Animation loop (for PNG poster cards) ────────────────────────────────────
 function _startAnimation(img, flash) {
   if (_animFrame) cancelAnimationFrame(_animFrame);
 
   let startTime  = null;
   let glitchEnd  = 0;
-  let nextGlitch = 1200 + Math.random() * 1800; // first glitch after 1.2-3s
+  let nextGlitch = 1200 + Math.random() * 1800;
 
   function tick(now) {
     if (!alarmOverlayActive) return;
@@ -69,36 +93,25 @@ function _startAnimation(img, flash) {
 
     if (!startTime) startTime = now;
     const elapsed = now - startTime;
-    const t = elapsed / 1000; // seconds
+    const t = elapsed / 1000;
 
-    // Schedule next glitch
     if (elapsed > nextGlitch && now > glitchEnd) {
       glitchEnd  = now + 80 + Math.random() * 140;
       nextGlitch = elapsed + 900 + Math.random() * 1800;
     }
 
     const glitching = now < glitchEnd;
-
-    // Gentle scale breathe (1.0 → 1.02 → 1.0)
-    const breathe = 1 + Math.sin(t * 1.05) * 0.012;
-
-    // Slow rainbow hue cycle (~30s per full rotation) — pride aesthetic on pop art
-    const hue = (t * 11) % 360;
-
-    // Glitch: horizontal snap + colour spike
-    const dx  = glitching ? (Math.random() < 0.5 ? -1 : 1) * (6 + Math.random() * 16) : 0;
-    const sat = glitching ? 260 : 120 + Math.sin(t * 1.05) * 18;
-    const bri = glitching ? 1.35 : 1.0 + Math.sin(t * 1.05) * 0.06;
-    const con = glitching ? 1.2 : 1.0;
+    const breathe   = 1 + Math.sin(t * 1.05) * 0.012;
+    const hue       = (t * 11) % 360;
+    const dx        = glitching ? (Math.random() < 0.5 ? -1 : 1) * (6 + Math.random() * 16) : 0;
+    const sat       = glitching ? 260 : 120 + Math.sin(t * 1.05) * 18;
+    const bri       = glitching ? 1.35 : 1.0 + Math.sin(t * 1.05) * 0.06;
 
     img.style.transform = `translateX(${dx.toFixed(1)}px) scale(${breathe.toFixed(4)})`;
-    img.style.filter    = `hue-rotate(${hue.toFixed(1)}deg) saturate(${sat.toFixed(0)}%) brightness(${bri.toFixed(3)}) contrast(${con})`;
+    img.style.filter    = `hue-rotate(${hue.toFixed(1)}deg) saturate(${sat.toFixed(0)}%) brightness(${bri.toFixed(3)}) contrast(${glitching ? 1.2 : 1})`;
 
-    // Colour flash overlay pulses on glitch (screen blend, low opacity)
-    const flashAlpha = glitching ? 0.18 + Math.random() * 0.12 : 0;
-    const flashHue   = (hue + 180) % 360;
-    flash.style.opacity    = flashAlpha;
-    flash.style.background = `hsl(${flashHue}, 100%, 60%)`;
+    flash.style.opacity    = glitching ? 0.18 + Math.random() * 0.12 : 0;
+    flash.style.background = `hsl(${(hue + 180) % 360}, 100%, 60%)`;
   }
 
   _animFrame = requestAnimationFrame(tick);
