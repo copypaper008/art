@@ -1,20 +1,20 @@
 // Alarm overlay — full-screen poster with animated effects
 
 const ENGINE_SLUGS = [
-  "warhol", "haring", "disco", "leather", "drag",
-  "camp",   "faerie", "ballroom", "archive", "gene"
+  // "warhol", "haring", "disco", "leather", "drag",
+  // "camp",   "faerie", "ballroom", "archive", "gene"
 ];
 
 // Slugs that have fully coded HTML/CSS/SVG cards (no PNG needed)
 const CODED_CARDS = {
-  warhol:  renderWarholCard,
-  haring:  renderHaringCard,
-  leather: renderLeatherCard,
+  // warhol:  renderWarholCard,
+  // haring:  renderHaringCard,
+  // leather: renderLeatherCard,
 };
 
 // Optional JS init called after HTML is injected (for glitch loops, listeners)
 const CARD_INITS = {
-  warhol: initWarholCard,
+  // warhol: initWarholCard,
 };
 
 let _alarmOverlay  = null;
@@ -57,6 +57,7 @@ function _showSlug(slug) {
 }
 
 function showAlarmScreen() {
+  if (!ENGINE_SLUGS.length) return;
   const slug = ENGINE_SLUGS[Math.floor(Math.random() * ENGINE_SLUGS.length)];
   _showSlug(slug);
 }
