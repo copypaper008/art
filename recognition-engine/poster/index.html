@@ -74,10 +74,12 @@ const statusEl      = document.getElementById('status');
 function setStatus(msg) { statusEl.textContent = msg; }
 
 // ── Render ────────────────────────────────────────────────────────────
-async function render(portrait = null) {
-  activePortrait     = portrait;
-  activeDetermination = generateDetermination();
-  const config        = SUBJECTS[activeSubject];
+// regen=true  → fresh random determination (default for user-initiated actions)
+// regen=false → reuse activeDetermination (used when only swapping the portrait)
+async function render(portrait = null, regen = true) {
+  activePortrait = portrait;
+  if (regen || !activeDetermination) activeDetermination = generateDetermination();
+  const config = SUBJECTS[activeSubject];
   setStatus('rendering…');
   try {
     await renderPoster(posterCanvas, config, activeDetermination, portrait);
@@ -91,11 +93,11 @@ async function render(portrait = null) {
 // ── Subject switcher ──────────────────────────────────────────────────
 document.getElementById('subject-select').addEventListener('change', async e => {
   activeSubject = e.target.value;
-  await render(null);   // clear any composited face when switching subjects
+  await render(null, true);   // clear any composited face when switching subjects
 });
 
 // ── Rescan (new random determination, keep composited face if any) ────
-document.getElementById('rescan-btn').addEventListener('click', () => render(activePortrait));
+document.getElementById('rescan-btn').addEventListener('click', () => render(activePortrait, true));
 
 // ── Scan face ─────────────────────────────────────────────────────────
 document.getElementById('scan-btn').addEventListener('click', async () => {
@@ -157,10 +159,48 @@ document.getElementById('anchor-btn').addEventListener('click', () => {
 // ── Kiosk mode (?kiosk=1) ────────────────────────────────────────────
 if (new URLSearchParams(location.search).has('kiosk')) {
   document.body.classList.add('kiosk');
-}
 
-// ── Init ──────────────────────────────────────────────────────────────
-render(null);
+  // Render poster immediately (no face), then attempt face swap in the background.
+  // Using regen=true only for the first render; the swap re-renders with regen=false
+  // so the metrics/characteristics/classification stay identical.
+  render(null, true).then(async () => {
+    const faceDataUrl = sessionStorage.getItem('reco-face');
+    if (!faceDataUrl) return;
+
+    try {
+      // Decode stored frame into a canvas
+      const img = await new Promise((res, rej) => {
+        const i = new Image();
+        i.onload = () => res(i);
+        i.onerror = () => rej(new Error('decode failed'));
+        i.src = faceDataUrl;
+      });
+      const fc = document.createElement('canvas');
+      fc.width  = img.width;
+      fc.height = img.height;
+      fc.getContext('2d').drawImage(img, 0, 0);
+
+      // Run face-swap pipeline (async — MediaPipe loads if needed)
+      const config     = SUBJECTS[activeSubject];
+      const composited = await swapFace(fc, config);
+
+      // Re-render: same determination, new portrait
+      await render(composited, false);
+
+      sessionStorage.removeItem('reco-face');
+    } catch (e) {
+      if (e.message === 'NO_FACE_DETECTED') {
+        console.warn('[poster] No face detected in captured frame — showing unmodified portrait.');
+      } else {
+        console.warn('[poster] Face swap failed:', e);
+      }
+      // Poster already displayed without swap; nothing more to do.
+    }
+  });
+} else {
+  // ── Normal (non-kiosk) init ─────────────────────────────────────────
+  render(null, true);
+}
 </script>
 </body>
 </html>

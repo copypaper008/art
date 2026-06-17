@@ -56,7 +56,26 @@ function _showSlug(slug) {
   alarmOverlayActive = true;
 }
 
+function _captureFaceToSession() {
+  // cam is the p5.js capture element defined in sketch.js
+  const videoEl = (typeof cam !== 'undefined') ? cam.elt : null;
+  if (!videoEl || videoEl.readyState < 2 || !videoEl.videoWidth) return;
+
+  const c = document.createElement('canvas');
+  c.width  = videoEl.videoWidth;
+  c.height = videoEl.videoHeight;
+  c.getContext('2d').drawImage(videoEl, 0, 0);
+
+  try {
+    sessionStorage.setItem('reco-face', c.toDataURL('image/jpeg', 0.88));
+  } catch (e) {
+    console.warn('[alarm] Could not cache face frame:', e.message);
+  }
+}
+
 function showAlarmScreen() {
+  _captureFaceToSession();
+
   const el = _ensureOverlay();
   if (_animFrame)         { cancelAnimationFrame(_animFrame); _animFrame = null; }
   if (el._cardInterval)  { clearInterval(el._cardInterval); el._cardInterval = null; }
