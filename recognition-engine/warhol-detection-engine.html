@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warhol Detection Engine</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Anton&display=swap');
+
+  :root{
+    --cyan:#21e6ff;
+    --magenta:#ff2bd0;
+    --bg:#05070d;
+    --panel:#070a12;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html,body{
+    background:#000;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    min-height:100vh;
+    font-family:'Oswald',sans-serif;
+  }
+
+  .poster{
+    position:relative;
+    width:380px;
+    background:
+      radial-gradient(120% 90% at 50% 0%, #0c1320 0%, #05070d 55%, #02040a 100%);
+    padding:14px 16px 0;
+    color:#fff;
+    overflow:hidden;
+    border:1px solid #0c1726;
+  }
+
+  /* subtle scanline / grain overlay */
+  .poster::after{
+    content:"";
+    position:absolute; inset:0;
+    background:repeating-linear-gradient(
+      to bottom, rgba(255,255,255,0.012) 0 1px, transparent 1px 3px);
+    pointer-events:none;
+    mix-blend-mode:overlay;
+  }
+
+  /* ---------- HEADER ---------- */
+  .top-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .badge{
+    border:2px solid var(--cyan);
+    color:#fff;
+    font-family:'Anton',sans-serif;
+    font-size:22px;
+    line-height:1;
+    padding:5px 8px 4px;
+    letter-spacing:1px;
+  }
+  .top-label{
+    color:#cfd6e0;
+    font-size:12px;
+    letter-spacing:3px;
+    font-weight:500;
+    flex:1;
+  }
+  .subjects{
+    color:#cfd6e0;
+    font-size:11px;
+    letter-spacing:2px;
+    text-align:right;
+    font-weight:500;
+  }
+  .stars{ color:var(--cyan); font-size:13px; letter-spacing:2px; }
+
+  /* ---------- TITLE ---------- */
+  .title{
+    font-family:'Anton',sans-serif;
+    line-height:0.92;
+    letter-spacing:1px;
+    margin-bottom:18px;
+  }
+  .title .warhol{
+    display:block;
+    font-size:46px;
+    color:var(--magenta);
+    text-shadow:0 0 18px rgba(255,43,208,0.55);
+  }
+  .title .engine{
+    display:block;
+    font-size:30px;
+    color:var(--cyan);
+    text-shadow:0 0 16px rgba(33,230,255,0.5);
+  }
+  .title .engine sup{ font-size:13px; }
+
+  /* ---------- BODY GRID ---------- */
+  .body{
+    display:grid;
+    grid-template-columns:0.88fr 1.12fr;
+    gap:10px;
+    align-items:start;
+  }
+
+  .label-cyan{
+    color:var(--cyan);
+    font-size:11px;
+    letter-spacing:2px;
+    font-weight:600;
+    margin-bottom:4px;
+  }
+  .class-value{
+    font-family:'Anton',sans-serif;
+    font-size:20px;
+    line-height:1.05;
+    color:#fff;
+    margin-bottom:22px;
+    letter-spacing:0.5px;
+  }
+
+  .indicators-title{
+    color:var(--magenta);
+    font-size:11px;
+    letter-spacing:1.5px;
+    font-weight:600;
+    margin-bottom:12px;
+  }
+  .ind-list{ list-style:none; }
+  .ind-list li{
+    position:relative;
+    padding-left:14px;
+    margin-bottom:14px;
+    font-size:11px;
+    line-height:1.25;
+    letter-spacing:1px;
+    color:#eef2f6;
+    font-weight:500;
+    text-transform:uppercase;
+  }
+  .ind-list li::before{
+    content:"";
+    position:absolute; left:0; top:3px;
+    width:5px; height:5px;
+    background:var(--cyan);
+    transform:rotate(45deg);
+  }
+  .ind-list li .mark{ color:var(--cyan); }
+
+  /* ---------- PORTRAIT ---------- */
+  .portrait{
+    position:relative;
+    width:100%;
+    border-radius:2px;
+    overflow:hidden;
+    box-shadow:0 0 30px rgba(255,43,208,0.3);
+  }
+  .portrait img{
+    display:block;
+    width:100%;
+    height:auto;
+    border:1px solid #243246;
+    border-radius:2px;
+  }
+
+  /* ---------- SOUP CANS ---------- */
+  .cans{
+    margin:14px 0 16px;
+  }
+  .cans img{
+    display:block;
+    width:100%;
+    height:auto;
+    border:1px solid #243246;
+    border-radius:2px;
+  }
+
+  /* ---------- RESULT ---------- */
+  .result-label{
+    color:var(--cyan);
+    font-size:11px;
+    letter-spacing:2px;
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  .result-box{
+    border:2px solid var(--magenta);
+    box-shadow:0 0 18px rgba(255,43,208,0.4), inset 0 0 18px rgba(255,43,208,0.12);
+    text-align:center;
+    padding:12px 8px;
+    margin-bottom:16px;
+  }
+  .result-box span{
+    font-family:'Anton',sans-serif;
+    color:var(--magenta);
+    font-size:19px;
+    line-height:1.15;
+    letter-spacing:0.5px;
+    text-shadow:0 0 12px rgba(255,43,208,0.5);
+  }
+
+  /* ---------- FOOTER ---------- */
+  .footer{
+    border-top:1px solid #14202e;
+    text-align:center;
+    padding:9px 0 11px;
+    color:var(--magenta);
+    font-size:9px;
+    letter-spacing:2px;
+    font-weight:600;
+  }
+  .footer .dots{ color:var(--magenta); }
+</style>
+</head>
+<body>
+  <div class="poster">
+
+    <!-- HEADER -->
+    <div class="top-row">
+      <div class="badge">01</div>
+      <div class="top-label">RECOGNITION ENGINE</div>
+      <div class="subjects">
+        SUBJECTS: 01<br>
+        <span class="stars">★★★</span>
+      </div>
+    </div>
+
+    <!-- TITLE -->
+    <div class="title">
+      <span class="warhol">WARHOL</span>
+      <span class="engine">DETECTION ENGINE<sup>™</sup></span>
+    </div>
+
+    <!-- BODY -->
+    <div class="body">
+      <div class="left">
+        <div class="label-cyan">CLASSIFICATION:</div>
+        <div class="class-value">POP ART<br>HOMOSEXUAL</div>
+
+        <div class="indicators-title">INDICATORS DETECTED:</div>
+        <ul class="ind-list">
+          <li>EXCESSIVE USE OF<br>FLUORESCENT COLOURS <span class="mark">✦</span></li>
+          <li>SUSPICIOUS INTEREST<br>IN CELEBRITY CULTURE</li>
+          <li>SOUP CAN FAMILIARITY<br>ABOVE BASELINE</li>
+          <li>FACTORY ATTENDANCE <span class="mark">⚠</span><br>ANOMALY</li>
+        </ul>
+      </div>
+
+      <!-- PORTRAIT -->
+      <div class="right">
+        <div class="portrait">
+          <img src="posters/warhol-face.png" alt="Warhol pop-art screen-print portrait">
+        </div>
+      </div>
+    </div>
+
+    <!-- SOUP CANS -->
+    <div class="cans">
+      <img src="posters/warhol-cans.png" alt="Campbell's tomato soup cans in fluorescent colours">
+    </div>
+
+    <!-- RESULT -->
+    <div class="result-label">RESULT:</div>
+    <div class="result-box">
+      <span>SUBJECT HAS BEEN<br>SCREEN PRINTED 16 TIMES</span>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <span class="dots">◗◗◗</span> PRIDE RESPONSE PROTOCOL INITIATED – ALL UNITS RESPOND <span class="dots">◖◖◖</span>
+    </div>
+
+  </div>
+</body>
+</html>
