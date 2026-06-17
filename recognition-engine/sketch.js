@@ -6,6 +6,10 @@ const SCAN_DURATION    = 5000;
 const STRAIGHT_HOLD    = 7500;
 const ALARM_HOLD       = 9000;
 
+// TESTING: when true, every scan resolves to ALARM (skips the STRAIGHT path)
+// so the alarm reveal can be exercised on every face. Set false for exhibition.
+const FORCE_ALARM = true;
+
 // Log sequence — referenced by Subject.tick() at runtime
 const HUD_LOG_SEQ = [
   "SYSTEM BOOT",

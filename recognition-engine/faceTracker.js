@@ -184,7 +184,7 @@ class Subject {
       if (elapsed > SCAN_DURATION) {
         if (!present) { this.enterState('IDLE'); return; }
         this.scanCount++;
-        if (this.scanCount >= this.nextGayAt) {
+        if (FORCE_ALARM || this.scanCount >= this.nextGayAt) {
           this.nextGayAt = this.scanCount + 2; // TESTING — exhibition: + floor(random(10,16))
           this.enterState('ALARM');
         } else {
