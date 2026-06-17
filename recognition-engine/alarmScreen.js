@@ -12,6 +12,11 @@ const CODED_CARDS = {
   leather: renderLeatherCard,
 };
 
+// Optional JS init called after HTML is injected (for glitch loops, listeners)
+const CARD_INITS = {
+  warhol: initWarholCard,
+};
+
 let _alarmOverlay  = null;
 let _animFrame     = null;
 let alarmOverlayActive = false;
@@ -27,9 +32,11 @@ function _ensureOverlay() {
 function _showSlug(slug) {
   const el = _ensureOverlay();
   if (_animFrame) { cancelAnimationFrame(_animFrame); _animFrame = null; }
+  if (el._cardInterval) { clearInterval(el._cardInterval); el._cardInterval = null; }
 
   if (CODED_CARDS[slug]) {
     el.innerHTML = CODED_CARDS[slug]();
+    if (CARD_INITS[slug]) CARD_INITS[slug](el);
   } else {
     el.innerHTML = `
       <img class="poster-img" src="posters/${slug}.png" />
@@ -59,6 +66,7 @@ function hideAlarmScreen() {
   _alarmOverlay.classList.remove('visible');
   alarmOverlayActive = false;
   if (_animFrame) { cancelAnimationFrame(_animFrame); _animFrame = null; }
+  if (_alarmOverlay._cardInterval) { clearInterval(_alarmOverlay._cardInterval); _alarmOverlay._cardInterval = null; }
 }
 
 // ── Preview mode ──────────────────────────────────────────────────────────────
