@@ -402,12 +402,13 @@ function drawAlarmTransformation(s) {
   }
 
   // ── Phase timings (ms from stateAt) ──────────────────────────────────────
-  const T_HAIR_FULL   = 2200;   // hair/clothing/shoulders fully visible
-  const T_MORPH_START = 500;    // portrait face ghost begins inside oval
-  const T_MORPH_FULL  = 2800;   // portrait face at max opacity (22%)
-  const T_INFO_START  = 1200;   // analysis panel starts building
-  const T_INFO_FULL   = 3200;   // analysis panel fully in
-  const T_STAMP       = 3600;   // HOMOSEXUAL stamp lands
+  // Hair/clothing must be clearly established before face ghost begins
+  const T_HAIR_FULL   = 1800;   // hair/clothing/shoulders fully visible
+  const T_MORPH_START = 1700;   // face ghost starts only after hair is mostly in
+  const T_MORPH_FULL  = 3200;   // portrait face at max opacity (22%)
+  const T_INFO_START  = 2000;   // analysis panel starts building
+  const T_INFO_FULL   = 3600;   // analysis panel fully in
+  const T_STAMP       = 4000;   // HOMOSEXUAL stamp lands
   const T_FADE_START  = 7000;   // begin global fade
   const T_FADE_END    = 8600;   // fully faded (IDLE at 9000ms)
 
