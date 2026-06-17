@@ -8,8 +8,7 @@ let ripplePhase = 0;
 let rippleBuffer = null;
 let mirrorBuffer = null;
 
-let _flashTimer = -9999;
-const _FLASH_DUR = 320;
+let _flash = 0;   // 0..1 white-flash intensity, driven by an eased tween
 
 let _particles = [];
 
@@ -335,14 +334,18 @@ function clearGhostTrails() {
 }
 
 // ── Transition flash ──────────────────────────────────────────────────────────
-function triggerFlash() { _flashTimer = millis(); }
+// Eased white pop on a verdict: full brightness instantly, then an exponential
+// decay tail (snappier and softer than the old linear fade).
+function triggerFlash() {
+  _flash = 1;
+  tween({ from: 1, to: 0, duration: 460, easing: Easing.outExpo,
+          onUpdate: v => { _flash = v; } });
+}
 
 function drawTransitionFlash() {
-  const elapsed = millis() - _flashTimer;
-  if (elapsed > _FLASH_DUR) return;
-  const alpha = map(elapsed, 0, _FLASH_DUR, 255, 0, true);
+  if (_flash <= 0.002) return;
   noStroke();
-  fill(255, alpha);
+  fill(255, _flash * 255);
   rect(0, 0, width, height);
 }
 
@@ -382,12 +385,9 @@ function drawParticles() {
 function drawPreCameraSpotlights() {
   noStroke();
   for (const s of faceTracker.subjects) {
-    let intensity = 0;
-    if (s.state === 'SCANNING') {
-      intensity = constrain((millis() - s.stateAt) / SCAN_DURATION, 0, 1);
-    } else if (s.state === 'STRAIGHT' || s.state === 'ALARM') {
-      intensity = 1.0;
-    }
+    // Spring-driven: ramps with the scan, holds full on a verdict, and eases
+    // back down smoothly as a subject leaves frame (no hard cut to black).
+    const intensity = s.spotSpring ? Math.max(0, s.spotSpring.value) : 0;
     if (intensity < 0.01) continue;
     // Use face w/h so spotlight matches face proportions
     const glowW = s.w * 2.0;

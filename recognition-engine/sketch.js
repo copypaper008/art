@@ -69,7 +69,8 @@ function draw() {
   }
 
   runDetection(cam);
-  faceTracker.update(detection.faces || []);
+  updateTweens(deltaTime);                       // advance global one-shots (flash)
+  faceTracker.update(detection.faces || [], deltaTime);
 
   const anyAlarm    = faceTracker.hasAlarm();
   const allStraight = faceTracker.allStraight();
@@ -102,8 +103,12 @@ function drawSubjectOverlay(s) {
   const tly  = s.y - s.h * 0.6;
   const brx  = tlx + s.w * 1.1;
   const bry  = tly + s.h * 1.2;
-  const tick = Math.max(16, Math.round(22 * uiScale));
   const t    = millis();
+  const fx       = s.fx || {};
+  const clamp01  = v => Math.max(0, Math.min(1, v));
+  // Reticle wipes in over the scan entrance; full strength in every other state.
+  const reticleReveal = s.state === 'SCANNING' ? clamp01(fx.rScan == null ? 1 : fx.rScan) : 1;
+  const tick = Math.max(16, Math.round(22 * uiScale)) * (0.45 + 0.55 * reticleReveal);
 
   noFill();
 
@@ -130,12 +135,12 @@ function drawSubjectOverlay(s) {
     const flicker = random(0.88, 1.0);
     const bW = Math.max(2, Math.round(4 * uiScale));
     strokeWeight(bW);
-    stroke(M_RED[0], M_RED[1], M_RED[2], 150 * flicker);
+    stroke(M_RED[0], M_RED[1], M_RED[2], 150 * flicker * reticleReveal);
     line(tlx, tly, tlx + tick, tly); line(tlx, tly, tlx, tly + tick);
     line(brx - tick, tly, brx, tly); line(brx, tly, brx, tly + tick);
     line(tlx, bry - tick, tlx, bry); line(tlx, bry, tlx + tick, bry);
     line(brx - tick, bry, brx, bry); line(brx, bry - tick, brx, bry);
-    stroke(M_RED[0], M_RED[1], M_RED[2], 14 * flicker);
+    stroke(M_RED[0], M_RED[1], M_RED[2], 14 * flicker * reticleReveal);
     strokeWeight(1);
     rect(tlx, tly, s.w * 1.1, s.h * 1.2);
   }
@@ -161,7 +166,7 @@ function drawSubjectOverlay(s) {
 
     // Fine analysis grid within face box
     strokeWeight(1);
-    stroke(sR, sG, sB, 20);
+    stroke(sR, sG, sB, 20 * reticleReveal);
     for (let col = 1; col < 6; col++) {
       const gx = lerp(tlx, brx, col / 6);
       line(gx, tly, gx, bry);
@@ -286,32 +291,42 @@ function drawSubjectOverlay(s) {
     const subBot = ruleY - gap;
     const headBot = subBot - subH - gap;
 
-    // Dismissal — dim, cold
-    fill(160, 160, 160, 80);
+    // Reveal channels (driven by the verdict Timeline in faceTracker.js).
+    const rNext    = clamp01(fx.rNext == null ? 1 : fx.rNext);
+    const rRule    = clamp01(fx.rRule == null ? 1 : fx.rRule);
+    const rSub     = clamp01(fx.rSub  == null ? 1 : fx.rSub);
+    const rHeadRaw = fx.rHead == null ? 1 : fx.rHead;     // may overshoot >1
+    const rHead    = clamp01(rHeadRaw);
+
+    // Dismissal — dim, cold; fades in last
+    fill(160, 160, 160, 80 * rNext);
     textFont("monospace");
     textAlign(CENTER, BOTTOM);
     textSize(smS);
     text(s.straightNext, s.x, baseY);
 
-    // Red rule
-    stroke(M_RED[0], M_RED[1], M_RED[2], 90);
+    // Red rule — wipes out from the centre
+    const sRuleW = ruleW * rRule;
+    stroke(M_RED[0], M_RED[1], M_RED[2], 90 * rRule);
     strokeWeight(1);
-    line(s.x - ruleW * 0.5, ruleY, s.x + ruleW * 0.5, ruleY);
+    line(s.x - sRuleW * 0.5, ruleY, s.x + sRuleW * 0.5, ruleY);
     noStroke();
 
-    // Sub description — red monospace
-    fill(M_RED[0], M_RED[1], M_RED[2], 195);
+    // Sub description — red monospace; rises into place
+    const subRise = (1 - rSub) * Math.round(14 * uiScale);
+    fill(M_RED[0], M_RED[1], M_RED[2], 195 * rSub);
     textFont("monospace");
     textSize(mdS);
     textLeading(Math.round(mdS * 1.4));
-    text(s.straightSub, s.x, subBot);
+    text(s.straightSub, s.x, subBot + subRise);
 
-    // Headline — bold white Arial
+    // Headline — bold white Arial; drops in from above with overshoot
+    const headDrop = (1 - rHeadRaw) * Math.round(46 * uiScale);
     textFont("Arial");
     textStyle(BOLD);
-    fill(255, 255, 255, 250);
+    fill(255, 255, 255, 250 * rHead);
     textSize(xlS);
-    text(s.straightPhrase, s.x, headBot);
+    text(s.straightPhrase, s.x, headBot - headDrop);
     textStyle(NORMAL);
     textFont("monospace");
   }
@@ -329,6 +344,14 @@ function drawSubjectOverlay(s) {
     const subH    = Math.round(subS * 1.4 * subN);
     const ruleW   = Math.min(s.w * 2.8, Math.round(360 * uiScale));
 
+    // Reveal channels (eruption Timeline in faceTracker.js).
+    const rHeadRaw   = fx.rHead   == null ? 1 : fx.rHead;
+    const rHead      = clamp01(rHeadRaw);
+    const rRule      = clamp01(fx.rRule == null ? 1 : fx.rRule);
+    const rSub       = clamp01(fx.rSub  == null ? 1 : fx.rSub);
+    const rCloserRaw = fx.rCloser == null ? 1 : fx.rCloser;  // outBack → pop
+    const rCloser    = clamp01(rCloserRaw);
+
     // Bounce animation on the closer
     const bounce  = sin(t * 0.004 + s.id) * Math.round(7 * uiScale);
     const baseY   = tly - Math.round(14 * uiScale) + bounce;
@@ -336,51 +359,59 @@ function drawSubjectOverlay(s) {
     const subBot  = ruleY - gap;
     const headBot = subBot - subH - gap;
 
-    // Closer — pop art: black outline + enormous rainbow text
+    // Closer — pop art: black outline + enormous rainbow text, scale-pops in
     const closeHue = (t * 0.3 + s.id * 30) % 360;
+    push();
+    translate(s.x, baseY);
+    scale(constrain(rCloserRaw, 0, 1.2));
+    translate(-s.x, -baseY);
     textFont("Arial");
     textStyle(BOLD);
     textAlign(CENTER, BOTTOM);
     textSize(closeS);
     // Black outline (4-direction)
-    fill(0, 0, 0, 220);
+    fill(0, 0, 0, 220 * rCloser);
     text(s.alarmNext, s.x - outOff, baseY - outOff);
     text(s.alarmNext, s.x + outOff, baseY - outOff);
     text(s.alarmNext, s.x - outOff, baseY + outOff);
     text(s.alarmNext, s.x + outOff, baseY + outOff);
     // Rainbow fill
     colorMode(HSB, 360, 100, 100, 255);
-    fill(closeHue, 95, 100, textA);
+    fill(closeHue, 95, 100, textA * rCloser);
     colorMode(RGB, 255);
     text(s.alarmNext, s.x, baseY);
     textStyle(NORMAL);
+    pop();
 
-    // Rainbow rule
+    // Rainbow rule — wipes from centre
+    const sRuleW = ruleW * rRule;
     colorMode(HSB, 360, 100, 100, 255);
-    stroke((t * 0.2 + s.id * 40) % 360, 90, 100, 180);
+    stroke((t * 0.2 + s.id * 40) % 360, 90, 100, 180 * rRule);
     strokeWeight(Math.max(2, Math.round(3 * uiScale)));
-    line(s.x - ruleW * 0.5, ruleY, s.x + ruleW * 0.5, ruleY);
+    line(s.x - sRuleW * 0.5, ruleY, s.x + sRuleW * 0.5, ruleY);
     noStroke();
     colorMode(RGB, 255);
 
-    // Sub description — rainbow monospace
+    // Sub description — rainbow monospace; rises in
+    const subRise = (1 - rSub) * Math.round(14 * uiScale);
     colorMode(HSB, 360, 100, 100, 255);
-    fill((t * 0.25 + s.id * 45 + 120) % 360, 90, 100, textA);
+    fill((t * 0.25 + s.id * 45 + 120) % 360, 90, 100, textA * rSub);
     colorMode(RGB, 255);
     textFont("monospace");
     textSize(subS);
     textLeading(Math.round(subS * 1.4));
-    text(s.alarmSub, s.x, subBot);
+    text(s.alarmSub, s.x, subBot + subRise);
 
-    // Headline — bold white Arial, pop art black outline
+    // Headline — bold white Arial, pop art black outline; drops in
+    const headDrop = (1 - rHeadRaw) * Math.round(40 * uiScale);
     textFont("Arial");
     textStyle(BOLD);
     textSize(headS);
-    fill(0, 0, 0, 200);
-    text(s.alarmPrimary, s.x - outOff, headBot + outOff);
-    text(s.alarmPrimary, s.x + outOff, headBot + outOff);
-    fill(255, 255, 255, textA);
-    text(s.alarmPrimary, s.x, headBot);
+    fill(0, 0, 0, 200 * rHead);
+    text(s.alarmPrimary, s.x - outOff, headBot + outOff - headDrop);
+    text(s.alarmPrimary, s.x + outOff, headBot + outOff - headDrop);
+    fill(255, 255, 255, textA * rHead);
+    text(s.alarmPrimary, s.x, headBot - headDrop);
     textStyle(NORMAL);
     textFont("monospace");
   }

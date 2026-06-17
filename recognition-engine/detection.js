@@ -32,6 +32,8 @@ const detection = {
   gazeApproximation: "uncertain",
   groupState: "none",
   faces: [],                // [{x, y, w, h}] in canvas-space, mirrored coords
+  faceFrameId: 0,           // bumps each time MediaPipe produces a fresh result;
+                            // faceTracker uses it to interpolate between measurements
 
   _presenceStartTime: null,
   _lastMotionTime: null,
@@ -211,6 +213,7 @@ function runFaceDetection(videoEl) {
   }
 
   const faces = results.detections || [];
+  detection.faceFrameId++;   // a fresh measurement frame — tracker may re-assign
   const vidW = videoEl.videoWidth;
   const vidH = videoEl.videoHeight;
   const now = millis() / 1000;
