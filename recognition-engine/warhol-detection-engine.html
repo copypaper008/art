@@ -154,31 +154,17 @@
   .portrait{
     position:relative;
     width:100%;
-    aspect-ratio:3/4;
     border-radius:2px;
     overflow:hidden;
-    box-shadow:0 0 30px rgba(255,43,208,0.25);
+    box-shadow:0 0 30px rgba(255,43,208,0.3);
   }
-  .portrait svg{ display:block; width:100%; height:100%; }
-  /* halftone dot screen — the signature screen-print texture */
-  .portrait::after{
-    content:"";
-    position:absolute; inset:0;
-    background-image:radial-gradient(circle at center, rgba(0,0,0,0.5) 0.5px, transparent 1.3px);
-    background-size:3px 3px;
-    mix-blend-mode:overlay;
-    opacity:0.55;
-    pointer-events:none;
-  }
+  .portrait img{ display:block; width:100%; height:auto; }
 
   /* ---------- SOUP CANS ---------- */
   .cans{
-    display:grid;
-    grid-template-columns:repeat(5,1fr);
-    gap:4px;
     margin:14px 0 16px;
   }
-  .can svg{ display:block; width:100%; height:auto; }
+  .cans img{ display:block; width:100%; height:auto; }
 
   /* ---------- RESULT ---------- */
   .result-label{
@@ -254,213 +240,14 @@
       <!-- PORTRAIT -->
       <div class="right">
         <div class="portrait">
-          <svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice">
-            <defs>
-              <radialGradient id="bgGrad" cx="52%" cy="38%" r="78%">
-                <stop offset="0%" stop-color="#43104f"/>
-                <stop offset="55%" stop-color="#26083a"/>
-                <stop offset="100%" stop-color="#0a0512"/>
-              </radialGradient>
-              <radialGradient id="halo" cx="54%" cy="38%" r="46%">
-                <stop offset="0%" stop-color="#ff86e4" stop-opacity="0.75"/>
-                <stop offset="60%" stop-color="#ff3dba" stop-opacity="0.28"/>
-                <stop offset="100%" stop-color="#ff3dba" stop-opacity="0"/>
-              </radialGradient>
-              <radialGradient id="vig" cx="52%" cy="40%" r="66%">
-                <stop offset="55%" stop-color="#000" stop-opacity="0"/>
-                <stop offset="100%" stop-color="#000" stop-opacity="0.6"/>
-              </radialGradient>
-
-              <!-- ink-bleed: roughens every edge so nothing reads as clean vector -->
-              <filter id="inkbleed" x="-12%" y="-12%" width="124%" height="124%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.013 0.022"
-                              numOctaves="2" seed="8" result="warp"/>
-                <feDisplacementMap in="SourceGraphic" in2="warp" scale="3.2"
-                                   xChannelSelector="R" yChannelSelector="G"/>
-              </filter>
-
-              <!-- film grain: black speckle, alpha driven by noise -->
-              <filter id="grain" x="0" y="0" width="100%" height="100%">
-                <feTurbulence type="fractalNoise" baseFrequency="0.9"
-                              numOctaves="2" stitchTiles="stitch" result="n"/>
-                <feColorMatrix in="n" type="matrix"
-                  values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0.85 0 0 0 0"/>
-              </filter>
-            </defs>
-
-            <!-- background + halo -->
-            <rect width="300" height="400" fill="url(#bgGrad)"/>
-            <rect width="300" height="400" fill="url(#halo)"/>
-
-            <g filter="url(#inkbleed)">
-              <!-- shoulders / body -->
-              <path d="M34 400 C48 326 92 304 150 304 C208 304 252 326 266 400 Z" fill="#15122e"/>
-              <path d="M44 400 C58 340 100 320 150 320 C200 320 242 340 256 400 Z" fill="#271a4c"/>
-              <!-- collar V -->
-              <path d="M120 300 L150 342 L180 300 L180 318 L150 354 L120 318 Z" fill="#0b0815"/>
-
-              <!-- neck (two-tone) -->
-              <path d="M127 298 L127 252 L173 252 L173 298 C165 309 135 309 127 298 Z" fill="#d06aa0"/>
-              <path d="M127 298 L127 252 L150 252 L150 306 C141 305 133 303 127 298 Z" fill="#8a1c5e"/>
-
-              <!-- colour-misregistration ghost (cyan plate offset up-left) -->
-              <path d="M109 145 C106 170 110 198 120 224 C128 244 140 257 148 261
-                       C156 257 168 244 176 224 C186 198 190 170 187 145
-                       C168 137 128 137 109 145 Z"
-                    fill="#1fd3e6" opacity="0.85" transform="translate(-3.5,2.5)"/>
-
-              <!-- hair: dark gold base mass -->
-              <path d="M82 160 C72 104 110 54 150 54 C192 54 228 96 218 160
-                       C214 134 205 118 195 108 C199 128 197 144 192 156
-                       C186 130 172 117 150 117 C128 117 114 130 108 156
-                       C103 144 101 128 105 108 C95 118 86 136 82 160 Z"
-                    fill="#d98c0c"/>
-
-              <!-- FACE — flat posterised tone blocks (hard edges = screen print) -->
-              <!-- base: light pink -->
-              <path d="M111 146 C108 170 112 198 122 224 C130 244 142 258 150 262
-                       C158 258 170 244 178 224 C188 198 192 170 189 146
-                       C170 138 130 138 111 146 Z" fill="#ff8fb8"/>
-              <!-- right (lit) half: yellow -->
-              <path d="M150 142 L150 260 C158 254 168 242 176 224 C186 198 191 170 188 146
-                       C176 141 162 140 150 142 Z" fill="#ffdf3c"/>
-              <!-- left mid-shadow: magenta -->
-              <path d="M111 146 C108 170 112 198 122 224 C128 240 137 252 146 257
-                       L134 200 L126 150 Z" fill="#ff3d96"/>
-              <!-- left deep shadow edge -->
-              <path d="M111 146 C108 172 112 200 121 222 C124 230 129 237 133 241
-                       L130 200 L124 150 Z" fill="#a81c64"/>
-              <!-- cheek hollow, shadow side -->
-              <path d="M119 196 C127 211 138 218 147 218 L147 231 C133 229 122 217 116 204 Z"
-                    fill="#a81c64"/>
-              <!-- cheek hollow, lit side (orange shadow on yellow) -->
-              <path d="M181 196 C173 211 162 218 153 218 L153 231 C167 229 178 217 184 204 Z"
-                    fill="#d97a18"/>
-              <!-- under-jaw / chin shadow -->
-              <path d="M131 246 C140 258 160 258 169 246 C161 260 139 260 131 246 Z"
-                    fill="#7d1850"/>
-
-              <!-- ears -->
-              <path d="M111 173 C103 172 101 185 108 193 C113 197 117 194 117 188 Z" fill="#ff8fb8"/>
-              <path d="M189 173 C197 172 199 185 192 193 C187 197 183 194 183 188 Z" fill="#e0a536"/>
-
-              <!-- nose: shadow down the ridge + tip -->
-              <path d="M150 184 L143 214 C146 219 154 219 157 214 L150 184 Z"
-                    fill="#a81c64" opacity="0.65"/>
-
-              <!-- eyebrows -->
-              <path d="M117 158 C128 151 140 151 148 156" stroke="#5e1140"
-                    stroke-width="5" fill="none" stroke-linecap="round"/>
-              <path d="M152 156 C162 151 174 151 183 158" stroke="#7a3b16"
-                    stroke-width="5" fill="none" stroke-linecap="round"/>
-
-              <!-- sunglasses -->
-              <g>
-                <path d="M114 163 C124 160 142 160 146 165 L146 185 C143 193 117 193 113 185
-                         C110 177 110 167 114 163 Z" fill="#0c0a16"/>
-                <path d="M186 163 C176 160 158 160 154 165 L154 185 C157 193 183 193 187 185
-                         C190 177 190 167 186 163 Z" fill="#0c0a16"/>
-                <rect x="146" y="166" width="8" height="4" fill="#0c0a16"/>
-                <path d="M114 166 L101 161" stroke="#0c0a16" stroke-width="5" stroke-linecap="round"/>
-                <path d="M186 166 L199 161" stroke="#0c0a16" stroke-width="5" stroke-linecap="round"/>
-                <!-- lens reflections -->
-                <path d="M119 168 L131 182" stroke="#34314f" stroke-width="3"
-                      stroke-linecap="round" opacity="0.85"/>
-                <path d="M159 168 L171 182" stroke="#34314f" stroke-width="3"
-                      stroke-linecap="round" opacity="0.85"/>
-                <circle cx="124" cy="170" r="1.6" fill="#6c6890"/>
-                <circle cx="164" cy="170" r="1.6" fill="#6c6890"/>
-              </g>
-
-              <!-- lips -->
-              <path d="M133 230 C142 237 158 237 167 230 C158 241 142 241 133 230 Z" fill="#db1f3e"/>
-              <path d="M133 230 C142 234 158 234 167 230" stroke="#7d1226"
-                    stroke-width="1.6" fill="none"/>
-
-              <!-- hair: front fringe swept right -->
-              <path d="M104 152 C99 130 108 110 126 102 C119 115 117 126 119 137
-                       C128 119 140 111 152 112 C149 121 147 129 151 135
-                       C162 119 178 113 195 122 C190 134 183 142 177 148
-                       C166 131 130 131 104 152 Z" fill="#ffcf1c"/>
-              <!-- hair highlight streaks -->
-              <path d="M122 110 C134 104 148 104 158 111 C147 108 133 109 124 115 Z" fill="#fff39a"/>
-              <path d="M162 116 C172 111 184 113 192 120 C184 116 173 117 166 121 Z" fill="#fff39a"/>
-              <!-- hair shadow streaks -->
-              <path d="M106 150 C112 135 123 124 134 119 C125 130 119 140 117 151 Z"
-                    fill="#9c5e08" opacity="0.85"/>
-              <path d="M150 134 C156 124 165 118 175 116 C167 122 160 130 156 139 Z"
-                    fill="#b8770a" opacity="0.8"/>
-            </g>
-
-            <!-- vignette + grain overlays -->
-            <rect width="300" height="400" fill="url(#vig)"/>
-            <rect width="300" height="400" filter="url(#grain)" opacity="0.5"
-                  style="mix-blend-mode:multiply"/>
-            <rect width="300" height="400" filter="url(#grain)" opacity="0.12"
-                  style="mix-blend-mode:screen"/>
-          </svg>
+          <img src="posters/warhol-face.png" alt="Warhol pop-art screen-print portrait">
         </div>
       </div>
     </div>
 
     <!-- SOUP CANS -->
     <div class="cans">
-      <!-- 5 cans, different fluorescent colours -->
-      <div class="can">
-        <svg viewBox="0 0 60 96">
-          <rect x="6" y="6" width="48" height="84" rx="3" fill="#d83a2a"/>
-          <rect x="6" y="34" width="48" height="30" fill="#f4f0e6"/>
-          <rect x="6" y="6" width="48" height="10" fill="#c9b24a"/>
-          <text x="30" y="28" font-family="Oswald" font-size="7" fill="#fff" text-anchor="middle" font-weight="700">Campbell's</text>
-          <text x="30" y="50" font-family="Oswald" font-size="6" fill="#d83a2a" text-anchor="middle" font-weight="700">TOMATO</text>
-          <text x="30" y="58" font-family="Oswald" font-size="6" fill="#d83a2a" text-anchor="middle" font-weight="700">SOUP</text>
-          <circle cx="30" cy="74" r="6" fill="#c9b24a"/>
-        </svg>
-      </div>
-      <div class="can">
-        <svg viewBox="0 0 60 96">
-          <rect x="6" y="6" width="48" height="84" rx="3" fill="#7a4bd6"/>
-          <rect x="6" y="34" width="48" height="30" fill="#efe9f6"/>
-          <rect x="6" y="6" width="48" height="10" fill="#3ad6c2"/>
-          <text x="30" y="28" font-family="Oswald" font-size="7" fill="#fff" text-anchor="middle" font-weight="700">Campbell's</text>
-          <text x="30" y="50" font-family="Oswald" font-size="6" fill="#7a4bd6" text-anchor="middle" font-weight="700">TOMATO</text>
-          <text x="30" y="58" font-family="Oswald" font-size="6" fill="#7a4bd6" text-anchor="middle" font-weight="700">SOUP</text>
-          <circle cx="30" cy="74" r="6" fill="#3ad6c2"/>
-        </svg>
-      </div>
-      <div class="can">
-        <svg viewBox="0 0 60 96">
-          <rect x="6" y="6" width="48" height="84" rx="3" fill="#e23a8a"/>
-          <rect x="6" y="34" width="48" height="30" fill="#f6e9f0"/>
-          <rect x="6" y="6" width="48" height="10" fill="#f2d23c"/>
-          <text x="30" y="28" font-family="Oswald" font-size="7" fill="#fff" text-anchor="middle" font-weight="700">Campbell's</text>
-          <text x="30" y="50" font-family="Oswald" font-size="6" fill="#e23a8a" text-anchor="middle" font-weight="700">TOMATO</text>
-          <text x="30" y="58" font-family="Oswald" font-size="6" fill="#e23a8a" text-anchor="middle" font-weight="700">SOUP</text>
-          <circle cx="30" cy="74" r="6" fill="#f2d23c"/>
-        </svg>
-      </div>
-      <div class="can">
-        <svg viewBox="0 0 60 96">
-          <rect x="6" y="6" width="48" height="84" rx="3" fill="#2ab0d6"/>
-          <rect x="6" y="34" width="48" height="30" fill="#e6f2f6"/>
-          <rect x="6" y="6" width="48" height="10" fill="#e2522a"/>
-          <text x="30" y="28" font-family="Oswald" font-size="7" fill="#fff" text-anchor="middle" font-weight="700">Campbell's</text>
-          <text x="30" y="50" font-family="Oswald" font-size="6" fill="#2ab0d6" text-anchor="middle" font-weight="700">TOMATO</text>
-          <text x="30" y="58" font-family="Oswald" font-size="6" fill="#2ab0d6" text-anchor="middle" font-weight="700">SOUP</text>
-          <circle cx="30" cy="74" r="6" fill="#e2522a"/>
-        </svg>
-      </div>
-      <div class="can">
-        <svg viewBox="0 0 60 96">
-          <rect x="6" y="6" width="48" height="84" rx="3" fill="#d83a2a"/>
-          <rect x="6" y="34" width="48" height="30" fill="#f4f0e6"/>
-          <rect x="6" y="6" width="48" height="10" fill="#c9b24a"/>
-          <text x="30" y="28" font-family="Oswald" font-size="7" fill="#fff" text-anchor="middle" font-weight="700">Campbell's</text>
-          <text x="30" y="50" font-family="Oswald" font-size="6" fill="#d83a2a" text-anchor="middle" font-weight="700">TOMATO</text>
-          <text x="30" y="58" font-family="Oswald" font-size="6" fill="#d83a2a" text-anchor="middle" font-weight="700">SOUP</text>
-          <circle cx="30" cy="74" r="6" fill="#c9b24a"/>
-        </svg>
-      </div>
+      <img src="posters/warhol-cans.png" alt="Campbell's tomato soup cans in fluorescent colours">
     </div>
 
     <!-- RESULT -->
