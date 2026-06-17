@@ -7,8 +7,9 @@ const ENGINE_SLUGS = [
 
 // Slugs that have fully coded HTML/CSS/SVG cards (no PNG needed)
 const CODED_CARDS = {
-  warhol: renderWarholCard,
-  haring: renderHaringCard,
+  warhol:  renderWarholCard,
+  haring:  renderHaringCard,
+  leather: renderLeatherCard,
 };
 
 let _alarmOverlay  = null;
@@ -42,8 +43,9 @@ function _showSlug(slug) {
     );
   }
 
-  el.getBoundingClientRect(); // force reflow before transition
-  el.classList.add('visible');
+  // Two-step: reflow first, then add class so CSS transition actually fires
+  el.getBoundingClientRect();
+  requestAnimationFrame(() => el.classList.add('visible'));
   alarmOverlayActive = true;
 }
 
@@ -60,23 +62,23 @@ function hideAlarmScreen() {
 }
 
 // ── Preview mode ──────────────────────────────────────────────────────────────
-// Add ?preview=SLUG to the URL to see a coded card immediately without scanning.
-// e.g. /recognition-engine/?preview=warhol  or  ?preview=haring
-// Press Escape or tap the overlay to dismiss.
+// Add ?preview=SLUG to URL to instantly show any card without scanning.
+// e.g.  ?preview=warhol   ?preview=haring   ?preview=leather
+// Tap the overlay or press Escape to dismiss.
 (function _initPreview() {
   const slug = new URLSearchParams(window.location.search).get('preview');
   if (!slug) return;
-  // Wait for p5.js and card scripts to be ready
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      _showSlug(slug);
-      // Tap/click or Escape dismisses preview
+  // Scripts are already loaded at this point (we're in the body, not async).
+  // A short delay lets p5.js finish its setup() before we add the overlay.
+  setTimeout(() => {
+    _showSlug(slug);
+    if (_alarmOverlay) {
       _alarmOverlay.addEventListener('click', hideAlarmScreen, { once: true });
-      document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') hideAlarmScreen();
-      }, { once: true });
-    }, 400);
-  });
+    }
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') hideAlarmScreen();
+    }, { once: true });
+  }, 600);
 })();
 
 // ── Animation loop (for PNG poster cards) ────────────────────────────────────
