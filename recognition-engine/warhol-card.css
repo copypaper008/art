@@ -128,24 +128,24 @@
   position: relative;
   flex: 1;
   min-height: 0;
-  display: grid;
-  place-items: center;
   margin: 0 10px;
-  background: #0d3038;
   overflow: hidden;
 }
 
+/* The poster image crops to show the Warhol portrait section */
 .wc-face {
-  width: 64%;
-  max-width: 220px;
-  height: auto;
-  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 32%;
   animation: wc-face-pulse 2.4s ease-in-out infinite alternate;
 }
 
 @keyframes wc-face-pulse {
-  from { filter: drop-shadow(0 0 8px rgba(255,20,147,0.4)) brightness(0.92); }
-  to   { filter: drop-shadow(0 0 20px rgba(255,20,147,0.75)) brightness(1.06); }
+  from { filter: brightness(0.92) saturate(1.1); }
+  to   { filter: brightness(1.06) saturate(1.3) drop-shadow(0 0 14px rgba(255,20,147,0.5)); }
 }
 
 /* Corner reticle brackets */
