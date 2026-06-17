@@ -16,19 +16,19 @@ const WARHOL_CONFIG = {
   scanDepth:       '97.2%',
 
   faceAnchors: {
-    leftEye:  { x: 268, y: 296 },   // subject's left eye (image-left side)
-    rightEye: { x: 418, y: 292 },   // subject's right eye (image-right side)
+    leftEye:  { x: 175, y: 298 },   // image-left eye (portrait 495×690)
+    rightEye: { x: 300, y: 293 },   // image-right eye
     faceOval: [
-      { x: 342, y: 162 },   // forehead top
-      { x: 430, y: 192 },   // right forehead
-      { x: 466, y: 290 },   // right temple
-      { x: 454, y: 400 },   // right cheek
-      { x: 422, y: 482 },   // right jaw
-      { x: 342, y: 514 },   // chin
-      { x: 262, y: 482 },   // left jaw
-      { x: 228, y: 400 },   // left cheek
-      { x: 218, y: 290 },   // left temple
-      { x: 255, y: 192 },   // left forehead
+      { x: 248, y: 165 },   // forehead top
+      { x: 325, y: 190 },   // right forehead
+      { x: 360, y: 295 },   // right temple
+      { x: 350, y: 390 },   // right cheek
+      { x: 315, y: 480 },   // right jaw
+      { x: 248, y: 525 },   // chin
+      { x: 180, y: 480 },   // left jaw
+      { x: 140, y: 390 },   // left cheek
+      { x: 133, y: 295 },   // left temple
+      { x: 168, y: 190 },   // left forehead
     ],
   },
 

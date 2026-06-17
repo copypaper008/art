@@ -16,20 +16,19 @@ const HARING_CONFIG = {
   scanDepth:       '96.8%',
 
   faceAnchors: {
-    // Placeholder — run anchor-overlay.js to calibrate against your portrait.
-    leftEye:  { x: 268, y: 296 },
-    rightEye: { x: 418, y: 292 },
+    leftEye:  { x: 175, y: 330 },   // image-left eye (portrait 493×764)
+    rightEye: { x: 297, y: 326 },   // image-right eye
     faceOval: [
-      { x: 342, y: 162 },
-      { x: 430, y: 192 },
-      { x: 466, y: 290 },
-      { x: 454, y: 400 },
-      { x: 422, y: 482 },
-      { x: 342, y: 514 },
-      { x: 262, y: 482 },
-      { x: 228, y: 400 },
-      { x: 218, y: 290 },
-      { x: 255, y: 192 },
+      { x: 246, y: 205 },   // forehead top
+      { x: 325, y: 225 },   // right forehead
+      { x: 355, y: 335 },   // right temple
+      { x: 345, y: 435 },   // right cheek
+      { x: 310, y: 530 },   // right jaw
+      { x: 246, y: 575 },   // chin
+      { x: 182, y: 530 },   // left jaw
+      { x: 145, y: 435 },   // left cheek
+      { x: 140, y: 335 },   // left temple
+      { x: 168, y: 225 },   // left forehead
     ],
   },
 
