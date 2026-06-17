@@ -64,13 +64,28 @@ function _addSubjectOverlay(subject) {
   const container = _ensureContainer();
   const iframe    = document.createElement('iframe');
   iframe.src      = 'poster/index.html?kiosk=1';
-  iframe.style.cssText = 'flex:1;border:none;display:block;height:100%;min-width:0;';
+  // Start fully clipped so the grow animation reveals it from the face outward
+  iframe.style.cssText = 'flex:1;border:none;display:block;height:100%;min-width:0;clip-path:circle(0%);';
   iframe.addEventListener('load', () => {
     iframe.contentWindow?.postMessage({ type: 'KIOSK_INIT', subjectKey: subject.subjectKey }, '*');
   });
   container.appendChild(iframe);
   _subjectOverlays.set(subject.id, { iframe, subject });
 }
+
+// ── POSTER_READY — trigger grow animation once kiosk iframe has rendered ──────
+window.addEventListener('message', evt => {
+  if (!evt.data || evt.data.type !== 'POSTER_READY') return;
+  for (const state of _subjectOverlays.values()) {
+    if (state.iframe.contentWindow === evt.source) {
+      const iframe = state.iframe;
+      iframe.style.setProperty('--grow-x', evt.data.faceX);
+      iframe.style.setProperty('--grow-y', evt.data.faceY);
+      iframe.classList.add('poster-iframe-growing');
+      break;
+    }
+  }
+});
 
 function _removeSubjectOverlay(id) {
   const state = _subjectOverlays.get(id);

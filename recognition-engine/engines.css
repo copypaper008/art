@@ -52,3 +52,13 @@
   from { top: -10%; }
   to   { top: 110%; }
 }
+
+/* Poster iframe: grows outward from the subject's face center */
+@keyframes poster-grow-from-face {
+  from { clip-path: circle(0% at var(--grow-x, 30%) var(--grow-y, 18%)); }
+  to   { clip-path: circle(150% at var(--grow-x, 30%) var(--grow-y, 18%)); }
+}
+
+.poster-iframe-growing {
+  animation: poster-grow-from-face 1.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

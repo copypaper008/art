@@ -342,6 +342,20 @@ if (new URLSearchParams(location.search).has('kiosk')) {
       activeDetermination = null;
       setStatus('initialising…');
       await _initPoster();
+
+      // Tell the parent where the face is so it can start the grow animation
+      const config   = SUBJECTS[activeSubject];
+      const { dx, dy, dw, dh, iw, ih } = _portLayout;
+      const eyeMidX  = (config.faceAnchors.leftEye.x + config.faceAnchors.rightEye.x) / 2;
+      const eyeMidY  = (config.faceAnchors.leftEye.y + config.faceAnchors.rightEye.y) / 2;
+      const faceCanX = dx + (eyeMidX / iw) * dw;
+      const faceCanY = dy + (eyeMidY / ih) * dh;
+      const rect     = posterCanvas.getBoundingClientRect();
+      const scaleX   = rect.width  / posterCanvas.width;
+      const scaleY   = rect.height / posterCanvas.height;
+      const faceX    = ((rect.left + faceCanX * scaleX) / window.innerWidth  * 100).toFixed(1) + '%';
+      const faceY    = ((rect.top  + faceCanY * scaleY) / window.innerHeight * 100).toFixed(1) + '%';
+      window.parent.postMessage({ type: 'POSTER_READY', faceX, faceY }, '*');
     } else if (msg.type === 'WEBCAM_FRAME') {
       _processFrame(msg.dataUrl, msg.faceHint);  // not awaited — drops if busy
     }
