@@ -1,13 +1,12 @@
 'use strict';
 
-// ── Subject pool ─────────────────────────────────────────────────────────────
-// Add 'milk', 'baldwin' here (+ portrait in poster/portraits/ + config below)
-const GALLERY_POOL = ['warhol', 'haring'];
-
+// ── Full subject configs (mirrors poster/subjects/*.js) ───────────────────────
 const GALLERY_CONFIGS = {
   warhol: {
-    name:    'WARHOL, ANDY',
-    fileId:  'AW-1928-0806',
+    fileId: 'AW-1928-0601', name: 'WARHOL, ANDY', date: '05.06.2024',
+    portrait: './poster/portraits/warhol.jpg',
+    imageResolution: '8192 × 10240', mode: 'B&W',
+    source: 'ARCHIVAL PHOTOGRAPH c. 1967', scanDepth: '97.2%',
     faceAnchors: {
       leftEye:  { x: 175, y: 298 },
       rightEye: { x: 300, y: 293 },
@@ -18,14 +17,17 @@ const GALLERY_CONFIGS = {
         { x: 168, y: 190 },
       ],
     },
-    stamp: {
-      text:      'HOMOSEXUAL',
-      treatment: 'warhol_pop',
-    },
+    exhibitionTitle: 'ANDY WARHOL\nRECOGNITION & SIMULATION\nA SOLO EXHIBITION',
+    dateRange:       '06.01 — 09.22.2024',
+    venue:           'MUSEUM OF CONTEMPORARY CULTURAL STUDIES',
+    address:         '301 OBSERVATION DRIVE\nMETROPOLIS, NY 10001',
+    stamp: { text: 'HOMOSEXUAL', treatment: 'warhol_pop' },
   },
   haring: {
-    name:    'HARING, KEITH',
-    fileId:  'KH-1958-0504',
+    fileId: 'KH-1958-0504', name: 'HARING, KEITH', date: '05.06.2024',
+    portrait: './poster/portraits/haring.jpg',
+    imageResolution: '8192 × 10240', mode: 'B&W',
+    source: 'ARCHIVAL PHOTOGRAPH c. 1985', scanDepth: '96.8%',
     faceAnchors: {
       leftEye:  { x: 175, y: 330 },
       rightEye: { x: 297, y: 326 },
@@ -36,36 +38,27 @@ const GALLERY_CONFIGS = {
         { x: 168, y: 225 },
       ],
     },
-    stamp: {
-      text:      'HOMOSEXUAL',
-      treatment: 'haring_bold',
-    },
+    exhibitionTitle: 'KEITH HARING\nLINES OF RECOGNITION\nA SOLO EXHIBITION',
+    dateRange:       '10.01 — 01.15.2025',
+    venue:           'MUSEUM OF CONTEMPORARY CULTURAL STUDIES',
+    address:         '301 OBSERVATION DRIVE\nMETROPOLIS, NY 10001',
+    stamp: { text: 'HOMOSEXUAL', treatment: 'haring_bold' },
   },
 };
 
-// ── Layout ────────────────────────────────────────────────────────────────────
-const GALLERY_N     = GALLERY_POOL.length;  // 2 until more portraits are added
-const GALLERY_CW    = 0.22;                 // card width as fraction of canvas width
-const GALLERY_SLOTS = [
-  { x: 0.28, y: 0.50, rot: -2.0 },
-  { x: 0.72, y: 0.50, rot:  1.5 },
-];
-
 // ── Beat durations (ms) ───────────────────────────────────────────────────────
-const GB_A       = 900;    // scan vignette
-const GB_B       = 1500;   // portrait builds outside-in
-const GB_C       = 1800;   // report assembles
-const GB_D       = 700;    // stamp lands
-const GB_HOLD    = 2800;   // dwell on finished card
-const GB_STAGGER = 450;    // delay between successive card starts
+const GB_A     = 1500;   // scan / processing screen
+const GB_B     = 3500;   // poster wipes in top-to-bottom
+const GB_D     = 900;    // HOMOSEXUAL stamp slams
+const GB_HOLD  = 5000;   // dwell on finished poster
+const GB_FADE  = 700;    // fade to black
 
-const GB_A_END     = GB_A;
-const GB_B_END     = GB_A + GB_B;
-const GB_C_END     = GB_A + GB_B + GB_C;
-const GB_PER_CARD  = GB_A + GB_B + GB_C + GB_D + GB_HOLD;
-const GB_TOTAL     = (GALLERY_N - 1) * GB_STAGGER + GB_PER_CARD;
+const GB_A_END = GB_A;
+const GB_B_END = GB_A + GB_B;
+const GB_D_END = GB_B_END + GB_D;
+const GB_TOTAL = GB_D_END + GB_HOLD + GB_FADE;
 
-// ── Oval path helper — caller must call ctx.beginPath() first ─────────────────
+// ── Oval path helper (caller must call ctx.beginPath() first) ─────────────────
 function _ovalPath(ctx, oval) {
   ctx.moveTo(oval[0].x, oval[0].y);
   for (let i = 1; i < oval.length; i++) {
@@ -76,32 +69,74 @@ function _ovalPath(ctx, oval) {
   ctx.closePath();
 }
 
-// ── Build oval array in card-local coords ─────────────────────────────────────
-function _buildOval(anchors, sc, lx, ty) {
-  return anchors.faceOval.map(pt => ({
-    x: lx + pt.x * sc,
-    y: ty + pt.y * sc,
-  }));
+// ── Build composited portrait: captured face composited into face oval ────────
+function _buildCompositedPortrait(portImg, anchors, capturedSnap, faceInfo) {
+  const c   = document.createElement('canvas');
+  c.width   = portImg.width;
+  c.height  = portImg.height;
+  const ctx = c.getContext('2d');
+
+  // Portrait base — greyscale + slight contrast
+  ctx.filter = 'grayscale(1) contrast(1.05)';
+  ctx.drawImage(portImg.canvas, 0, 0);
+  ctx.filter = 'none';
+
+  if (capturedSnap && faceInfo) {
+    // Align captured face eyes to portrait face-anchor eyes
+    const portEyeMidX = (anchors.leftEye.x + anchors.rightEye.x) / 2;
+    const portEyeMidY = (anchors.leftEye.y + anchors.rightEye.y) / 2;
+    const portEyeDist = Math.hypot(
+      anchors.rightEye.x - anchors.leftEye.x,
+      anchors.rightEye.y - anchors.leftEye.y,
+    );
+
+    const captEyeX    = faceInfo.x;
+    const captEyeY    = faceInfo.y - faceInfo.h * 0.18;
+    const faceEyeDist = faceInfo.w * 0.46;
+    const faceScale   = portEyeDist / faceEyeDist;
+
+    const dx = portEyeMidX - captEyeX * faceScale;
+    const dy = portEyeMidY - captEyeY * faceScale;
+
+    ctx.save();
+    ctx.beginPath();
+    _ovalPath(ctx, anchors.faceOval);
+    ctx.clip();
+    ctx.filter = 'grayscale(1) contrast(1.05)';
+    ctx.drawImage(
+      capturedSnap.elt,
+      dx, dy,
+      capturedSnap.width  * faceScale,
+      capturedSnap.height * faceScale,
+    );
+    ctx.filter = 'none';
+    ctx.restore();
+  }
+
+  return c;
 }
 
 // ── GalleryReveal ─────────────────────────────────────────────────────────────
 class GalleryReveal {
   constructor() {
     this.active       = false;
-    this.cards        = [];
+    this._rendering   = false;
+    this.posterCanvas = null;
+    this.cardKey      = null;
     this.startMs      = 0;
-    this.capturedSnap = null;  // p5.Graphics: mirrored camera freeze
-    this.faceInfo     = null;  // { x, y, w, h } in canvas-space (mirrored)
+    this.capturedSnap = null;
+    this.faceInfo     = null;
   }
 
-  trigger(subject) {
-    if (this.active) return;
+  async trigger(subject) {
+    if (this.active || this._rendering) return;
+    this._rendering = true;
 
-    // Freeze a mirrored camera frame — face coords match tracking space
+    // Freeze a mirrored camera frame so face coords match tracking space
     if (this.capturedSnap) { this.capturedSnap.remove(); this.capturedSnap = null; }
     const snap = createGraphics(width, height);
     snap.pixelDensity(1);
-    if (cam && cam.elt && cam.elt.readyState >= 2) {
+    if (typeof cam !== 'undefined' && cam && cam.elt && cam.elt.readyState >= 2) {
       const sctx = snap.drawingContext;
       sctx.save();
       sctx.translate(width, 0);
@@ -111,304 +146,157 @@ class GalleryReveal {
     }
     this.capturedSnap = snap;
     this.faceInfo     = { x: subject.x, y: subject.y, w: subject.w, h: subject.h };
+    this.cardKey      = subject.subjectKey;
 
-    const shuffled = [...GALLERY_POOL].sort(() => Math.random() - 0.5);
-    this.cards = shuffled.slice(0, GALLERY_N).map((key, i) => ({
-      key,
-      slot:          GALLERY_SLOTS[i] || GALLERY_SLOTS[0],
-      startOffset:   i * GB_STAGGER,
-      determination: _generateAlarmData(),
-    }));
+    const config  = GALLERY_CONFIGS[this.cardKey];
+    const portImg = _portraitImages[this.cardKey];
 
-    this.startMs = millis();
-    this.active  = true;
+    // Composite captured face into portrait oval
+    let composited = null;
+    if (portImg && portImg.width > 0) {
+      composited = _buildCompositedPortrait(portImg, config.faceAnchors, snap, this.faceInfo);
+    }
+
+    // Render the full 1024×1536 poster
+    const canvas = document.createElement('canvas');
+    await renderPoster(canvas, config, generateDetermination(), composited);
+
+    this.posterCanvas = canvas;
+    this.startMs      = millis();
+    this.active       = true;
+    this._rendering   = false;
   }
 
   draw() {
     if (!this.active) return;
     const elapsed = millis() - this.startMs;
 
-    const fadeStart = GB_TOTAL - 600;
+    // Poster is 1024:1536 (2:3). Fit to screen with 4% margin on each side.
+    const aspect = 1536 / 1024;
+    const cw     = Math.min(height * 0.92 / aspect, width * 0.92);
+    const ch     = cw * aspect;
+    const lx     = (width  - cw) * 0.5;
+    const ty     = (height - ch) * 0.5;
+
+    const fadeStart = GB_TOTAL - GB_FADE;
     const fade = elapsed > fadeStart
       ? constrain(map(elapsed, fadeStart, GB_TOTAL, 1, 0), 0, 1)
       : 1;
 
-    for (const card of this.cards) {
-      const age = elapsed - card.startOffset;
-      if (age < 0) continue;
-      const portImg = _portraitImages[card.key];
-      if (!portImg || portImg.width === 0) continue;
-      this._drawCard(card, Math.min(age, GB_PER_CARD), portImg, fade);
-    }
-
-    if (elapsed >= GB_TOTAL) this.active = false;
-  }
-
-  isActive() { return this.active; }
-
-  // ── Card dispatcher ───────────────────────────────────────────────────────
-  _drawCard(card, age, portImg, fade) {
-    const config  = GALLERY_CONFIGS[card.key];
-    const cw      = width  * GALLERY_CW;
-    const ch      = cw * 1.5;
-    const lx      = -cw / 2;
-    const ty      = -ch / 2;
-    const sc      = cw / portImg.width;
-    const oval    = _buildOval(config.faceAnchors, sc, lx, ty);
-
-    push();
-    translate(card.slot.x * width, card.slot.y * height);
-    rotate(card.slot.rot * PI / 180);
     drawingContext.globalAlpha = fade;
 
-    if (age < GB_A_END) {
-      this._beatA(card, age / GB_A,              lx, ty, cw, ch, config, portImg, sc, oval);
-    } else if (age < GB_B_END) {
-      this._beatB(card, (age - GB_A_END) / GB_B, lx, ty, cw, ch, config, portImg, sc, oval);
-    } else if (age < GB_C_END) {
-      this._beatC(card, (age - GB_B_END) / GB_C, lx, ty, cw, ch, config, portImg, sc, oval);
+    if (elapsed < GB_A_END) {
+      this._beatA(elapsed / GB_A, lx, ty, cw, ch);
+    } else if (elapsed < GB_B_END) {
+      if (!this.posterCanvas) {
+        // Poster not ready yet — hold on Beat A
+        this._beatA(1, lx, ty, cw, ch);
+      } else {
+        this._beatB((elapsed - GB_A_END) / GB_B, lx, ty, cw, ch);
+      }
     } else {
-      this._beatC(card, 1,                        lx, ty, cw, ch, config, portImg, sc, oval);
-      this._beatD(card, age - GB_C_END,           lx, ty, cw, ch, config);
+      // Full poster visible
+      if (this.posterCanvas) {
+        drawingContext.drawImage(this.posterCanvas, lx, ty, cw, ch);
+      }
+      // Stamp overlaid on top
+      this._beatD(elapsed - GB_B_END, lx, ty, cw, ch);
     }
 
     drawingContext.globalAlpha = 1;
-    pop();
+
+    if (elapsed >= GB_TOTAL) {
+      this.active = false;
+      if (this.capturedSnap) { this.capturedSnap.remove(); this.capturedSnap = null; }
+    }
   }
 
-  // ── Beat A: scan vignette ─────────────────────────────────────────────────
-  _beatA(card, p, lx, ty, cw, ch, config, portImg, sc, oval) {
-    const ctx = drawingContext;
+  isActive() { return this.active || this._rendering; }
 
-    // Dark card background
-    ctx.fillStyle = 'rgba(10,10,10,0.92)';
+  // ── Beat A: scan / processing screen ─────────────────────────────────────
+  _beatA(p, lx, ty, cw, ch) {
+    const ctx    = drawingContext;
+    const config = GALLERY_CONFIGS[this.cardKey] || {};
+
+    // Dark card
+    ctx.fillStyle = 'rgba(6,6,6,0.97)';
     ctx.fillRect(lx, ty, cw, ch);
 
-    // Vignette circle growing to reveal the captured face
-    const r = cw * 0.42 * p;
-    if (r > 4 && this.capturedSnap) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(0, -ch * 0.05, r, 0, Math.PI * 2);
-      ctx.clip();
-      ctx.filter = 'grayscale(1) contrast(1.1)';
-      this._drawFace(portImg, sc, lx, ty, config.faceAnchors);
-      ctx.filter = 'none';
-      ctx.restore();
+    // Animated scan line crawling down
+    const scanFrac = ((millis() * 0.00022) % 1);
+    const scanY    = ty + ch * scanFrac;
+    const sg = ctx.createLinearGradient(0, scanY - ch * 0.08, 0, scanY + 3);
+    sg.addColorStop(0, 'rgba(220,20,20,0)');
+    sg.addColorStop(1, `rgba(220,20,20,${0.22 * p})`);
+    ctx.fillStyle = sg;
+    ctx.fillRect(lx, Math.max(ty, scanY - ch * 0.08), cw, Math.min(ch * 0.08 + 3, ch));
 
-      // Vignette fade edge
-      const grad = ctx.createRadialGradient(0, -ch * 0.05, r * 0.55, 0, -ch * 0.05, r);
-      grad.addColorStop(0, 'rgba(0,0,0,0)');
-      grad.addColorStop(1, 'rgba(0,0,0,0.88)');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(0, -ch * 0.05, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    // Progress bar at bottom
+    ctx.fillStyle = `rgba(220,20,20,${0.85 * p})`;
+    ctx.fillRect(lx, ty + ch - 3, cw * _gEaseOut(p), 3);
 
-    // Red card border, grows in with p
-    ctx.strokeStyle = `rgba(${M_RED[0]},${M_RED[1]},${M_RED[2]},${0.55 * p})`;
-    ctx.lineWidth   = 1;
+    // Card border
+    ctx.strokeStyle = `rgba(220,20,20,${0.65 * p})`;
+    ctx.lineWidth = 2;
     ctx.strokeRect(lx + 1, ty + 1, cw - 2, ch - 2);
 
-    // Subject name + progress
-    const a = floor(min(p * 4, 1) * 210);
-    noStroke();
-    fill(M_RED[0], M_RED[1], M_RED[2], a);
-    textFont('monospace');
-    textAlign(CENTER, TOP);
-    textSize(max(7, cw * 0.048));
-    text('PROCESSING  ' + config.name, 0, ty + ch * 0.06);
+    // Center text
+    const ta = Math.min(p * 3, 1);
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    const midX = lx + cw * 0.5;
+    const midY = ty + ch * 0.5;
 
-    textStyle(BOLD);
-    textSize(max(16, cw * 0.13));
-    textAlign(CENTER, BOTTOM);
-    text(floor(p * 100) + '%', 0, ty + ch - ch * 0.05);
-    textStyle(NORMAL);
+    ctx.font = `bold ${Math.round(cw * 0.038)}px monospace`;
+    ctx.fillStyle = `rgba(220,20,20,${ta * 0.9})`;
+    ctx.fillText('PROCESSING', midX, midY - ch * 0.04);
 
-    // Crosshair
-    const cg = max(4, cw * 0.04);
-    const cl = max(8, cw * 0.1);
-    stroke(M_RED[0], M_RED[1], M_RED[2], a * 0.6);
-    strokeWeight(1);
-    line(-cl, -ch * 0.05, -cg, -ch * 0.05);
-    line( cg, -ch * 0.05,  cl, -ch * 0.05);
-    line(0, -ch * 0.05 - cl, 0, -ch * 0.05 - cg);
-    line(0, -ch * 0.05 + cg, 0, -ch * 0.05 + cl);
-    noStroke();
+    ctx.font = `${Math.round(cw * 0.024)}px monospace`;
+    ctx.fillStyle = `rgba(220,20,20,${ta * 0.55})`;
+    ctx.fillText(config.name || '', midX, midY + ch * 0.02);
+
+    ctx.font = `bold ${Math.round(cw * 0.065)}px monospace`;
+    ctx.fillStyle = `rgba(220,20,20,${ta * 0.45})`;
+    ctx.fillText(Math.round(p * 100) + '%', midX, midY + ch * 0.1);
   }
 
-  // ── Beat B: portrait builds outside-in ───────────────────────────────────
-  _beatB(card, progress, lx, ty, cw, ch, config, portImg, sc, oval) {
-    const ctx   = drawingContext;
-    const portH = portImg.height * sc;
+  // ── Beat B: poster wipes in top-to-bottom ────────────────────────────────
+  _beatB(p, lx, ty, cw, ch) {
+    const ctx = drawingContext;
+    const ep  = _gEaseOut(p);
 
-    // Cream background
-    ctx.fillStyle = '#eae5dc';
-    ctx.fillRect(lx, ty, cw, ch);
-
-    // User face inside oval — greyscale, full opacity
-    ctx.save();
-    ctx.beginPath(); _ovalPath(ctx, oval); ctx.clip();
-    ctx.filter = 'grayscale(1) contrast(1.05)';
-    this._drawFace(portImg, sc, lx, ty, config.faceAnchors);
-    ctx.filter = 'none';
-    ctx.restore();
-
-    // Portrait hair / clothing outside oval — fades in
-    if (progress > 0.02) {
+    // Revealed section (clipped)
+    if (this.posterCanvas) {
       ctx.save();
-      ctx.globalAlpha = progress;
       ctx.beginPath();
-      ctx.rect(lx, ty, cw, portH);
-      _ovalPath(ctx, oval);
-      ctx.clip('evenodd');
-      ctx.filter = 'grayscale(1) contrast(1.05)';
-      tint(255, 255); image(portImg, lx, ty, cw, portH); noTint();
-      ctx.filter = 'none';
+      ctx.rect(lx, ty, cw, ch * ep);
+      ctx.clip();
+      ctx.drawImage(this.posterCanvas, lx, ty, cw, ch);
       ctx.restore();
     }
 
-    // Portrait face ghost inside oval — morph effect (25% max)
-    if (progress > 0.04) {
-      ctx.save();
-      ctx.globalAlpha = progress * 0.25;
-      ctx.beginPath(); _ovalPath(ctx, oval); ctx.clip();
-      ctx.filter = 'grayscale(1)';
-      tint(255, 255); image(portImg, lx, ty, cw, portH); noTint();
-      ctx.filter = 'none';
-      ctx.restore();
+    // Unrevealed section — dark
+    if (ep < 0.999) {
+      ctx.fillStyle = 'rgba(6,6,6,0.97)';
+      ctx.fillRect(lx, ty + ch * ep, cw, ch * (1 - ep) + 1);
     }
 
-    // Scan box pinned over face oval
-    const anchors = config.faceAnchors;
-    const ox1 = lx + Math.min(...anchors.faceOval.map(p => p.x)) * sc;
-    const ox2 = lx + Math.max(...anchors.faceOval.map(p => p.x)) * sc;
-    const oy1 = ty + Math.min(...anchors.faceOval.map(p => p.y)) * sc;
-    const oy2 = ty + Math.max(...anchors.faceOval.map(p => p.y)) * sc;
-    noFill();
-    stroke(M_RED[0], M_RED[1], M_RED[2], 75 * progress);
-    strokeWeight(1);
-    rect(ox1, oy1, ox2 - ox1, oy2 - oy1);
-    noStroke();
-
-    // Card border
-    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-    ctx.lineWidth   = 1;
-    ctx.strokeRect(lx, ty, cw, ch);
+    // Glowing wipe edge
+    if (ep > 0.01 && ep < 0.999) {
+      const edgeY = ty + ch * ep;
+      const eg    = ctx.createLinearGradient(0, edgeY - 24, 0, edgeY + 4);
+      eg.addColorStop(0, 'rgba(220,20,20,0)');
+      eg.addColorStop(1, `rgba(220,20,20,${0.65 * (1 - p)})`);
+      ctx.fillStyle = eg;
+      ctx.fillRect(lx, Math.max(ty, edgeY - 24), cw, 28);
+    }
   }
 
-  // ── Beat C: report assembles ──────────────────────────────────────────────
-  _beatC(card, progress, lx, ty, cw, ch, config, portImg, sc, oval) {
-    const ctx   = drawingContext;
-    const portH = portImg.height * sc;
-
-    // Cream background
-    ctx.fillStyle = '#eae5dc';
-    ctx.fillRect(lx, ty, cw, ch);
-
-    // Portrait outside oval (hair / clothing)
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(lx, ty, cw, portH);
-    _ovalPath(ctx, oval);
-    ctx.clip('evenodd');
-    ctx.filter = 'grayscale(1) contrast(1.05)';
-    tint(255, 255); image(portImg, lx, ty, cw, portH); noTint();
-    ctx.filter = 'none';
-    ctx.restore();
-
-    // Face in oval (captured)
-    ctx.save();
-    ctx.beginPath(); _ovalPath(ctx, oval); ctx.clip();
-    ctx.filter = 'grayscale(1) contrast(1.05)';
-    this._drawFace(portImg, sc, lx, ty, config.faceAnchors);
-    ctx.filter = 'none';
-    ctx.restore();
-
-    // Portrait ghost inside oval (25% morph)
-    ctx.save();
-    ctx.globalAlpha = 0.25;
-    ctx.beginPath(); _ovalPath(ctx, oval); ctx.clip();
-    ctx.filter = 'grayscale(1)';
-    tint(255, 255); image(portImg, lx, ty, cw, portH); noTint();
-    ctx.filter = 'none';
-    ctx.restore();
-
-    // ── Report panel ────────────────────────────────────────────────────────
-    const anchors  = config.faceAnchors;
-    const ovalBot  = ty + Math.max(...anchors.faceOval.map(pt => pt.y)) * sc;
-    const panelTop = ovalBot + cw * 0.04;
-    const panelBot = ty + ch - cw * 0.02;
-    const panelH   = panelBot - panelTop;
-
-    // Semi-transparent dark panel
-    const panelA = constrain(progress * 3.5, 0, 1);
-    ctx.fillStyle = `rgba(8,8,8,${0.75 * panelA})`;
-    ctx.fillRect(lx, panelTop - cw * 0.01, cw, panelH + cw * 0.03);
-
-    // Clip text to panel area
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(lx, panelTop, cw, panelH);
-    ctx.clip();
-
-    const chars    = card.determination?.characteristics || [];
-    const N_LINES  = 4 + chars.length + 2;   // header + name + fileId + conf + chars + rule + classif
-    const lineReveal = constrain(map(progress, 0, 1, 0, N_LINES + 1), 0, N_LINES + 1);
-
-    let curY = panelTop + cw * 0.03;
-    const lh = panelH / (N_LINES + 2);
-
-    const panelLine = (txt, idx, sizeFrac, col, alpha255, bold) => {
-      if (lineReveal < idx) return;
-      const a = constrain(map(lineReveal, idx, idx + 0.7, 0, 1), 0, 1) * alpha255;
-      noStroke();
-      if (bold) textStyle(BOLD);
-      fill(col[0], col[1], col[2], a);
-      textFont('monospace');
-      textSize(max(6, cw * sizeFrac));
-      textAlign(LEFT, TOP);
-      text(txt, lx + cw * 0.05, curY);
-      if (bold) textStyle(NORMAL);
-      curY += lh;
-    };
-
-    const panelRule = idx => {
-      if (lineReveal < idx) return;
-      const a = constrain(map(lineReveal, idx, idx + 0.4, 0, 1), 0, 1);
-      stroke(255, 255, 255, 32 * a);
-      strokeWeight(1);
-      line(lx + cw * 0.04, curY, lx + cw * 0.96, curY);
-      noStroke();
-      curY += lh * 0.4;
-    };
-
-    panelLine('SUBJECT ANALYSIS REPORT', 0,   0.040, [255, 255, 255], 110,  false);
-    panelLine(config.name,               1,   0.065, [255, 255, 255], 240,  true);
-    panelLine(config.fileId,             2,   0.039, [M_RED[0], M_RED[1], M_RED[2]], 155, false);
-    panelRule(2.5);
-    panelLine('CONFIDENCE: ' + (card.determination?.confidence ?? 97) + '%',
-                                         3,   0.042, [255, 255, 255], 200,  false);
-    panelRule(3.5);
-    chars.forEach((ch, i) => {
-      panelLine('✓  ' + ch,            4 + i, 0.037, [255, 255, 255], 170, false);
-    });
-    panelRule(4 + chars.length + 0.2);
-    panelLine('CULTURAL ICON',  4 + chars.length + 1, 0.056, [255, 255, 255], 230, true);
-
-    ctx.restore();
-
-    // Card border
-    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
-    ctx.lineWidth   = 1;
-    ctx.strokeRect(lx, ty, cw, ch);
-  }
-
-  // ── Beat D: stamp ──────────────────────────────────────────────────────────
-  _beatD(card, stampAge, lx, ty, cw, ch, config) {
-    const ANIM_DUR = 650;
-    const p = min(stampAge / ANIM_DUR, 1);
+  // ── Beat D: HOMOSEXUAL stamp slams down ───────────────────────────────────
+  _beatD(stampAge, lx, ty, cw, ch) {
+    const ANIM = 650;
+    const p    = Math.min(stampAge / ANIM, 1);
+    if (p <= 0) return;
 
     let sc;
     if      (p < 0.28) sc = map(p, 0,    0.28, 4.2,  0.84);
@@ -416,15 +304,17 @@ class GalleryReveal {
     else if (p < 0.72) sc = map(p, 0.52, 0.72, 1.07, 1.00);
     else               sc = 1.00;
 
-    const alpha = min(p / 0.12, 1) * 255;
+    const alpha = Math.min(p / 0.12, 1) * 255;
     if (alpha < 2) return;
 
-    const treatment  = config.stamp.treatment;
-    const fontSize   = cw * 0.95 * sc;
-    const stampAngle = treatment === 'warhol_pop' ? -0.07 : 0.065;
+    const config    = GALLERY_CONFIGS[this.cardKey];
+    const treatment = config.stamp.treatment;
+    const fontSize  = cw * 0.95 * sc;
+    const angle     = treatment === 'warhol_pop' ? -0.07 : 0.065;
 
     push();
-    rotate(stampAngle);    // already in card-local space centered at (0,0)
+    translate(lx + cw * 0.5, ty + ch * 0.5);
+    rotate(angle);
     textAlign(CENTER, CENTER);
     textFont('Arial');
     textStyle(BOLD);
@@ -441,9 +331,8 @@ class GalleryReveal {
     } else {
       // haring_bold: radiant lines + yellow fill + black outline
       strokeWeight(max(3, fontSize * 0.028));
-      const nLines = 18;
-      for (let i = 0; i < nLines; i++) {
-        const a = (i / nLines) * TWO_PI;
+      for (let i = 0; i < 18; i++) {
+        const a = (i / 18) * TWO_PI;
         stroke(220, 40, 40, alpha * 0.28);
         line(cos(a) * fontSize * 0.55, sin(a) * fontSize * 0.28,
              cos(a) * fontSize * 1.5,  sin(a) * fontSize * 0.9);
@@ -458,45 +347,10 @@ class GalleryReveal {
     textStyle(NORMAL);
     pop();
   }
+}
 
-  // ── Draw captured face aligned to subject portrait ────────────────────────
-  // Must be called inside an active ctx clip region.
-  _drawFace(portImg, sc, lx, ty, anchors) {
-    if (!this.capturedSnap || !this.faceInfo) {
-      // Fallback: show portrait face if no captured snap
-      const portH = portImg.height * sc;
-      tint(255, 255); image(portImg, lx, ty, portImg.width * sc, portH); noTint();
-      return;
-    }
-
-    const portEyeMidX = (anchors.leftEye.x + anchors.rightEye.x) / 2;
-    const portEyeMidY = (anchors.leftEye.y + anchors.rightEye.y) / 2;
-    const portEyeDist = Math.hypot(
-      anchors.rightEye.x - anchors.leftEye.x,
-      anchors.rightEye.y - anchors.leftEye.y,
-    );
-
-    // Target: eye-mid in card-local space
-    const cardEyeX = lx + portEyeMidX * sc;
-    const cardEyeY = ty + portEyeMidY * sc;
-
-    // Source: approximate eye-mid in captured snap (face centre ≈ eye-mid x)
-    const fi          = this.faceInfo;
-    const captEyeX    = fi.x;
-    const captEyeY    = fi.y - fi.h * 0.18;
-    const faceEyeDist = fi.w * 0.46;
-
-    const faceScale = (portEyeDist * sc) / faceEyeDist;
-    const dx = cardEyeX - captEyeX * faceScale;
-    const dy = cardEyeY - captEyeY * faceScale;
-
-    drawingContext.drawImage(
-      this.capturedSnap.elt,
-      dx, dy,
-      width  * faceScale,
-      height * faceScale,
-    );
-  }
+function _gEaseOut(t) {
+  return 1 - Math.pow(1 - Math.min(Math.max(t, 0), 1), 2.5);
 }
 
 // ── Singleton ─────────────────────────────────────────────────────────────────

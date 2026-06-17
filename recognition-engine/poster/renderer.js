@@ -1,3 +1,4 @@
+(function () {
 'use strict';
 
 // ── Canvas dimensions ───────────────────────────────────────────────────
@@ -652,3 +653,6 @@ async function renderPoster(canvas, config, determination, compositedPortrait = 
 
   return canvas;
 }
+
+window.renderPoster = renderPoster;
+})();

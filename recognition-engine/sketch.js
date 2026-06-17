@@ -4,7 +4,7 @@
 const IDLE_BEFORE_SCAN = 800;
 const SCAN_DURATION    = 5000;
 const STRAIGHT_HOLD    = 7500;
-const ALARM_HOLD       = 9000;
+const ALARM_HOLD       = 12000;
 
 // Log sequence — referenced by Subject.tick() at runtime
 const HUD_LOG_SEQ = [
