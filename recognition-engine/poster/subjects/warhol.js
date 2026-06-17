@@ -1,7 +1,7 @@
 'use strict';
 
-// Portrait is 684 × 816 px (warhol-portrait-real.jpg)
-// Eye anchors eyeballed; use anchor-overlay.js dev tool to verify & refine.
+// Portrait: place a B&W headshot at poster/portraits/warhol.jpg
+// Calibrate faceAnchors with the anchor-overlay.js dev tool after adding the image.
 
 /** @type {SubjectConfig} */
 const WARHOL_CONFIG = {
@@ -9,7 +9,7 @@ const WARHOL_CONFIG = {
   name:   'WARHOL, ANDY',
   date:   '05.06.2024',
 
-  portrait:        '../posters/warhol-portrait-real.jpg',
+  portrait:        'portraits/warhol.jpg',
   imageResolution: '8192 × 10240',
   mode:            'B&W',
   source:          'ARCHIVAL PHOTOGRAPH c. 1967',

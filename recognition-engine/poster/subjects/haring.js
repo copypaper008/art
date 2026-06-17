@@ -1,9 +1,7 @@
 'use strict';
 
-// Portrait: substitute a proper B&W portrait of Haring.
-// haring.png in /posters/ is the pop-art card asset; replace with a
-// frontal headshot and re-calibrate the faceAnchors below.
-// Placeholder anchors assume a similar 684 × 816 crop.
+// Portrait: place a B&W headshot at poster/portraits/haring.jpg
+// Calibrate faceAnchors with the anchor-overlay.js dev tool after adding the image.
 
 /** @type {SubjectConfig} */
 const HARING_CONFIG = {
@@ -11,7 +9,7 @@ const HARING_CONFIG = {
   name:   'HARING, KEITH',
   date:   '05.06.2024',
 
-  portrait:        '../posters/haring.png',
+  portrait:        'portraits/haring.jpg',
   imageResolution: '8192 × 10240',
   mode:            'B&W',
   source:          'ARCHIVAL PHOTOGRAPH c. 1985',

@@ -592,18 +592,33 @@ function drawFooter(ctx, config) {
 // PUBLIC API
 // ═══════════════════════════════════════════════════════════════════════
 
-/** Load an image from src (path or HTMLCanvasElement/ImageBitmap). */
+/** Load an image from src; returns a placeholder canvas if the file is missing. */
 function loadImage(src) {
   if (src instanceof HTMLCanvasElement || src instanceof ImageBitmap) {
     return Promise.resolve(src);
   }
-  return new Promise((res, rej) => {
+  return new Promise(res => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload  = () => res(img);
-    img.onerror = () => rej(new Error(`Failed to load image: ${src}`));
+    img.onerror = () => res(_placeholderPortrait());
     img.src = src;
   });
+}
+
+function _placeholderPortrait(w = 684, h = 816) {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#aaa';
+  ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = '#555';
+  ctx.font = fnt(18, 500, FM);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('ADD PORTRAIT', w / 2, h / 2 - 14);
+  ctx.fillText('poster/portraits/', w / 2, h / 2 + 14);
+  return c;
 }
 
 /**
