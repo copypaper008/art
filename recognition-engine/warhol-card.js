@@ -1,5 +1,4 @@
 // Warhol Detection Engine — fully coded HTML/CSS/SVG card
-// Renders in place of the warhol.png poster image
 
 function renderWarholCard() {
   return `
@@ -31,19 +30,21 @@ function renderWarholCard() {
     </div>
 
     <div class="wc-cans">
-      ${[0, 150, 210, 295].map(hue => `
+      ${[0, 200, 300, 330].map((hue, i) => `
         <div class="wc-can" style="filter:hue-rotate(${hue}deg)">
-          <div class="wc-can-rim top"></div>
+          <div class="wc-can-top"></div>
           <div class="wc-can-body">
-            <div class="wc-band"></div>
-            <div class="wc-label-area">
-              <span class="wc-campbells">Campbell's</span>
-              <span class="wc-condensed">CONDENSED</span>
-              <span class="wc-soup">Tomato<br>SOUP</span>
+            <div class="wc-can-red-top"></div>
+            <div class="wc-can-gold-band"></div>
+            <div class="wc-can-label">
+              <div class="wc-can-campbells">Campbell's</div>
+              <div class="wc-can-condensed">CONDENSED</div>
+              <div class="wc-can-soup">Tomato<br>SOUP</div>
             </div>
-            <div class="wc-band"></div>
+            <div class="wc-can-gold-band"></div>
+            <div class="wc-can-red-bot"></div>
           </div>
-          <div class="wc-can-rim bot"></div>
+          <div class="wc-can-bottom"></div>
         </div>
       `).join('')}
     </div>
@@ -71,75 +72,86 @@ function renderWarholCard() {
 
 function _warholPortraitSVG() {
   return `<svg class="wc-face" viewBox="0 0 160 200" xmlns="http://www.w3.org/2000/svg">
-    <!-- Vivid yellow background — classic Warhol silkscreen ground -->
-    <rect width="160" height="200" fill="#ffe000"/>
+    <!-- Teal background matching poster -->
+    <rect width="160" height="200" fill="#0e3540"/>
 
-    <!-- Hair — dark, voluminous, slightly silver-grey bouffant -->
-    <ellipse cx="80" cy="38" rx="64" ry="52" fill="#1a1a1a"/>
-    <ellipse cx="80" cy="44" rx="58" ry="46" fill="#2a2a2a"/>
-    <!-- Silver highlight on hair -->
-    <ellipse cx="72" cy="26" rx="28" ry="16" fill="#888" opacity="0.35"/>
+    <!-- Subtle dot texture on bg -->
+    <pattern id="wbgdots" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+      <circle cx="5" cy="5" r="0.7" fill="#00e5ff" opacity="0.18"/>
+    </pattern>
+    <rect width="160" height="200" fill="url(#wbgdots)"/>
 
-    <!-- Side hair coming down to temples -->
-    <path d="M 18 90 Q 14 60 20 34 Q 26 62 28 90 Z" fill="#1a1a1a"/>
-    <path d="M 142 90 Q 146 60 140 34 Q 134 62 132 90 Z" fill="#1a1a1a"/>
+    <!-- Platinum/silver wig — voluminous Warhol bouffant -->
+    <!-- Main wig mass -->
+    <ellipse cx="80" cy="46" rx="65" ry="56" fill="#d8d8d8"/>
+    <!-- Wig highlight — lighter center -->
+    <ellipse cx="80" cy="34" rx="50" ry="38" fill="#e8e8e8"/>
+    <ellipse cx="72" cy="28" rx="28" ry="18" fill="#f0f0f0" opacity="0.7"/>
+    <!-- Wig sides hanging down -->
+    <path d="M 14 50 Q 10 72 16 100 Q 22 80 28 60 Z" fill="#c8c8c8"/>
+    <path d="M 146 50 Q 150 72 144 100 Q 138 80 132 60 Z" fill="#c8c8c8"/>
+    <!-- Wig shadow/depth at base -->
+    <path d="M 22 88 Q 22 100 36 104 Q 80 112 124 104 Q 138 100 138 88 Q 110 96 80 96 Q 50 96 22 88 Z"
+          fill="#aaa" opacity="0.5"/>
 
-    <!-- Face/skin — warm yellow, flat Warhol style -->
-    <ellipse cx="80" cy="114" rx="52" ry="64" fill="#f5c518"/>
-    <!-- Forehead -->
-    <ellipse cx="80" cy="72" rx="50" ry="26" fill="#f5c518"/>
+    <!-- Face — flat orange/amber Warhol silkscreen style -->
+    <!-- Main face oval -->
+    <ellipse cx="80" cy="118" rx="54" ry="60" fill="#e86b10"/>
+    <!-- Forehead blending into wig -->
+    <ellipse cx="80" cy="78" rx="52" ry="30" fill="#e86b10"/>
 
-    <!-- Cheek blush / shadow — subtle orange wash -->
-    <ellipse cx="42" cy="116" rx="16" ry="12" fill="#e8a000" opacity="0.4"/>
-    <ellipse cx="118" cy="116" rx="16" ry="12" fill="#e8a000" opacity="0.4"/>
+    <!-- Subtle cheek shadow -->
+    <ellipse cx="40" cy="122" rx="15" ry="11" fill="#c04800" opacity="0.35"/>
+    <ellipse cx="120" cy="122" rx="15" ry="11" fill="#c04800" opacity="0.35"/>
 
-    <!-- Eyebrows — thin, dark -->
-    <path d="M 38 82 Q 58 76 66 80" stroke="#2a1800" stroke-width="3" fill="none" stroke-linecap="round"/>
-    <path d="M 94 80 Q 102 76 122 82" stroke="#2a1800" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <!-- Eyebrows — thin dark arches -->
+    <path d="M 38 88 Q 54 82 66 86" stroke="#4a1400" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M 94 86 Q 106 82 122 88" stroke="#4a1400" stroke-width="3" fill="none" stroke-linecap="round"/>
 
-    <!-- Glasses — large dark oval frames, Warhol's signature -->
-    <ellipse cx="58" cy="100" rx="23" ry="17" fill="#111"/>
-    <ellipse cx="102" cy="100" rx="23" ry="17" fill="#111"/>
-    <!-- Lens tint — very dark, barely see-through -->
-    <ellipse cx="58" cy="100" rx="19" ry="13" fill="#1a1000" opacity="0.9"/>
-    <ellipse cx="102" cy="100" rx="19" ry="13" fill="#1a1000" opacity="0.9"/>
-    <!-- Lens glint -->
-    <ellipse cx="50" cy="95" rx="5" ry="3" fill="#333" opacity="0.6"/>
-    <ellipse cx="94" cy="95" rx="5" ry="3" fill="#333" opacity="0.6"/>
-    <!-- Bridge -->
-    <rect x="77" y="97" width="6" height="5" fill="#111" rx="2"/>
+    <!-- Large oval dark sunglasses — Warhol signature -->
+    <!-- Frames -->
+    <ellipse cx="58" cy="102" rx="25" ry="19" fill="#0a0a0a"/>
+    <ellipse cx="102" cy="102" rx="25" ry="19" fill="#0a0a0a"/>
+    <!-- Lens tint — very dark -->
+    <ellipse cx="58" cy="102" rx="21" ry="15" fill="#0d0d0d"/>
+    <ellipse cx="102" cy="102" rx="21" ry="15" fill="#0d0d0d"/>
+    <!-- Very subtle lens sheen -->
+    <ellipse cx="51" cy="97" rx="6" ry="4" fill="#222" opacity="0.7"/>
+    <ellipse cx="95" cy="97" rx="6" ry="4" fill="#222" opacity="0.7"/>
+    <!-- Bridge connecting lenses -->
+    <path d="M 79 100 Q 80 98 81 100 Q 80 104 79 100 Z" fill="#0a0a0a"/>
+    <rect x="76" y="99" width="8" height="6" fill="#0a0a0a" rx="2"/>
     <!-- Temple arms -->
-    <line x1="35" y1="99" x2="22" y2="96" stroke="#111" stroke-width="4.5" stroke-linecap="round"/>
-    <line x1="125" y1="99" x2="138" y2="96" stroke="#111" stroke-width="4.5" stroke-linecap="round"/>
+    <line x1="33" y1="101" x2="16" y2="98" stroke="#0a0a0a" stroke-width="5" stroke-linecap="round"/>
+    <line x1="127" y1="101" x2="144" y2="98" stroke="#0a0a0a" stroke-width="5" stroke-linecap="round"/>
 
-    <!-- Nose — minimal suggestion -->
-    <path d="M 76 118 L 72 133 Q 80 138 88 133 L 84 118 Z" fill="#e0a800" opacity="0.45"/>
-    <!-- Nostrils -->
-    <ellipse cx="72" cy="133" rx="5" ry="3" fill="#cc8800" opacity="0.5"/>
-    <ellipse cx="88" cy="133" rx="5" ry="3" fill="#cc8800" opacity="0.5"/>
+    <!-- Nose — minimal shadow suggestion -->
+    <path d="M 76 118 L 73 132 Q 80 137 87 132 L 84 118" fill="#c04800" opacity="0.35"/>
+    <ellipse cx="72" cy="132" rx="5" ry="3.5" fill="#9a3000" opacity="0.4"/>
+    <ellipse cx="88" cy="132" rx="5" ry="3.5" fill="#9a3000" opacity="0.4"/>
 
-    <!-- Lips — flat hot pink, Warhol-bold -->
-    <path d="M 56 147 Q 80 138 104 147 Q 80 160 56 147 Z" fill="#cc2244"/>
-    <!-- Upper lip cupid's bow -->
-    <path d="M 56 147 Q 68 141 80 144 Q 92 141 104 147" fill="none" stroke="#aa1133" stroke-width="1.5"/>
-    <!-- Lip line -->
-    <line x1="56" y1="147" x2="104" y2="147" stroke="#990022" stroke-width="1"/>
+    <!-- Lips — bold hot pink Warhol flat -->
+    <path d="M 54 148 Q 67 140 80 143 Q 93 140 106 148 Q 93 162 80 159 Q 67 162 54 148 Z"
+          fill="#e0105a"/>
+    <!-- Upper lip line -->
+    <path d="M 54 148 Q 67 140 80 143 Q 93 140 106 148" fill="none" stroke="#b00040" stroke-width="1.5"/>
 
-    <!-- Jaw / chin -->
-    <ellipse cx="80" cy="162" rx="42" ry="22" fill="#f0b810"/>
+    <!-- Jaw / chin area -->
+    <ellipse cx="80" cy="162" rx="44" ry="22" fill="#d45a08"/>
 
     <!-- Neck -->
-    <rect x="64" y="170" width="32" height="24" fill="#e8a800" rx="4"/>
+    <rect x="64" y="170" width="32" height="26" fill="#cc5208" rx="3"/>
 
-    <!-- Black turtleneck — Warhol's signature look -->
-    <path d="M 0 200 L 38 172 L 60 182 L 64 174 L 80 168 L 96 174 L 100 182 L 122 172 L 160 200 Z"
+    <!-- Dark turtleneck — signature Warhol -->
+    <path d="M 0 200 L 34 172 L 60 182 L 64 174 L 80 168 L 96 174 L 100 182 L 126 172 L 160 200 Z"
           fill="#111"/>
     <!-- Turtleneck roll -->
-    <path d="M 58 180 Q 80 170 102 180 Q 80 188 58 180 Z" fill="#1a1a1a"/>
+    <ellipse cx="80" cy="179" rx="22" ry="7" fill="#1a1a1a"/>
+    <path d="M 60 180 Q 80 172 100 180" fill="none" stroke="#333" stroke-width="2"/>
 
-    <!-- Subtle dot/screen-print texture overlay -->
+    <!-- Halftone dot overlay — Warhol screen-print feel -->
     <pattern id="wdots" x="0" y="0" width="8" height="8" patternUnits="userSpaceOnUse">
-      <circle cx="4" cy="4" r="0.8" fill="#000" opacity="0.12"/>
+      <circle cx="4" cy="4" r="0.7" fill="#000" opacity="0.1"/>
     </pattern>
     <rect width="160" height="200" fill="url(#wdots)"/>
   </svg>`;
