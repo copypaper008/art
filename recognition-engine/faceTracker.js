@@ -80,6 +80,7 @@ class Subject {
       this.alarmSubTimer    = millis();
       this.targetConfidence = 99;
       this.determination    = _generateAlarmData();
+      galleryReveal.trigger(this);
       triggerFlash();
     }
     if (s === 'IDLE') {
