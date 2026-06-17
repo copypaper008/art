@@ -156,47 +156,201 @@ document.getElementById('anchor-btn').addEventListener('click', () => {
   showAnchorOverlay(SUBJECTS[activeSubject]);
 });
 
-// ── Kiosk mode (?kiosk=1) ────────────────────────────────────────────
+// ── Kiosk mode — live webcam tracking via postMessage ───────────────────────
 if (new URLSearchParams(location.search).has('kiosk')) {
   document.body.classList.add('kiosk');
 
-  // Render poster immediately (no face), then attempt face swap in the background.
-  // Using regen=true only for the first render; the swap re-renders with regen=false
-  // so the metrics/characteristics/classification stay identical.
-  render(null, true).then(async () => {
-    const faceDataUrl = sessionStorage.getItem('reco-face');
-    if (!faceDataUrl) return;
+  let _liveFL       = null;   // FaceLandmarker VIDEO mode
+  let _liveBusy     = false;  // frame-processing lock (drop frames while busy)
+  let _lastLiveTs   = 0;      // monotonic timestamp for detectForVideo
+  let _maskCache    = null;   // pre-computed feathered oval mask canvas
+  let _portCache    = null;   // loaded portrait image/canvas
+  let _portLayout   = null;   // { dx, dy, dw, dh, iw, ih } in poster-canvas space
+  let _staticCanvas = null;   // full poster rendered without live face (updated once on init)
 
+  // ── VIDEO-mode FaceLandmarker (supports up to 6 simultaneous faces) ────────
+  async function _getLiveFL() {
+    if (_liveFL) return _liveFL;
+    const CDN = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14';
+    const { FaceLandmarker: FL, FilesetResolver: FR } =
+      await import(CDN + '/vision_bundle.mjs')
+        .catch(() => import('./vendor/mediapipe/vision_bundle.mjs'));
+    const wasm = await FR.forVisionTasks(CDN + '/wasm')
+      .catch(() => FR.forVisionTasks('./vendor/mediapipe'));
+    _liveFL = await FL.createFromOptions(wasm, {
+      baseOptions: {
+        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+      },
+      runningMode: 'VIDEO',
+      numFaces: 6,
+      outputFaceBlendshapes: false,
+      outputFacialTransformationMatrixes: false,
+    });
+    return _liveFL;
+  }
+
+  // ── Render static poster chrome; cache portrait image and layout ─────────
+  async function _initPoster() {
+    _maskCache = null; _portCache = null; _portLayout = null;
+
+    if (!activeDetermination) activeDetermination = generateDetermination();
+    const config = SUBJECTS[activeSubject];
+
+    // Render full poster to off-screen canvas (uses placeholder portrait)
+    _staticCanvas = document.createElement('canvas');
+    await renderPoster(_staticCanvas, config, activeDetermination, null);
+
+    // Blit to display canvas
+    posterCanvas.width  = _staticCanvas.width;
+    posterCanvas.height = _staticCanvas.height;
+    posterCanvas.getContext('2d').drawImage(_staticCanvas, 0, 0);
+
+    // Load portrait image (falls back to grey placeholder if file is missing)
+    _portCache = await loadImage(config.portrait);
+
+    // Compute the portrait's position in poster-canvas space
+    // (mirrors the layout logic in renderer.js drawPortrait)
+    const PAD_L = 46, PAD_T = 14, PAD_B = 88;
+    const px  = PAD_L;
+    const py  = BODY_Y + PAD_T;
+    const pw  = LEFT_W - PAD_L - 4;
+    const ph  = BODY_H - PAD_T - PAD_B;
+    const iw  = _portCache.naturalWidth  || _portCache.width  || 684;
+    const ih  = _portCache.naturalHeight || _portCache.height || 816;
+    const sc  = Math.min(pw / iw, ph / ih);
+    const dw  = iw * sc, dh = ih * sc;
+    const dx  = px + (pw - dw) / 2, dy = py;
+    _portLayout = { dx, dy, dw, dh, iw, ih };
+
+    // Pre-compute feathered oval mask at native portrait resolution
+    _maskCache = createFaceMask(iw, ih, config.faceAnchors.faceOval);
+
+    setStatus('');
+  }
+
+  // ── Redraw frame + brackets + crosshairs on top of live-face composite ────
+  function _redrawDecorations(ctx, dx, dy, dw, dh) {
+    ctx.save();
+    orect(ctx, dx, dy, dw, dh, 1);
+    const bm = 8;
+    drawBracket(ctx, dx + bm,      dy + bm,      'tl');
+    drawBracket(ctx, dx + dw - bm, dy + bm,      'tr');
+    drawBracket(ctx, dx + bm,      dy + dh - bm, 'bl');
+    drawBracket(ctx, dx + dw - bm, dy + dh - bm, 'br');
+    const ccx = dx + dw / 2, ccy = dy + dh * 0.44;
+    ctx.globalAlpha = 0.55;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth   = 0.7;
+    ctx.setLineDash([5, 7]);
+    ctx.beginPath();
+    ctx.moveTo(dx, ccy); ctx.lineTo(dx + dw, ccy);
+    ctx.moveTo(ccx, dy); ctx.lineTo(ccx, dy + dh);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // ── Process one incoming webcam frame ─────────────────────────────────────
+  async function _processFrame(dataUrl, faceHint) {
+    if (_liveBusy || !_portLayout) return;
+    _liveBusy = true;
     try {
-      // Decode stored frame into a canvas
-      const img = await new Promise((res, rej) => {
-        const i = new Image();
-        i.onload = () => res(i);
-        i.onerror = () => rej(new Error('decode failed'));
-        i.src = faceDataUrl;
-      });
-      const fc = document.createElement('canvas');
-      fc.width  = img.width;
-      fc.height = img.height;
-      fc.getContext('2d').drawImage(img, 0, 0);
+      const lfl = await _getLiveFL();
 
-      // Run face-swap pipeline (async — MediaPipe loads if needed)
-      const config     = SUBJECTS[activeSubject];
-      const composited = await swapFace(fc, config);
+      // Decode JPEG into a canvas suitable for detectForVideo
+      const img = new Image();
+      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = dataUrl; });
+      const srcC = document.createElement('canvas');
+      srcC.width = img.width; srcC.height = img.height;
+      srcC.getContext('2d').drawImage(img, 0, 0);
 
-      // Re-render: same determination, new portrait
-      await render(composited, false);
+      // detectForVideo requires monotonically increasing timestamps
+      const ts = Math.max(performance.now(), _lastLiveTs + 1);
+      _lastLiveTs = ts;
+      const result = lfl.detectForVideo(srcC, ts);
+      if (!result.faceLandmarks?.length) return;
 
-      sessionStorage.removeItem('reco-face');
-    } catch (e) {
-      if (e.message === 'NO_FACE_DETECTED') {
-        console.warn('[poster] No face detected in captured frame — showing unmodified portrait.');
-      } else {
-        console.warn('[poster] Face swap failed:', e);
+      // When multiple faces detected, pick the one nearest to faceHint
+      // (faceHint is in raw webcam pixel coords — unmirrored)
+      const I468 = 468, I473 = 473;   // iris centre landmark indices
+      let best = 0;
+      if (faceHint && result.faceLandmarks.length > 1) {
+        let minD = Infinity;
+        result.faceLandmarks.forEach((lm, i) => {
+          const fx = ((lm[I468].x + lm[I473].x) * 0.5) * srcC.width;
+          const fy = ((lm[I468].y + lm[I473].y) * 0.5) * srcC.height;
+          const d  = (fx - faceHint.x) ** 2 + (fy - faceHint.y) ** 2;
+          if (d < minD) { minD = d; best = i; }
+        });
       }
-      // Poster already displayed without swap; nothing more to do.
+
+      // Mirror x so eye coords match the visually-mirrored display
+      const lm   = result.faceLandmarks[best];
+      const srcL = { x: (1 - lm[I468].x) * srcC.width,  y: lm[I468].y * srcC.height };
+      const srcR = { x: (1 - lm[I473].x) * srcC.width,  y: lm[I473].y * srcC.height };
+
+      const config = SUBJECTS[activeSubject];
+      const T = computeSimilarityTransform(
+        srcL, srcR, config.faceAnchors.leftEye, config.faceAnchors.rightEye
+      );
+
+      const { iw, ih, dx, dy, dw, dh } = _portLayout;
+
+      // Warp webcam face into portrait space
+      const warpC = document.createElement('canvas');
+      warpC.width = iw; warpC.height = ih;
+      const wCtx  = warpC.getContext('2d');
+      wCtx.save();
+      wCtx.translate(T.tx, T.ty);
+      wCtx.rotate(T.rotation);
+      wCtx.scale(T.scale, T.scale);
+      wCtx.drawImage(srcC, -T.srcMidX, -T.srcMidY);
+      wCtx.restore();
+
+      toGreyscale(warpC);
+      addGrain(warpC, 12);
+
+      // Clip warped face through the feathered oval mask
+      const maskedC = document.createElement('canvas');
+      maskedC.width = iw; maskedC.height = ih;
+      const mCtx   = maskedC.getContext('2d');
+      mCtx.drawImage(warpC, 0, 0);
+      mCtx.globalCompositeOperation = 'destination-in';
+      mCtx.drawImage(_maskCache, 0, 0);
+      mCtx.globalCompositeOperation = 'source-over';
+
+      // Composite onto poster: restore static region → portrait → live face → decorations
+      const ctx = posterCanvas.getContext('2d');
+      ctx.drawImage(_staticCanvas, dx, dy, dw, dh, dx, dy, dw, dh);
+      ctx.drawImage(_portCache, dx, dy, dw, dh);
+      ctx.drawImage(maskedC, 0, 0, iw, ih, dx, dy, dw, dh);
+      _redrawDecorations(ctx, dx, dy, dw, dh);
+
+    } catch (e) {
+      console.warn('[kiosk] frame error:', e.message);
+    } finally {
+      _liveBusy = false;
+    }
+  }
+
+  // ── Message listener ─────────────────────────────────────────────────────
+  window.addEventListener('message', async evt => {
+    const msg = evt.data;
+    if (!msg || typeof msg !== 'object') return;
+    if (msg.type === 'KIOSK_INIT') {
+      activeSubject       = msg.subjectKey || 'warhol';
+      activeDetermination = null;
+      setStatus('initialising…');
+      await _initPoster();
+    } else if (msg.type === 'WEBCAM_FRAME') {
+      _processFrame(msg.dataUrl, msg.faceHint);  // not awaited — drops if busy
     }
   });
+
+  // Initial render while awaiting KIOSK_INIT from parent
+  setStatus('initialising…');
+  _initPoster();
+
 } else {
   // ── Normal (non-kiosk) init ─────────────────────────────────────────
   render(null, true);

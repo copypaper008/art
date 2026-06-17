@@ -79,9 +79,8 @@ function draw() {
   drawDistortedMirror(cam, visualState);
   drawGrid();
 
-  // HTML engine card overlay takes over the screen during ALARM
-  if (anyAlarm && !alarmOverlayActive) showAlarmScreen();
-  if (!anyAlarm && alarmOverlayActive) hideAlarmScreen();
+  // Per-subject poster overlays — create/destroy as subjects enter/leave ALARM
+  updateAlarmPosters(faceTracker.subjects);
 
   if (faceTracker.subjects.length > 0) {
     drawAllSubjectOverlays();

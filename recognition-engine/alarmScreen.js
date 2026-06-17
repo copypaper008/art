@@ -1,154 +1,110 @@
-// Alarm overlay — full-screen poster with animated effects
+'use strict';
 
-const ENGINE_SLUGS = [
-  // "warhol", "haring", "disco", "leather", "drag",
-  // "camp",   "faerie", "ballroom", "archive", "gene"
-];
-
-// Slugs that have fully coded HTML/CSS/SVG cards (no PNG needed)
-const CODED_CARDS = {
-  // warhol:  renderWarholCard,
-  // haring:  renderHaringCard,
-  // leather: renderLeatherCard,
-};
-
-// Optional JS init called after HTML is injected (for glitch loops, listeners)
-const CARD_INITS = {
-  // warhol: initWarholCard,
-};
-
-let _alarmOverlay  = null;
-let _animFrame     = null;
+// ── Per-subject poster overlays (one iframe per ALARM subject) ─────────────────
+const _subjectOverlays = new Map();  // subjectId → { iframe, subject }
+let _alarmContainer    = null;
 let alarmOverlayActive = false;
 
-function _ensureOverlay() {
-  if (_alarmOverlay) return _alarmOverlay;
-  _alarmOverlay = document.createElement('div');
-  _alarmOverlay.className = 'alarm-overlay';
-  document.body.appendChild(_alarmOverlay);
-  return _alarmOverlay;
+// ── Webcam frame broadcaster (~12 fps to all active iframes) ──────────────────
+let _senderRaf  = null;
+let _lastSendMs = 0;
+const _SEND_INTERVAL = 80;
+
+function _startSender() {
+  if (_senderRaf) return;
+  function _tick(now) {
+    if (_subjectOverlays.size === 0) { _senderRaf = null; return; }
+    _senderRaf = requestAnimationFrame(_tick);
+    if (now - _lastSendMs < _SEND_INTERVAL) return;
+    _lastSendMs = now;
+
+    const vid = (typeof cam !== 'undefined') ? cam.elt : null;
+    if (!vid || vid.readyState < 2 || !vid.videoWidth) return;
+
+    const fc = document.createElement('canvas');
+    fc.width  = vid.videoWidth;
+    fc.height = vid.videoHeight;
+    fc.getContext('2d').drawImage(vid, 0, 0);
+    const dataUrl = fc.toDataURL('image/jpeg', 0.75);
+
+    const cw = window.innerWidth  || 1;
+    const ch = window.innerHeight || 1;
+
+    for (const state of _subjectOverlays.values()) {
+      const s = state.subject;
+      // Convert mirrored canvas coords → raw webcam pixel coords for face matching
+      const faceHint = {
+        x: (1 - s.x / cw) * vid.videoWidth,
+        y: (s.y / ch)     * vid.videoHeight,
+      };
+      state.iframe.contentWindow?.postMessage(
+        { type: 'WEBCAM_FRAME', dataUrl, faceHint }, '*'
+      );
+    }
+  }
+  _senderRaf = requestAnimationFrame(_tick);
 }
 
-function _showSlug(slug) {
-  const el = _ensureOverlay();
-  if (_animFrame) { cancelAnimationFrame(_animFrame); _animFrame = null; }
-  if (el._cardInterval) { clearInterval(el._cardInterval); el._cardInterval = null; }
+function _stopSender() {
+  if (_senderRaf) { cancelAnimationFrame(_senderRaf); _senderRaf = null; }
+}
 
-  if (CODED_CARDS[slug]) {
-    el.innerHTML = CODED_CARDS[slug]();
-    if (CARD_INITS[slug]) CARD_INITS[slug](el);
+// ── Overlay container — tiles iframes side-by-side ───────────────────────────
+function _ensureContainer() {
+  if (_alarmContainer) return _alarmContainer;
+  _alarmContainer = document.createElement('div');
+  _alarmContainer.className    = 'alarm-overlay';
+  _alarmContainer.style.alignItems = 'stretch';  // override class default (center)
+  document.body.appendChild(_alarmContainer);
+  return _alarmContainer;
+}
+
+// ── Per-subject iframe lifecycle ─────────────────────────────────────────────
+function _addSubjectOverlay(subject) {
+  const container = _ensureContainer();
+  const iframe    = document.createElement('iframe');
+  iframe.src      = 'poster/index.html?kiosk=1';
+  iframe.style.cssText = 'flex:1;border:none;display:block;height:100%;min-width:0;';
+  iframe.addEventListener('load', () => {
+    iframe.contentWindow?.postMessage({ type: 'KIOSK_INIT', subjectKey: 'warhol' }, '*');
+  });
+  container.appendChild(iframe);
+  _subjectOverlays.set(subject.id, { iframe, subject });
+}
+
+function _removeSubjectOverlay(id) {
+  const state = _subjectOverlays.get(id);
+  if (!state) return;
+  state.iframe.remove();
+  _subjectOverlays.delete(id);
+}
+
+// ── Public API — called every draw() frame from sketch.js ─────────────────────
+function updateAlarmPosters(subjects) {
+  const alarmed = subjects.filter(s => s.state === 'ALARM');
+
+  // Remove overlays for subjects that left ALARM
+  for (const [id] of _subjectOverlays) {
+    if (!alarmed.some(s => s.id === id)) _removeSubjectOverlay(id);
+  }
+
+  // Add overlays for newly ALARM subjects; keep position reference fresh
+  for (const s of alarmed) {
+    if (_subjectOverlays.has(s.id)) _subjectOverlays.get(s.id).subject = s;
+    else _addSubjectOverlay(s);
+  }
+
+  const container = _ensureContainer();
+  if (alarmed.length > 0) {
+    if (!container.classList.contains('visible')) {
+      container.getBoundingClientRect();  // force reflow so CSS transition fires
+      requestAnimationFrame(() => container.classList.add('visible'));
+    }
+    alarmOverlayActive = true;
+    _startSender();
   } else {
-    el.innerHTML = `
-      <img class="poster-img" src="posters/${slug}.png" />
-      <div class="scanline"></div>
-      <div class="color-flash"></div>
-    `;
-    el.getBoundingClientRect();
-    _startAnimation(
-      el.querySelector('.poster-img'),
-      el.querySelector('.color-flash')
-    );
+    container.classList.remove('visible');
+    alarmOverlayActive = false;
+    _stopSender();
   }
-
-  // Two-step: reflow first, then add class so CSS transition actually fires
-  el.getBoundingClientRect();
-  requestAnimationFrame(() => el.classList.add('visible'));
-  alarmOverlayActive = true;
-}
-
-function _captureFaceToSession() {
-  // cam is the p5.js capture element defined in sketch.js
-  const videoEl = (typeof cam !== 'undefined') ? cam.elt : null;
-  if (!videoEl || videoEl.readyState < 2 || !videoEl.videoWidth) return;
-
-  const c = document.createElement('canvas');
-  c.width  = videoEl.videoWidth;
-  c.height = videoEl.videoHeight;
-  c.getContext('2d').drawImage(videoEl, 0, 0);
-
-  try {
-    sessionStorage.setItem('reco-face', c.toDataURL('image/jpeg', 0.88));
-  } catch (e) {
-    console.warn('[alarm] Could not cache face frame:', e.message);
-  }
-}
-
-function showAlarmScreen() {
-  _captureFaceToSession();
-
-  const el = _ensureOverlay();
-  if (_animFrame)         { cancelAnimationFrame(_animFrame); _animFrame = null; }
-  if (el._cardInterval)  { clearInterval(el._cardInterval); el._cardInterval = null; }
-
-  el.innerHTML = '<iframe src="poster/index.html?kiosk=1" style="width:100%;height:100%;border:none;display:block;"></iframe>';
-
-  el.getBoundingClientRect();
-  requestAnimationFrame(() => el.classList.add('visible'));
-  alarmOverlayActive = true;
-}
-
-function hideAlarmScreen() {
-  if (!_alarmOverlay) return;
-  _alarmOverlay.classList.remove('visible');
-  alarmOverlayActive = false;
-  if (_animFrame) { cancelAnimationFrame(_animFrame); _animFrame = null; }
-  if (_alarmOverlay._cardInterval) { clearInterval(_alarmOverlay._cardInterval); _alarmOverlay._cardInterval = null; }
-}
-
-// ── Preview mode ──────────────────────────────────────────────────────────────
-// Add ?preview=SLUG to URL to instantly show any card without scanning.
-// e.g.  ?preview=warhol   ?preview=haring   ?preview=leather
-// Tap the overlay or press Escape to dismiss.
-(function _initPreview() {
-  const slug = new URLSearchParams(window.location.search).get('preview');
-  if (!slug) return;
-  // Scripts are already loaded at this point (we're in the body, not async).
-  // A short delay lets p5.js finish its setup() before we add the overlay.
-  setTimeout(() => {
-    _showSlug(slug);
-    if (_alarmOverlay) {
-      _alarmOverlay.addEventListener('click', hideAlarmScreen, { once: true });
-    }
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') hideAlarmScreen();
-    }, { once: true });
-  }, 600);
-})();
-
-// ── Animation loop (for PNG poster cards) ────────────────────────────────────
-function _startAnimation(img, flash) {
-  if (_animFrame) cancelAnimationFrame(_animFrame);
-
-  let startTime  = null;
-  let glitchEnd  = 0;
-  let nextGlitch = 1200 + Math.random() * 1800;
-
-  function tick(now) {
-    if (!alarmOverlayActive) return;
-    _animFrame = requestAnimationFrame(tick);
-
-    if (!startTime) startTime = now;
-    const elapsed = now - startTime;
-    const t = elapsed / 1000;
-
-    if (elapsed > nextGlitch && now > glitchEnd) {
-      glitchEnd  = now + 80 + Math.random() * 140;
-      nextGlitch = elapsed + 900 + Math.random() * 1800;
-    }
-
-    const glitching = now < glitchEnd;
-    const breathe   = 1 + Math.sin(t * 1.05) * 0.012;
-    const hue       = (t * 11) % 360;
-    const dx        = glitching ? (Math.random() < 0.5 ? -1 : 1) * (6 + Math.random() * 16) : 0;
-    const sat       = glitching ? 260 : 120 + Math.sin(t * 1.05) * 18;
-    const bri       = glitching ? 1.35 : 1.0 + Math.sin(t * 1.05) * 0.06;
-
-    img.style.transform = `translateX(${dx.toFixed(1)}px) scale(${breathe.toFixed(4)})`;
-    img.style.filter    = `hue-rotate(${hue.toFixed(1)}deg) saturate(${sat.toFixed(0)}%) brightness(${bri.toFixed(3)}) contrast(${glitching ? 1.2 : 1})`;
-
-    flash.style.opacity    = glitching ? 0.18 + Math.random() * 0.12 : 0;
-    flash.style.background = `hsl(${(hue + 180) % 360}, 100%, 60%)`;
-  }
-
-  _animFrame = requestAnimationFrame(tick);
 }
