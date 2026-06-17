@@ -7,8 +7,9 @@ const MATCH_DIST_MULT = 1.8;  // max matching distance = face.w * this
 
 class Subject {
   constructor(id, face) {
-    this.id         = id;
-    this.subjectKey = random(['warhol', 'haring']);
+    this.id           = id;
+    this.subjectKey   = random(['warhol', 'haring']);
+    this.determination = null;   // set by _generateAlarmData() on ALARM entry
     this.age = 0;
     this.x = face.x; this.y = face.y;
     this.w = face.w; this.h = face.h;
@@ -78,7 +79,7 @@ class Subject {
       this.alarmNext        = getRandomPhrase('alarmNext');
       this.alarmSubTimer    = millis();
       this.targetConfidence = 99;
-      initParticles();
+      this.determination    = _generateAlarmData();
       triggerFlash();
     }
     if (s === 'IDLE') {

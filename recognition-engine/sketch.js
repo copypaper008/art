@@ -20,8 +20,60 @@ let uiScale = 1;
 let cam;
 let detectionGraphics;
 let bgImage;
+let _portraitImages = {};
 
 let hudSessionId = "";
+
+// ── Subject configs used by the canvas morphing sequence ─────────────────────
+const SUBJECT_CONFIGS = {
+  warhol: {
+    name: 'WARHOL, ANDY',
+    faceAnchors: {
+      leftEye:  { x: 175, y: 298 },
+      rightEye: { x: 300, y: 293 },
+      faceOval: [
+        { x: 248, y: 165 }, { x: 325, y: 190 }, { x: 360, y: 295 },
+        { x: 350, y: 390 }, { x: 315, y: 480 }, { x: 248, y: 525 },
+        { x: 180, y: 480 }, { x: 140, y: 390 }, { x: 133, y: 295 },
+        { x: 168, y: 190 },
+      ],
+    },
+  },
+  haring: {
+    name: 'HARING, KEITH',
+    faceAnchors: {
+      leftEye:  { x: 175, y: 330 },
+      rightEye: { x: 297, y: 326 },
+      faceOval: [
+        { x: 246, y: 205 }, { x: 325, y: 225 }, { x: 355, y: 335 },
+        { x: 345, y: 435 }, { x: 310, y: 530 }, { x: 246, y: 575 },
+        { x: 182, y: 530 }, { x: 145, y: 435 }, { x: 140, y: 335 },
+        { x: 168, y: 225 },
+      ],
+    },
+  },
+};
+
+const _CHARACTERISTICS = [
+  "Demonstrates systematic cultural legibility",
+  "Displays advanced understanding of image production",
+  "Output suggests preoccupation with surface and depth",
+  "Occupies multiple cultural registers simultaneously",
+  "Engages with commodity structures reflexively",
+  "Identity appears partially self-constructed",
+  "Sustains public identity through repetition and variation",
+  "Aesthetic sensibility reads as culturally inflected",
+  "Subjectivity exceeds dominant symbolic parameters",
+  "Behavioural signatures indicate non-normative alignment",
+];
+
+function _generateAlarmData() {
+  const shuffled = [..._CHARACTERISTICS].sort(() => Math.random() - 0.5);
+  return {
+    characteristics: shuffled.slice(0, 6),
+    scanDepth: (95.0 + Math.random() * 4.5).toFixed(1) + '%',
+  };
+}
 
 let idlePhrase      = "";
 let idlePhraseTimer = 0;
@@ -29,6 +81,8 @@ const IDLE_PHRASE_INTERVAL = 4000;
 
 function preload() {
   bgImage = loadImage('./bg.png');
+  _portraitImages.warhol = loadImage('./poster/portraits/warhol.jpg');
+  _portraitImages.haring = loadImage('./poster/portraits/haring.jpg');
 }
 
 function setup() {
@@ -79,8 +133,10 @@ function draw() {
   drawDistortedMirror(cam, visualState);
   drawGrid();
 
-  // Per-subject poster overlays — create/destroy as subjects enter/leave ALARM
-  updateAlarmPosters(faceTracker.subjects);
+  // Canvas portrait morphing — grows around each ALARM subject's face
+  for (const s of faceTracker.subjects) {
+    if (s.state === 'ALARM') drawAlarmTransformation(s);
+  }
 
   if (faceTracker.subjects.length > 0) {
     drawAllSubjectOverlays();
@@ -97,6 +153,9 @@ function draw() {
 // Per-face overlay: reticle + state text + confidence readout
 
 function drawSubjectOverlay(s) {
+  // ALARM state is handled entirely by drawAlarmTransformation()
+  if (s.state === 'ALARM') return;
+
   const tlx  = s.x - s.w * 0.55;
   const tly  = s.y - s.h * 0.6;
   const brx  = tlx + s.w * 1.1;
@@ -107,20 +166,7 @@ function drawSubjectOverlay(s) {
   noFill();
 
   // ── Reticle: angular L-brackets ──────────────────────────────────────────
-  if (s.state === 'ALARM') {
-    // White brackets — the stamp is the only colour
-    const flicker = random(0.80, 1.0);
-    const bW = Math.max(2, Math.round(4 * uiScale));
-    strokeWeight(bW);
-    stroke(255, 255, 255, 130 * flicker);
-    line(tlx, tly, tlx + tick, tly); line(tlx, tly, tlx, tly + tick);
-    line(brx - tick, tly, brx, tly); line(brx, tly, brx, tly + tick);
-    line(tlx, bry - tick, tlx, bry); line(tlx, bry, tlx + tick, bry);
-    line(brx - tick, bry, brx, bry); line(brx, bry - tick, brx, bry);
-    stroke(255, 255, 255, 6);
-    strokeWeight(1);
-    rect(tlx, tly, s.w * 1.1, s.h * 1.2);
-  } else {
+  {
     const flicker = random(0.88, 1.0);
     const bW = Math.max(2, Math.round(4 * uiScale));
     strokeWeight(bW);
@@ -310,14 +356,10 @@ function drawSubjectOverlay(s) {
     textFont("monospace");
   }
 
-  // ── ALARM ─────────────────────────────────────────────────────────────────
-  if (s.state === 'ALARM') {
-    drawHomosexualStamp(s);
-  }
 }
 
 // ── HOMOSEXUAL stamp — animated, styled per subject, the only colour on screen ──
-function drawHomosexualStamp(s) {
+function drawHomosexualStamp(s, fadeMultiplier = 1.0) {
   const t        = millis();
   const stampAge = t - s.stateAt;
   const ANIM_DUR = 650;
@@ -330,7 +372,7 @@ function drawHomosexualStamp(s) {
   else if (p < 0.72) stampScale = map(p, 0.52, 0.72, 1.07, 1.00);
   else               stampScale = 1.00;
 
-  const alpha = min(p / 0.12, 1) * 255;
+  const alpha = min(p / 0.12, 1) * 255 * fadeMultiplier;
   if (alpha < 2) return;
 
   const isWarhol   = (s.subjectKey ?? 'warhol') === 'warhol';
@@ -362,6 +404,198 @@ function drawHomosexualStamp(s) {
   }
 
   textStyle(NORMAL);
+  pop();
+}
+
+// ── Portrait morphing sequence — Warhol/Haring materialises around the live face ─
+function drawAlarmTransformation(s) {
+  const age    = millis() - s.stateAt;
+  const config = SUBJECT_CONFIGS[s.subjectKey] || SUBJECT_CONFIGS.warhol;
+  const portImg = _portraitImages[s.subjectKey];
+  if (!portImg || portImg.width === 0) return;
+
+  const anchors = config.faceAnchors;
+
+  // Scale: map portrait eye distance to estimated canvas eye distance
+  const portEyeDist = Math.hypot(
+    anchors.rightEye.x - anchors.leftEye.x,
+    anchors.rightEye.y - anchors.leftEye.y
+  );
+  const faceEyeDist = s.w * 0.46;
+  const sc = faceEyeDist / portEyeDist;
+
+  // Portrait image natural dims
+  const iw = portImg.width, ih = portImg.height;
+
+  // Anchor: portrait eye midpoint
+  const portEyeMidX = (anchors.leftEye.x + anchors.rightEye.x) / 2;
+  const portEyeMidY = (anchors.leftEye.y + anchors.rightEye.y) / 2;
+
+  // s.y is roughly nose/midface; eyes are ~18% of face height above centre
+  const eyeCanvasY = s.y - s.h * 0.18;
+
+  const portX = s.x        - portEyeMidX * sc;
+  const portY = eyeCanvasY - portEyeMidY * sc;
+  const portW = iw * sc;
+  const portH = ih * sc;
+
+  // Face oval in canvas space (matches portrait positioning)
+  const oval = anchors.faceOval.map(pt => ({
+    x: portX + pt.x * sc,
+    y: portY + pt.y * sc,
+  }));
+
+  function traceOval(ctx) {
+    ctx.beginPath();
+    ctx.moveTo(oval[0].x, oval[0].y);
+    for (let i = 1; i < oval.length; i++) {
+      const a = oval[i];
+      const b = oval[(i + 1) % oval.length];
+      ctx.quadraticCurveTo(a.x, a.y, (a.x + b.x) / 2, (a.y + b.y) / 2);
+    }
+    ctx.closePath();
+  }
+
+  // Timings (ms from stateAt)
+  const T_HAIR_FULL  = 900;    // hair + clothing fully visible
+  const T_FACE_START = 800;    // face area begins fading in
+  const T_FACE_FULL  = 2000;   // face area fully visible
+  const T_INFO_START = 1000;   // analysis panel starts
+  const T_INFO_FULL  = 2200;   // analysis panel fully visible
+  const T_STAMP      = 3200;   // stamp thwacks in
+  const T_FADE_START = 7200;   // begin global fade
+  const T_FADE_END   = 8800;   // fully faded (IDLE resets at ALARM_HOLD=9000)
+
+  const fade = age > T_FADE_START
+    ? constrain(map(age, T_FADE_START, T_FADE_END, 1.0, 0.0), 0, 1)
+    : 1.0;
+
+  // Phase 1 — hair, ears, clothing: portrait OUTSIDE face oval
+  const hairA = constrain(map(age, 0, T_HAIR_FULL, 0, 245), 0, 245) * fade;
+  if (hairA > 2) {
+    drawingContext.save();
+    drawingContext.beginPath();
+    drawingContext.rect(0, 0, width, height);
+    traceOval(drawingContext);
+    drawingContext.clip('evenodd');
+    tint(255, Math.round(hairA));
+    image(portImg, portX, portY, portW, portH);
+    noTint();
+    drawingContext.restore();
+  }
+
+  // Phase 2 — face structure: portrait INSIDE face oval, camera fades out beneath
+  const faceA = constrain(map(age, T_FACE_START, T_FACE_FULL, 0, 255), 0, 255) * fade;
+  if (faceA > 2) {
+    drawingContext.save();
+    traceOval(drawingContext);
+    drawingContext.clip();
+    tint(255, Math.round(faceA));
+    image(portImg, portX, portY, portW, portH);
+    noTint();
+    drawingContext.restore();
+  }
+
+  // Analysis panel — builds in while face settles
+  if (age > T_INFO_START && s.determination) {
+    const infoA = constrain(map(age, T_INFO_START, T_INFO_FULL, 0, 255), 0, 255) * fade;
+    if (infoA > 2) drawSubjectInfo(s, config, infoA);
+  }
+
+  // HOMOSEXUAL stamp — offset stateAt so stamp timer begins at T_STAMP
+  if (age > T_STAMP) {
+    const fakeS = Object.assign({}, s, { stateAt: s.stateAt + T_STAMP });
+    drawHomosexualStamp(fakeS, fade);
+  }
+}
+
+// ── Analysis panel drawn alongside the morphing portrait ─────────────────────
+function drawSubjectInfo(s, config, alpha) {
+  const pad  = Math.round(36 * uiScale);
+  const rX   = width - pad;
+
+  push();
+  noStroke();
+  textAlign(RIGHT, TOP);
+  textFont("monospace");
+
+  // Report header
+  const hdrS = Math.max(8, Math.round(11 * uiScale));
+  fill(255, 255, 255, alpha * 0.5);
+  textStyle(BOLD);
+  textSize(hdrS);
+  text("SUBJECT ANALYSIS REPORT", rX, pad);
+  textStyle(NORMAL);
+
+  let curY = pad + Math.round(hdrS * 2.5);
+
+  // Subject name
+  const nameS = Math.max(18, Math.round(28 * uiScale));
+  fill(255, 255, 255, alpha);
+  textStyle(BOLD);
+  textSize(nameS);
+  text(config.name, rX, curY);
+  textStyle(NORMAL);
+  curY += Math.round(nameS * 1.7);
+
+  // Confidence
+  const lblS = Math.max(8, Math.round(10 * uiScale));
+  fill(255, 255, 255, alpha * 0.5);
+  textSize(lblS);
+  text("CONFIDENCE:", rX, curY);
+  curY += Math.round(lblS * 1.4);
+
+  const confS = Math.max(24, Math.round(42 * uiScale));
+  fill(M_RED[0], M_RED[1], M_RED[2], alpha);
+  textStyle(BOLD);
+  textSize(confS);
+  text(s.confidence.toFixed(2) + "%", rX, curY);
+  textStyle(NORMAL);
+  curY += Math.round(confS * 1.9);
+
+  // Divider
+  const divW = Math.min(width * 0.38, Math.round(380 * uiScale));
+  stroke(255, 255, 255, alpha * 0.18);
+  strokeWeight(1);
+  line(rX - divW, curY, rX, curY);
+  noStroke();
+  curY += Math.round(14 * uiScale);
+
+  // Observed characteristics
+  fill(255, 255, 255, alpha * 0.5);
+  textSize(lblS);
+  text("OBSERVED CHARACTERISTICS:", rX, curY);
+  curY += Math.round(lblS * 2.4);
+
+  const charS = Math.max(9, Math.round(12 * uiScale));
+  fill(255, 255, 255, alpha * 0.82);
+  textSize(charS);
+  for (const ch of (s.determination?.characteristics || [])) {
+    text("✓  " + ch, rX, curY);
+    curY += Math.round(charS * 1.9);
+  }
+  curY += Math.round(16 * uiScale);
+
+  // Divider
+  stroke(255, 255, 255, alpha * 0.18);
+  strokeWeight(1);
+  line(rX - divW, curY, rX, curY);
+  noStroke();
+  curY += Math.round(12 * uiScale);
+
+  // Classification
+  fill(255, 255, 255, alpha * 0.5);
+  textSize(lblS);
+  text("CLASSIFICATION:", rX, curY);
+  curY += Math.round(lblS * 1.5);
+
+  const clsS = Math.max(14, Math.round(22 * uiScale));
+  fill(255, 255, 255, alpha);
+  textStyle(BOLD);
+  textSize(clsS);
+  text("HOMOSEXUAL", rX, curY);
+  textStyle(NORMAL);
+
   pop();
 }
 
