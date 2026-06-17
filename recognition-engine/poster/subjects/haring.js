@@ -36,4 +36,10 @@ const HARING_CONFIG = {
   dateRange:       '10.01 — 01.15.2025',
   venue:           'MUSEUM OF CONTEMPORARY CULTURAL STUDIES',
   address:         '301 OBSERVATION DRIVE\nMETROPOLIS, NY 10001',
+
+  stamp: {
+    text:      'HOMOSEXUAL',
+    treatment: 'haring_bold',
+    palette:   ['rgba(255,210,0,1)', 'rgba(0,0,0,1)', 'rgba(220,40,40,1)'],
+  },
 };

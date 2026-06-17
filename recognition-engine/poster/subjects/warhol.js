@@ -36,4 +36,10 @@ const WARHOL_CONFIG = {
   dateRange:       '06.01 — 09.22.2024',
   venue:           'MUSEUM OF CONTEMPORARY CULTURAL STUDIES',
   address:         '301 OBSERVATION DRIVE\nMETROPOLIS, NY 10001',
+
+  stamp: {
+    text:      'HOMOSEXUAL',
+    treatment: 'warhol_pop',
+    palette:   ['rgba(185,8,8,1)', 'rgba(255,0,180,1)', 'rgba(0,200,220,1)'],
+  },
 };
