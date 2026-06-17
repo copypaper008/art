@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warhol Detection Engine</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Anton&display=swap');
+
+  :root{
+    --cyan:#21e6ff;
+    --magenta:#ff2bd0;
+    --bg:#05070d;
+    --panel:#070a12;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  html,body{
+    background:#000;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    min-height:100vh;
+    font-family:'Oswald',sans-serif;
+  }
+
+  .poster{
+    position:relative;
+    width:380px;
+    background:
+      radial-gradient(120% 90% at 50% 0%, #0c1320 0%, #05070d 55%, #02040a 100%);
+    padding:14px 16px 0;
+    color:#fff;
+    overflow:hidden;
+    border:1px solid #0c1726;
+  }
+
+  /* subtle scanline / grain overlay */
+  .poster::after{
+    content:"";
+    position:absolute; inset:0;
+    background:repeating-linear-gradient(
+      to bottom, rgba(255,255,255,0.012) 0 1px, transparent 1px 3px);
+    pointer-events:none;
+    mix-blend-mode:overlay;
+  }
+
+  /* ---------- HEADER ---------- */
+  .top-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .badge{
+    border:2px solid var(--cyan);
+    color:#fff;
+    font-family:'Anton',sans-serif;
+    font-size:22px;
+    line-height:1;
+    padding:5px 8px 4px;
+    letter-spacing:1px;
+  }
+  .top-label{
+    color:#cfd6e0;
+    font-size:12px;
+    letter-spacing:3px;
+    font-weight:500;
+    flex:1;
+  }
+  .subjects{
+    color:#cfd6e0;
+    font-size:11px;
+    letter-spacing:2px;
+    text-align:right;
+    font-weight:500;
+  }
+  .stars{ color:var(--cyan); font-size:13px; letter-spacing:2px; }
+
+  /* ---------- TITLE ---------- */
+  .title{
+    font-family:'Anton',sans-serif;
+    line-height:0.92;
+    letter-spacing:1px;
+    margin-bottom:18px;
+  }
+  .title .warhol{
+    display:block;
+    font-size:46px;
+    color:var(--magenta);
+    text-shadow:0 0 18px rgba(255,43,208,0.55);
+  }
+  .title .engine{
+    display:block;
+    font-size:30px;
+    color:var(--cyan);
+    text-shadow:0 0 16px rgba(33,230,255,0.5);
+  }
+  .title .engine sup{ font-size:13px; }
+
+  /* ---------- BODY GRID ---------- */
+  .body{
+    display:grid;
+    grid-template-columns:1.05fr 1fr;
+    gap:10px;
+  }
+
+  .label-cyan{
+    color:var(--cyan);
+    font-size:11px;
+    letter-spacing:2px;
+    font-weight:600;
+    margin-bottom:4px;
+  }
+  .class-value{
+    font-family:'Anton',sans-serif;
+    font-size:20px;
+    line-height:1.05;
+    color:#fff;
+    margin-bottom:22px;
+    letter-spacing:0.5px;
+  }
+
+  .indicators-title{
+    color:var(--magenta);
+    font-size:11px;
+    letter-spacing:1.5px;
+    font-weight:600;
+    margin-bottom:12px;
+  }
+  .ind-list{ list-style:none; }
+  .ind-list li{
+    position:relative;
+    padding-left:14px;
+    margin-bottom:14px;
+    font-size:11px;
+    line-height:1.25;
+    letter-spacing:1px;
+    color:#eef2f6;
+    font-weight:500;
+    text-transform:uppercase;
+  }
+  .ind-list li::before{
+    content:"";
+    position:absolute; left:0; top:3px;
+    width:5px; height:5px;
+    background:var(--cyan);
+    transform:rotate(45deg);
+  }
+  .ind-list li .mark{ color:var(--cyan); }
+
+  /* ---------- PORTRAIT ---------- */
+  .portrait{
+    width:100%;
+    aspect-ratio:3/4;
+    border-radius:2px;
+    overflow:hidden;
+    box-shadow:0 0 30px rgba(255,43,208,0.25);
+  }
+  .portrait svg{ display:block; width:100%; height:100%; }
+
+  /* ---------- SOUP CANS ---------- */
+  .cans{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:4px;
+    margin:14px 0 16px;
+  }
+  .can svg{ display:block; width:100%; height:auto; }
+
+  /* ---------- RESULT ---------- */
+  .result-label{
+    color:var(--cyan);
+    font-size:11px;
+    letter-spacing:2px;
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  .result-box{
+    border:2px solid var(--magenta);
+    box-shadow:0 0 18px rgba(255,43,208,0.4), inset 0 0 18px rgba(255,43,208,0.12);
+    text-align:center;
+    padding:12px 8px;
+    margin-bottom:16px;
+  }
+  .result-box span{
+    font-family:'Anton',sans-serif;
+    color:var(--magenta);
+    font-size:19px;
+    line-height:1.15;
+    letter-spacing:0.5px;
+    text-shadow:0 0 12px rgba(255,43,208,0.5);
+  }
+
+  /* ---------- FOOTER ---------- */
+  .footer{
+    border-top:1px solid #14202e;
+    text-align:center;
+    padding:9px 0 11px;
+    color:var(--magenta);
+    font-size:9px;
+    letter-spacing:2px;
+    font-weight:600;
+  }
+  .footer .dots{ color:var(--magenta); }
+</style>
+</head>
+<body>
+  <div class="poster">
+
+    <!-- HEADER -->
+    <div class="top-row">
+      <div class="badge">01</div>
+      <div class="top-label">RECOGNITION ENGINE</div>
+      <div class="subjects">
+        SUBJECTS: 01<br>
+        <span class="stars">★★★</span>
+      </div>
+    </div>
+
+    <!-- TITLE -->
+    <div class="title">
+      <span class="warhol">WARHOL</span>
+      <span class="engine">DETECTION ENGINE<sup>™</sup></span>
+    </div>
+
+    <!-- BODY -->
+    <div class="body">
+      <div class="left">
+        <div class="label-cyan">CLASSIFICATION:</div>
+        <div class="class-value">POP ART<br>HOMOSEXUAL</div>
+
+        <div class="indicators-title">INDICATORS DETECTED:</div>
+        <ul class="ind-list">
+          <li>EXCESSIVE USE OF<br>FLUORESCENT COLOURS <span class="mark">✦</span></li>
+          <li>SUSPICIOUS INTEREST<br>IN CELEBRITY CULTURE</li>
+          <li>SOUP CAN FAMILIARITY<br>ABOVE BASELINE</li>
+          <li>FACTORY ATTENDANCE <span class="mark">⚠</span><br>ANOMALY</li>
+        </ul>
+      </div>
+
+      <!-- PORTRAIT -->
+      <div class="right">
+        <div class="portrait">
+          <svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#1a0a2e"/>
+                <stop offset="50%" stop-color="#3a0d4a"/>
+                <stop offset="100%" stop-color="#0a0a1a"/>
+              </linearGradient>
+              <radialGradient id="halo" cx="55%" cy="40%" r="60%">
+                <stop offset="0%" stop-color="#ff7be0" stop-opacity="0.55"/>
+                <stop offset="100%" stop-color="#ff7be0" stop-opacity="0"/>
+              </radialGradient>
+              <!-- face: yellow->magenta pop split -->
+              <linearGradient id="faceGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#ffe24d"/>
+                <stop offset="45%" stop-color="#ffb33c"/>
+                <stop offset="100%" stop-color="#ff2bd0"/>
+              </linearGradient>
+              <linearGradient id="hairGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#fff27a"/>
+                <stop offset="100%" stop-color="#ffd23c"/>
+              </linearGradient>
+            </defs>
+
+            <!-- background -->
+            <rect width="300" height="400" fill="url(#bgGrad)"/>
+            <rect width="300" height="400" fill="url(#halo)"/>
+
+            <!-- shoulders / body -->
+            <path d="M40 400 C55 320 95 300 150 300 C205 300 245 320 260 400 Z"
+                  fill="#12122a"/>
+            <path d="M40 400 C55 330 100 312 150 312 C200 312 245 330 260 400 Z"
+                  fill="#1d1340" opacity="0.9"/>
+
+            <!-- neck -->
+            <path d="M122 290 L122 250 L178 250 L178 290 C170 305 130 305 122 290 Z"
+                  fill="#d98a3a"/>
+
+            <!-- hair (Warhol-style platinum, swept) -->
+            <path d="M86 150 C78 96 118 60 150 60 C188 60 220 92 214 150
+                     C214 120 205 100 188 92 C200 110 198 130 192 142
+                     C186 120 170 108 150 108 C150 100 150 92 150 92
+                     C140 104 130 116 124 138 C120 120 116 110 110 104
+                     C100 120 96 138 96 156 Z"
+                  fill="url(#hairGrad)"/>
+            <path d="M90 150 C84 110 120 74 150 74 C182 74 214 104 210 150
+                     L210 165 C200 130 180 116 150 116 C120 116 100 132 92 166 Z"
+                  fill="url(#hairGrad)"/>
+
+            <!-- face -->
+            <path d="M104 150 C104 116 124 104 150 104 C176 104 196 116 196 150
+                     C196 200 184 252 150 258 C116 252 104 200 104 150 Z"
+                  fill="url(#faceGrad)"/>
+
+            <!-- cheek shading -->
+            <path d="M150 104 C176 104 196 116 196 150 C196 200 184 252 150 258 Z"
+                  fill="#ff2bd0" opacity="0.28"/>
+
+            <!-- ears -->
+            <ellipse cx="104" cy="176" rx="10" ry="16" fill="url(#faceGrad)"/>
+            <ellipse cx="196" cy="176" rx="10" ry="16" fill="#ff7ad6"/>
+
+            <!-- eyebrows -->
+            <path d="M118 158 q16 -8 30 -3" stroke="#7a3b16" stroke-width="4"
+                  fill="none" stroke-linecap="round"/>
+            <path d="M152 155 q16 -5 30 3" stroke="#7a3b16" stroke-width="4"
+                  fill="none" stroke-linecap="round"/>
+
+            <!-- sunglasses -->
+            <g>
+              <rect x="112" y="166" width="34" height="26" rx="9" fill="#0a0a12"/>
+              <rect x="154" y="166" width="34" height="26" rx="9" fill="#0a0a12"/>
+              <rect x="146" y="172" width="8" height="4" fill="#0a0a12"/>
+              <path d="M112 170 L100 166" stroke="#0a0a12" stroke-width="4"
+                    stroke-linecap="round"/>
+              <path d="M188 170 L200 166" stroke="#0a0a12" stroke-width="4"
+                    stroke-linecap="round"/>
+              <!-- lens glare -->
+              <rect x="118" y="170" width="10" height="6" rx="3" fill="#3a3a55" opacity="0.7"/>
+              <rect x="160" y="170" width="10" height="6" rx="3" fill="#3a3a55" opacity="0.7"/>
+            </g>
+
+            <!-- nose -->
+            <path d="M150 192 L143 218 q7 6 14 0 Z" fill="#c25a1e" opacity="0.55"/>
+
+            <!-- lips -->
+            <path d="M134 232 q16 12 32 0 q-16 6 -32 0 Z" fill="#b3201f"/>
+            <path d="M134 232 q16 -8 32 0" stroke="#7a1414" stroke-width="2" fill="none"/>
+
+            <!-- collar -->
+            <path d="M122 290 L150 318 L178 290 L178 308 L150 332 L122 308 Z"
+                  fill="#0a0a18"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- SOUP CANS -->
+    <div class="cans">
+      <!-- 5 cans, different fluorescent colours -->
+      <div class="can">
+        <svg viewBox="0 0 60 96">
+          <rect x="6" y="6" width="48" height="84" rx="3" fill="#d83a2a"/>
+          <rect x="6" y="34" width="48" height="30" fill="#f4f0e6"/>
+          <rect x="6" y="6" width="48" height="10" fill="#c9b24a"/>
+          <text x="30" y="28" font-family="Oswald" font-size="7" fill="#fff" text-anchor="middle" font-weight="700">Campbell's</text>
+          <text x="30" y="50" font-family="Oswald" font-size="6" fill="#d83a2a" text-anchor="middle" font-weight="700">TOMATO</text>
+          <text x="30" y="58" font-family="Oswald" font-size="6" fill="#d83a2a" text-anchor="middle" font-weight="700">SOUP</text>
+          <circle cx="30" cy="74" r="6" fill="#c9b24a"/>
+        </svg>
+      </div>
+      <div class="can">
+        <svg viewBox="0 0 60 96">
+          <rect x="6" y="6" width="48" height="84" rx="3" fill="#7a4bd6"/>
+          <rect x="6" y="34" width="48" height="30" fill="#efe9f6"/>
+          <rect x="6" y="6" width="48" height="10" fill="#3ad6c2"/>
+          <text x="30" y="28" font-family="Oswald" font-size="7" fill="#fff" text-anchor="middle" font-weight="700">Campbell's</text>
+          <text x="30" y="50" font-family="Oswald" font-size="6" fill="#7a4bd6" text-anchor="middle" font-weight="700">TOMATO</text>
+          <text x="30" y="58" font-family="Oswald" font-size="6" fill="#7a4bd6" text-anchor="middle" font-weight="700">SOUP</text>
+          <circle cx="30" cy="74" r="6" fill="#3ad6c2"/>
+        </svg>
+      </div>
+      <div class="can">
+        <svg viewBox="0 0 60 96">
+          <rect x="6" y="6" width="48" height="84" rx="3" fill="#e23a8a"/>
+          <rect x="6" y="34" width="48" height="30" fill="#f6e9f0"/>
+          <rect x="6" y="6" width="48" height="10" fill="#f2d23c"/>
+          <text x="30" y="28" font-family="Oswald" font-size="7" fill="#fff" text-anchor="middle" font-weight="700">Campbell's</text>
+          <text x="30" y="50" font-family="Oswald" font-size="6" fill="#e23a8a" text-anchor="middle" font-weight="700">TOMATO</text>
+          <text x="30" y="58" font-family="Oswald" font-size="6" fill="#e23a8a" text-anchor="middle" font-weight="700">SOUP</text>
+          <circle cx="30" cy="74" r="6" fill="#f2d23c"/>
+        </svg>
+      </div>
+      <div class="can">
+        <svg viewBox="0 0 60 96">
+          <rect x="6" y="6" width="48" height="84" rx="3" fill="#2ab0d6"/>
+          <rect x="6" y="34" width="48" height="30" fill="#e6f2f6"/>
+          <rect x="6" y="6" width="48" height="10" fill="#e2522a"/>
+          <text x="30" y="28" font-family="Oswald" font-size="7" fill="#fff" text-anchor="middle" font-weight="700">Campbell's</text>
+          <text x="30" y="50" font-family="Oswald" font-size="6" fill="#2ab0d6" text-anchor="middle" font-weight="700">TOMATO</text>
+          <text x="30" y="58" font-family="Oswald" font-size="6" fill="#2ab0d6" text-anchor="middle" font-weight="700">SOUP</text>
+          <circle cx="30" cy="74" r="6" fill="#e2522a"/>
+        </svg>
+      </div>
+      <div class="can">
+        <svg viewBox="0 0 60 96">
+          <rect x="6" y="6" width="48" height="84" rx="3" fill="#d83a2a"/>
+          <rect x="6" y="34" width="48" height="30" fill="#f4f0e6"/>
+          <rect x="6" y="6" width="48" height="10" fill="#c9b24a"/>
+          <text x="30" y="28" font-family="Oswald" font-size="7" fill="#fff" text-anchor="middle" font-weight="700">Campbell's</text>
+          <text x="30" y="50" font-family="Oswald" font-size="6" fill="#d83a2a" text-anchor="middle" font-weight="700">TOMATO</text>
+          <text x="30" y="58" font-family="Oswald" font-size="6" fill="#d83a2a" text-anchor="middle" font-weight="700">SOUP</text>
+          <circle cx="30" cy="74" r="6" fill="#c9b24a"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- RESULT -->
+    <div class="result-label">RESULT:</div>
+    <div class="result-box">
+      <span>SUBJECT HAS BEEN<br>SCREEN PRINTED 16 TIMES</span>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <span class="dots">◗◗◗</span> PRIDE RESPONSE PROTOCOL INITIATED – ALL UNITS RESPOND <span class="dots">◖◖◖</span>
+    </div>
+
+  </div>
+</body>
+</html>
