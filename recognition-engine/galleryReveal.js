@@ -138,49 +138,50 @@ class GalleryReveal {
     this.faceInfo     = null;
   }
 
-  async trigger(subject) {
+  trigger(subject) {
     if (this.active || this._rendering) return;
-    this._rendering = true;
 
+    // Freeze a mirrored camera frame so face coords match tracking space
+    if (this.capturedSnap) { this.capturedSnap.remove(); this.capturedSnap = null; }
+    const snap = createGraphics(width, height);
+    snap.pixelDensity(1);
+    if (typeof cam !== 'undefined' && cam && cam.elt && cam.elt.readyState >= 2) {
+      const sctx = snap.drawingContext;
+      sctx.save();
+      sctx.translate(width, 0);
+      sctx.scale(-1, 1);
+      sctx.drawImage(cam.elt, 0, 0, width, height);
+      sctx.restore();
+    }
+    this.capturedSnap = snap;
+    this.faceInfo     = { x: subject.x, y: subject.y, w: subject.w, h: subject.h };
+    this.cardKey      = subject.subjectKey;
+    this.posterCanvas = null;
+    this._rendering   = true;
+
+    // Start Beat A immediately — don't wait for the poster to render
+    this.startMs = millis();
+    this.active  = true;
+
+    // Render poster in the background; Beat A holds until posterCanvas is set
+    const config  = GALLERY_CONFIGS[this.cardKey];
+    const portImg = _portraitImages[this.cardKey];
+    let composited = null;
+    if (portImg && portImg.width > 0) {
+      composited = _buildCompositedPortrait(portImg, config.faceAnchors, snap, this.faceInfo);
+    }
+    this._renderPosterAsync(config, composited);
+  }
+
+  async _renderPosterAsync(config, composited) {
     try {
-      // Freeze a mirrored camera frame so face coords match tracking space
-      if (this.capturedSnap) { this.capturedSnap.remove(); this.capturedSnap = null; }
-      const snap = createGraphics(width, height);
-      snap.pixelDensity(1);
-      if (typeof cam !== 'undefined' && cam && cam.elt && cam.elt.readyState >= 2) {
-        const sctx = snap.drawingContext;
-        sctx.save();
-        sctx.translate(width, 0);
-        sctx.scale(-1, 1);
-        sctx.drawImage(cam.elt, 0, 0, width, height);
-        sctx.restore();
-      }
-      this.capturedSnap = snap;
-      this.faceInfo     = { x: subject.x, y: subject.y, w: subject.w, h: subject.h };
-      this.cardKey      = subject.subjectKey;
-
-      const config  = GALLERY_CONFIGS[this.cardKey];
-      const portImg = _portraitImages[this.cardKey];
-
-      // Composite captured face into portrait oval (returns null on failure)
-      let composited = null;
-      if (portImg && portImg.width > 0) {
-        composited = _buildCompositedPortrait(portImg, config.faceAnchors, snap, this.faceInfo);
-      }
-
-      // Render the full 1024×1536 poster
       const canvas = document.createElement('canvas');
       await renderPoster(canvas, config, generateDetermination(), composited);
       this.posterCanvas = canvas;
     } catch (err) {
       console.error('GalleryReveal: poster render failed.', err);
     } finally {
-      // Always clear _rendering — never leave the system stuck
       this._rendering = false;
-      if (this.posterCanvas) {
-        this.startMs = millis();
-        this.active  = true;
-      }
     }
   }
 
@@ -223,7 +224,9 @@ class GalleryReveal {
     drawingContext.globalAlpha = 1;
 
     if (elapsed >= GB_TOTAL) {
-      this.active = false;
+      this.active       = false;
+      this._rendering   = false;
+      this.posterCanvas = null;
       if (this.capturedSnap) { this.capturedSnap.remove(); this.capturedSnap = null; }
     }
   }
