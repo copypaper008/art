@@ -24,8 +24,31 @@ let uiScale = 1;
 let cam;
 let detectionGraphics;
 let bgImage;
+let _portraitImages = {};
 
 let hudSessionId = "";
+
+
+const _CHARACTERISTICS = [
+  "Demonstrates systematic cultural legibility",
+  "Displays advanced understanding of image production",
+  "Output suggests preoccupation with surface and depth",
+  "Occupies multiple cultural registers simultaneously",
+  "Engages with commodity structures reflexively",
+  "Identity appears partially self-constructed",
+  "Sustains public identity through repetition and variation",
+  "Aesthetic sensibility reads as culturally inflected",
+  "Subjectivity exceeds dominant symbolic parameters",
+  "Behavioural signatures indicate non-normative alignment",
+];
+
+function _generateAlarmData() {
+  const shuffled = [..._CHARACTERISTICS].sort(() => Math.random() - 0.5);
+  return {
+    characteristics: shuffled.slice(0, 6),
+    confidence: Math.floor(94 + Math.random() * 5),
+  };
+}
 
 let idlePhrase      = "";
 let idlePhraseTimer = 0;
@@ -33,6 +56,8 @@ const IDLE_PHRASE_INTERVAL = 4000;
 
 function preload() {
   bgImage = loadImage('./bg.png');
+  _portraitImages.warhol = loadImage('./poster/portraits/warhol.jpg');
+  _portraitImages.haring = loadImage('./poster/portraits/haring.jpg');
 }
 
 function setup() {
@@ -84,9 +109,8 @@ function draw() {
   drawDistortedMirror(cam, visualState);
   drawGrid();
 
-  // HTML engine card overlay takes over the screen during ALARM
-  if (anyAlarm && !alarmOverlayActive) showAlarmScreen();
-  if (!anyAlarm && alarmOverlayActive) hideAlarmScreen();
+  // Gallery of cards reveals when a subject is classified ALARM
+  galleryReveal.draw();
 
   if (faceTracker.subjects.length > 0) {
     drawAllSubjectOverlays();
@@ -103,6 +127,9 @@ function draw() {
 // Per-face overlay: reticle + state text + confidence readout
 
 function drawSubjectOverlay(s) {
+  // ALARM state is rendered by galleryReveal — suppress per-face overlay
+  if (s.state === 'ALARM') return;
+
   const tlx  = s.x - s.w * 0.55;
   const tly  = s.y - s.h * 0.6;
   const brx  = tlx + s.w * 1.1;
@@ -117,25 +144,7 @@ function drawSubjectOverlay(s) {
   noFill();
 
   // ── Reticle: angular L-brackets ──────────────────────────────────────────
-  if (s.state === 'ALARM') {
-    const hue     = (t * 0.3 + s.id * 60) % 360;
-    const flicker = random(0.75, 1.0);
-    colorMode(HSB, 360, 100, 100, 255);
-    const bW = Math.max(2, Math.round(4 * uiScale));
-    strokeWeight(bW);
-    stroke(hue, 90, 100, 210 * flicker);
-    line(tlx, tly, tlx + tick, tly); line(tlx, tly, tlx, tly + tick);
-    stroke((hue + 90) % 360, 90, 100, 210 * flicker);
-    line(brx - tick, tly, brx, tly); line(brx, tly, brx, tly + tick);
-    stroke((hue + 180) % 360, 90, 100, 210 * flicker);
-    line(tlx, bry - tick, tlx, bry); line(tlx, bry, tlx + tick, bry);
-    stroke((hue + 270) % 360, 90, 100, 210 * flicker);
-    line(brx - tick, bry, brx, bry); line(brx, bry - tick, brx, bry);
-    stroke(hue, 50, 100, 10 * flicker);
-    strokeWeight(1);
-    rect(tlx, tly, s.w * 1.1, s.h * 1.2);
-    colorMode(RGB, 255);
-  } else {
+  {
     const flicker = random(0.88, 1.0);
     const bW = Math.max(2, Math.round(4 * uiScale));
     strokeWeight(bW);
@@ -334,91 +343,7 @@ function drawSubjectOverlay(s) {
     textStyle(NORMAL);
     textFont("monospace");
   }
-
-  // ── ALARM ─────────────────────────────────────────────────────────────────
-  if (s.state === 'ALARM') {
-    const flash   = sin(t * 0.012) > 0;
-    const textA   = flash ? 255 : 210;
-    const closeS  = Math.max(28, Math.round(82 * uiScale));   // enormous closer
-    const headS   = Math.max(18, Math.round(36 * uiScale));   // bold headline
-    const subS    = Math.max(13, Math.round(19 * uiScale));   // sub description
-    const gap     = Math.round(14 * uiScale);
-    const outOff  = Math.max(2, Math.round(4 * uiScale));
-    const subN    = (s.alarmSub.match(/\n/g) || []).length + 1;
-    const subH    = Math.round(subS * 1.4 * subN);
-    const ruleW   = Math.min(s.w * 2.8, Math.round(360 * uiScale));
-
-    // Reveal channels (eruption Timeline in faceTracker.js).
-    const rHeadRaw   = fx.rHead   == null ? 1 : fx.rHead;
-    const rHead      = clamp01(rHeadRaw);
-    const rRule      = clamp01(fx.rRule == null ? 1 : fx.rRule);
-    const rSub       = clamp01(fx.rSub  == null ? 1 : fx.rSub);
-    const rCloserRaw = fx.rCloser == null ? 1 : fx.rCloser;  // outBack → pop
-    const rCloser    = clamp01(rCloserRaw);
-
-    // Bounce animation on the closer
-    const bounce  = sin(t * 0.004 + s.id) * Math.round(7 * uiScale);
-    const baseY   = tly - Math.round(14 * uiScale) + bounce;
-    const ruleY   = baseY - Math.round(closeS * 1.3) - Math.round(gap * 0.4);
-    const subBot  = ruleY - gap;
-    const headBot = subBot - subH - gap;
-
-    // Closer — pop art: black outline + enormous rainbow text, scale-pops in
-    const closeHue = (t * 0.3 + s.id * 30) % 360;
-    push();
-    translate(s.x, baseY);
-    scale(constrain(rCloserRaw, 0, 1.2));
-    translate(-s.x, -baseY);
-    textFont("Arial");
-    textStyle(BOLD);
-    textAlign(CENTER, BOTTOM);
-    textSize(closeS);
-    // Black outline (4-direction)
-    fill(0, 0, 0, 220 * rCloser);
-    text(s.alarmNext, s.x - outOff, baseY - outOff);
-    text(s.alarmNext, s.x + outOff, baseY - outOff);
-    text(s.alarmNext, s.x - outOff, baseY + outOff);
-    text(s.alarmNext, s.x + outOff, baseY + outOff);
-    // Rainbow fill
-    colorMode(HSB, 360, 100, 100, 255);
-    fill(closeHue, 95, 100, textA * rCloser);
-    colorMode(RGB, 255);
-    text(s.alarmNext, s.x, baseY);
-    textStyle(NORMAL);
-    pop();
-
-    // Rainbow rule — wipes from centre
-    const sRuleW = ruleW * rRule;
-    colorMode(HSB, 360, 100, 100, 255);
-    stroke((t * 0.2 + s.id * 40) % 360, 90, 100, 180 * rRule);
-    strokeWeight(Math.max(2, Math.round(3 * uiScale)));
-    line(s.x - sRuleW * 0.5, ruleY, s.x + sRuleW * 0.5, ruleY);
-    noStroke();
-    colorMode(RGB, 255);
-
-    // Sub description — rainbow monospace; rises in
-    const subRise = (1 - rSub) * Math.round(14 * uiScale);
-    colorMode(HSB, 360, 100, 100, 255);
-    fill((t * 0.25 + s.id * 45 + 120) % 360, 90, 100, textA * rSub);
-    colorMode(RGB, 255);
-    textFont("monospace");
-    textSize(subS);
-    textLeading(Math.round(subS * 1.4));
-    text(s.alarmSub, s.x, subBot + subRise);
-
-    // Headline — bold white Arial, pop art black outline; drops in
-    const headDrop = (1 - rHeadRaw) * Math.round(40 * uiScale);
-    textFont("Arial");
-    textStyle(BOLD);
-    textSize(headS);
-    fill(0, 0, 0, 200 * rHead);
-    text(s.alarmPrimary, s.x - outOff, headBot + outOff - headDrop);
-    text(s.alarmPrimary, s.x + outOff, headBot + outOff - headDrop);
-    fill(255, 255, 255, textA * rHead);
-    text(s.alarmPrimary, s.x, headBot - headDrop);
-    textStyle(NORMAL);
-    textFont("monospace");
-  }
+  // ALARM is rendered by galleryReveal (early-returned at the top of this fn).
 }
 
 function drawAllSubjectOverlays() {
@@ -438,27 +363,9 @@ function drawGlobalHUD() {
   const anyAlarm = faceTracker.hasAlarm();
   const t        = millis();
 
-  function _hFill(a) {
-    if (anyAlarm) {
-      colorMode(HSB, 360, 100, 100, 255);
-      fill((t * 0.2) % 360, 90, 100, a);
-      colorMode(RGB, 255);
-    } else {
-      fill(M_RED[0], M_RED[1], M_RED[2], a);
-    }
-  }
+  function _hFill(a)   { fill(M_RED[0], M_RED[1], M_RED[2], a); }
+  function _hStroke(a) { stroke(M_RED[0], M_RED[1], M_RED[2], a); }
 
-  function _hStroke(a) {
-    if (anyAlarm) {
-      colorMode(HSB, 360, 100, 100, 255);
-      stroke((t * 0.2) % 360, 90, 100, a);
-      colorMode(RGB, 255);
-    } else {
-      stroke(M_RED[0], M_RED[1], M_RED[2], a);
-    }
-  }
-
-  // ── Header ───────────────────────────────────────────────────────────────
   noStroke();
   textAlign(LEFT, TOP);
   textFont("monospace");
@@ -478,60 +385,25 @@ function drawGlobalHUD() {
   line(pad, pad * 0.7 + lh * 2.1, Math.round(width * 0.45), pad * 0.7 + lh * 2.1);
   noStroke();
 
-  // Subject count — top right
   textAlign(RIGHT, TOP);
   textStyle(BOLD);
   _hFill(210);
   textSize(sm);
-  text("SUBJECTS: " + String(faceTracker.subjects.length).padStart(2, '0'), width - pad, pad * 0.7);
+  const _subjectCount = galleryReveal.isActive()
+    ? galleryReveal.cards.length
+    : faceTracker.subjects.length;
+  text("SUBJECTS: " + String(_subjectCount).padStart(2, '0'), width - pad, pad * 0.7);
   textStyle(NORMAL);
 
-  // ── Alarm extras ─────────────────────────────────────────────────────────
   if (anyAlarm) {
-    const flash  = sin(t * 0.012) > 0;
-    const flash2 = sin(t * 0.018) > 0;
-    const prideS = Math.max(18, Math.round(26 * uiScale));
-    const outOff = Math.max(2, Math.round(3 * uiScale));
-
-    if (flash) {
-      textFont("Arial");
-      textStyle(BOLD);
-      textAlign(LEFT, TOP);
-      textSize(prideS);
-      fill(0, 0, 0, 200);
-      text("★ PRIDE ★", pad - outOff, pad * 0.7 + Math.round(lh * 1.9) + outOff);
-      text("★ PRIDE ★", pad + outOff, pad * 0.7 + Math.round(lh * 1.9) + outOff);
-      colorMode(HSB, 360, 100, 100, 255);
-      fill((t * 0.3) % 360, 95, 100, 255);
-      colorMode(RGB, 255);
-      text("★ PRIDE ★", pad, pad * 0.7 + Math.round(lh * 1.9));
-      textStyle(NORMAL);
-    }
-    if (flash2) {
-      textFont("Arial");
-      textStyle(BOLD);
-      textAlign(RIGHT, TOP);
-      textSize(prideS);
-      fill(0, 0, 0, 200);
-      text("★ PRIDE ★", width - pad + outOff, pad * 0.7 + Math.round(lh * 1.9) + outOff);
-      text("★ PRIDE ★", width - pad - outOff, pad * 0.7 + Math.round(lh * 1.9) + outOff);
-      colorMode(HSB, 360, 100, 100, 255);
-      fill((t * 0.3 + 120) % 360, 95, 100, 255);
-      colorMode(RGB, 255);
-      text("★ PRIDE ★", width - pad, pad * 0.7 + Math.round(lh * 1.9));
-      textStyle(NORMAL);
-    }
-
+    noStroke();
+    fill(M_RED[0], M_RED[1], M_RED[2], 50);
     textFont("monospace");
-    textAlign(CENTER, BOTTOM);
-    colorMode(HSB, 360, 100, 100, 255);
-    fill((t * 0.2 + 180) % 360, 85, 100, flash ? 220 : 90);
-    colorMode(RGB, 255);
     textSize(Math.max(10, Math.round(14 * uiScale)));
-    text("PRIDE RESPONSE PROTOCOL INITIATED — ALL UNITS RESPOND", width * 0.5, height - Math.round(14 * uiScale));
+    textAlign(CENTER, BOTTOM);
+    text("CLASSIFICATION CONFIRMED", width * 0.5, height - Math.round(14 * uiScale));
   }
 
-  // ── Idle phrase (no subjects) ─────────────────────────────────────────────
   if (faceTracker.subjects.length === 0) {
     const now = millis();
     if (now - idlePhraseTimer > IDLE_PHRASE_INTERVAL) {
@@ -547,7 +419,6 @@ function drawGlobalHUD() {
     text(idlePhrase, width * 0.5, height * 0.44);
   }
 
-  // ── Multi-subject list (>1 subject) ──────────────────────────────────────
   if (faceTracker.subjects.length > 1) {
     const listY = Math.round(150 * uiScale);
     const lineH = Math.round(22 * uiScale);
@@ -561,9 +432,7 @@ function drawGlobalHUD() {
       textSize(xs);
       text("SUBJ " + String(i + 1).padStart(2, '0') + ":", pad, rowY);
       if (s.state === 'ALARM') {
-        colorMode(HSB, 360, 100, 100, 255);
-        fill((t * 0.25 + i * 60) % 360, 90, 100, 220);
-        colorMode(RGB, 255);
+        fill(255, 255, 255, 200);
       } else {
         fill(M_RED[0], M_RED[1], M_RED[2], 190);
       }
@@ -572,7 +441,6 @@ function drawGlobalHUD() {
     }
   }
 
-  // ── Bottom tagline ────────────────────────────────────────────────────────
   if (!anyAlarm) {
     noStroke();
     fill(M_RED[0], M_RED[1], M_RED[2], 30);

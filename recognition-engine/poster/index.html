@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recognition Engine — Poster</title>
+
+  <!-- Typography: condensed grotesque + mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+
+  <div id="controls">
+    <select id="subject-select" aria-label="Subject">
+      <option value="warhol">WARHOL, ANDY</option>
+      <option value="haring">HARING, KEITH</option>
+    </select>
+
+    <button id="rescan-btn" title="Generate a new random determination">RESCAN</button>
+    <button id="scan-btn"   title="Capture your face and superimpose it">SCAN FACE</button>
+    <button id="export-btn" title="Download poster as PNG">EXPORT PNG</button>
+    <button id="anchor-btn" title="Open the dev anchor editor">ANCHORS</button>
+
+    <span id="status"></span>
+  </div>
+
+  <div id="canvas-wrapper">
+    <canvas id="poster-canvas"></canvas>
+  </div>
+
+  <!-- Off-screen utilities for face-swap pipeline -->
+  <video  id="webcam"      autoplay playsinline muted></video>
+  <canvas id="work-canvas"></canvas>
+
+</div>
+
+<!-- Types (JSDoc only, no runtime code) -->
+<script src="types.js"></script>
+
+<!-- Subject configs -->
+<script src="subjects/warhol.js"></script>
+<script src="subjects/haring.js"></script>
+
+<!-- Core modules -->
+<script src="determination.js"></script>
+<script src="renderer.js"></script>
+<script src="face-swap.js"></script>
+<script src="reveal.js"></script>
+<script src="anchor-overlay.js"></script>
+
+<script>
+'use strict';
+
+// ── Subject registry ──────────────────────────────────────────────────
+const SUBJECTS = {
+  warhol: WARHOL_CONFIG,
+  haring: HARING_CONFIG,
+};
+
+// ── State ─────────────────────────────────────────────────────────────
+let activeSubject      = 'warhol';
+let activeDetermination = null;
+let activePortrait     = null;  // null = use config.portrait; else composited canvas
+
+const posterCanvas  = document.getElementById('poster-canvas');
+const workCanvas    = document.getElementById('work-canvas');
+const webcamEl      = document.getElementById('webcam');
+const statusEl      = document.getElementById('status');
+
+function setStatus(msg) { statusEl.textContent = msg; }
+
+// ── Render ────────────────────────────────────────────────────────────
+// regen=true  → fresh random determination (default for user-initiated actions)
+// regen=false → reuse activeDetermination (used when only swapping the portrait)
+async function render(portrait = null, regen = true) {
+  activePortrait = portrait;
+  if (regen || !activeDetermination) activeDetermination = generateDetermination();
+  const config = SUBJECTS[activeSubject];
+  setStatus('rendering…');
+  try {
+    await renderPoster(posterCanvas, config, activeDetermination, portrait);
+    setStatus('');
+  } catch (e) {
+    setStatus(`render error: ${e.message}`);
+    console.error(e);
+  }
+}
+
+// ── Subject switcher ──────────────────────────────────────────────────
+document.getElementById('subject-select').addEventListener('change', async e => {
+  activeSubject = e.target.value;
+  await render(null, true);   // clear any composited face when switching subjects
+});
+
+// ── Rescan (new random determination, keep composited face if any) ────
+document.getElementById('rescan-btn').addEventListener('click', () => render(activePortrait, true));
+
+// ── Scan face ─────────────────────────────────────────────────────────
+document.getElementById('scan-btn').addEventListener('click', async () => {
+  const btn = document.getElementById('scan-btn');
+  btn.disabled = true;
+  setStatus('requesting camera…');
+
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+    webcamEl.srcObject = stream;
+    await new Promise((res, rej) => {
+      webcamEl.onloadeddata = res;
+      setTimeout(() => rej(new Error('camera timeout')), 8000);
+    });
+
+    setStatus('capturing…');
+    await new Promise(r => setTimeout(r, 400)); // let auto-exposure settle
+
+    workCanvas.width  = webcamEl.videoWidth;
+    workCanvas.height = webcamEl.videoHeight;
+    workCanvas.getContext('2d').drawImage(webcamEl, 0, 0);
+
+    setStatus('detecting face…');
+    const config = SUBJECTS[activeSubject];
+    const composited = await swapFace(workCanvas, config);
+
+    setStatus('rendering…');
+    await render(composited);
+    setStatus('done');
+  } catch (err) {
+    if (err.message === 'NO_FACE_DETECTED') {
+      setStatus('no face detected — try again with better lighting');
+    } else {
+      setStatus(`error: ${err.message}`);
+      console.error(err);
+    }
+  } finally {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    webcamEl.srcObject = null;
+    btn.disabled = false;
+  }
+});
+
+// ── Export ────────────────────────────────────────────────────────────
+document.getElementById('export-btn').addEventListener('click', () => {
+  const link = document.createElement('a');
+  const name  = activeSubject.toUpperCase();
+  link.download = `recognition-engine-${name}-${Date.now()}.png`;
+  link.href = posterCanvas.toDataURL('image/png');
+  link.click();
+});
+
+// ── Anchor dev tool ───────────────────────────────────────────────────
+document.getElementById('anchor-btn').addEventListener('click', () => {
+  showAnchorOverlay(SUBJECTS[activeSubject]);
+});
+
+// ── Kiosk mode — reveal animation driven by postMessage from parent ───
+if (new URLSearchParams(location.search).has('kiosk')) {
+  document.body.classList.add('kiosk');
+
+  window.addEventListener('message', async evt => {
+    const msg = evt.data;
+    if (!msg || typeof msg !== 'object' || msg.type !== 'KIOSK_INIT') return;
+
+    activeSubject = msg.subjectKey || 'warhol';
+    const config  = SUBJECTS[activeSubject];
+    const det     = generateDetermination();
+
+    try {
+      await runReveal(posterCanvas, config, det, msg.capturedFaceDataUrl || null);
+    } catch (e) {
+      console.error('[kiosk] reveal error:', e);
+    }
+  });
+
+} else {
+  // ── Normal (non-kiosk) init ───────────────────────────────────────
+  render(null, true);
+}
+</script>
+</body>
+</html>

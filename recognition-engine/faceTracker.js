@@ -21,6 +21,9 @@ const MATCH_DIST_MULT = 1.8;  // gating radius for a match = face size * this
 class Subject {
   constructor(id, face) {
     this.id  = id;
+    // Which gallery portrait this subject gets stamped onto on ALARM.
+    this.subjectKey    = random(['warhol', 'haring']);
+    this.determination = null;   // set by _generateAlarmData() on ALARM entry
 
     // ── Spatial filters ──────────────────────────────────────────────────────
     this.kx = new Kalman1D(face.x);
@@ -36,10 +39,11 @@ class Subject {
     this.state   = 'IDLE';
     this.stateAt = millis();
 
-    // Scan counter + threshold (TESTING: every 2nd scan; for exhibition change
-    // nextGayAt increment below to + floor(random(10,16))).
+    // Scan counter + threshold. With FORCE_ALARM (sketch.js) every scan resolves
+    // to ALARM; for exhibition set FORCE_ALARM=false and the increment below to
+    // + floor(random(10,16)).
     this.scanCount = 0;
-    this.nextGayAt = 2;
+    this.nextGayAt = 1;
 
     // Text slots
     this.scanLine       = '';
@@ -137,13 +141,10 @@ class Subject {
       this.alarmNext        = getRandomPhrase('alarmNext');
       this.alarmSubTimer    = millis();
       this.targetConfidence = 99;
-      // Brief on-canvas eruption before the HTML poster fades over the top.
-      this.tl = new Timeline(this.fx)
-        .add('rHead',   0, 1,   0, 380, Easing.outBack)
-        .add('rRule',   0, 1, 120, 300, Easing.outQuart)
-        .add('rSub',    0, 1, 200, 340, Easing.outCubic)
-        .add('rCloser', 0, 1, 240, 620, Easing.outBack);
-      initParticles();
+      // ALARM visuals are owned by the on-canvas gallery reveal (colourful
+      // museum cards + face-swap + stamp). The white flash bridges into it.
+      this.determination = _generateAlarmData();
+      galleryReveal.trigger(this);
       triggerFlash();
     }
 
@@ -185,7 +186,7 @@ class Subject {
         if (!present) { this.enterState('IDLE'); return; }
         this.scanCount++;
         if (FORCE_ALARM || this.scanCount >= this.nextGayAt) {
-          this.nextGayAt = this.scanCount + 2; // TESTING — exhibition: + floor(random(10,16))
+          this.nextGayAt = this.scanCount + 1; // TESTING — exhibition: + floor(random(10,16))
           this.enterState('ALARM');
         } else {
           this.enterState('STRAIGHT');

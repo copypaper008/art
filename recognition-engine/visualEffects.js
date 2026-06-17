@@ -1,5 +1,6 @@
 // Visual effects — constructivist/brutalist aesthetic
-// Machine state: deep red on near-black. ALARM: full rainbow eruption.
+// Machine state: deep red on near-black. ALARM is desaturated so the colour of
+// the gallery-reveal cards + stamp (galleryReveal.js) is the only colour on screen.
 
 const GHOST_FRAMES = 8;
 const ghostTrails  = [];
@@ -25,23 +26,14 @@ function initVisuals(w, h) {
 function drawDistortedMirror(videoCapture, currentState) {
   if (!videoCapture || !mirrorBuffer) return;
 
-  // Determine color filter and camera opacity per state.
-  // Filter is applied to mirrorBuffer at draw time (baked into pixels before
-  // applyRipple reads them). Opacity is then applied via tint() when blitting
-  // to the main canvas — this is reliable across mobile browsers, unlike
-  // globalAlpha + CSS filter combined on the main context.
-  let filterStr, camAlpha;
+  // Camera filter: ALARM is desaturated so the stamp is the only colour on screen.
+  let filterStr;
   if (currentState === "ALARM") {
-    const hue = (millis() * 0.18) % 360;
-    filterStr = `hue-rotate(${hue}deg) saturate(220%) brightness(1.1)`;
-    camAlpha  = 0.78;
+    filterStr = "saturate(0%) brightness(0.88) contrast(1.15)";
   } else if (currentState === "STRAIGHT") {
     filterStr = "grayscale(100%) brightness(0.68) contrast(1.25)";
-    camAlpha  = 0.65;
   } else {
-    // Scanning: desaturated but bright enough to read the face
     filterStr = "saturate(15%) brightness(0.92) contrast(1.2)";
-    camAlpha  = 0.65;
   }
 
   // Draw camera flipped into mirrorBuffer with color filter baked in
@@ -58,7 +50,7 @@ function drawDistortedMirror(videoCapture, currentState) {
   ripplePhase += 0.04;
   applyRipple(mirrorBuffer, rippleBuffer, amplitude);
 
-  // Ghost motion trails — very faint, add camera persistence effect
+  // Ghost motion trails — very faint, camera persistence effect
   for (let i = 0; i < ghostTrails.length; i++) {
     const alpha = map(i, 0, ghostTrails.length, 4, 18);
     tint(255, alpha);
@@ -66,10 +58,43 @@ function drawDistortedMirror(videoCapture, currentState) {
   }
   noTint();
 
-  // Composite camera over background image at partial opacity
-  tint(255, Math.round(camAlpha * 255));
-  image(rippleBuffer, 0, 0);
-  noTint();
+  const subjects = faceTracker.subjects;
+  if (subjects.length > 0) {
+    // Faint ambient so the room is barely perceptible
+    tint(255, 18);
+    image(rippleBuffer, 0, 0);
+    noTint();
+
+    // Spotlight: reveal camera at high opacity only around each tracked face.
+    // drawingContext.clip() gives a hard ellipse edge; the pre-camera spotlight
+    // glow (drawn before this function) provides the soft feathered halo.
+    for (const s of subjects) {
+      let faceAlpha;
+      if (s.state === 'IDLE') {
+        faceAlpha = 30;
+      } else if (s.state === 'SCANNING') {
+        faceAlpha = Math.round(constrain((millis() - s.stateAt) / SCAN_DURATION, 0.08, 1.0) * 210);
+      } else {
+        faceAlpha = 210;
+      }
+      if (faceAlpha < 6) continue;
+
+      drawingContext.save();
+      drawingContext.beginPath();
+      // radiusX, radiusY sized to encompass the face oval (s.w/s.h are bbox dims)
+      drawingContext.ellipse(s.x, s.y, s.w * 0.65, s.h * 0.72, 0, 0, Math.PI * 2);
+      drawingContext.clip();
+      tint(255, faceAlpha);
+      image(rippleBuffer, 0, 0);
+      noTint();
+      drawingContext.restore();
+    }
+  } else {
+    // No tracked subjects: show full camera at moderate opacity
+    tint(255, Math.round(0.62 * 255));
+    image(rippleBuffer, 0, 0);
+    noTint();
+  }
 
   if (frameCount % 3 === 0) {
     if (ghostTrails.length >= GHOST_FRAMES) {

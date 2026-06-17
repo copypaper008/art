@@ -1,0 +1,98 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: #1a1a1a;
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  color: #eee;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100%;
+  padding: 20px 16px 40px;
+  gap: 16px;
+}
+
+/* ── Controls ─────────────────────────────────────────────────────────── */
+#controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  max-width: 700px;
+}
+
+#controls select,
+#controls button {
+  background: #222;
+  color: #ddd;
+  border: 1px solid #444;
+  padding: 8px 14px;
+  font-family: inherit;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  border-radius: 2px;
+  text-transform: uppercase;
+}
+
+#controls button:hover   { background: #333; border-color: #666; }
+#controls button:active  { background: #111; }
+#controls button:disabled { opacity: 0.4; cursor: default; }
+
+#status {
+  font-size: 11px;
+  color: #888;
+  margin-left: auto;
+}
+
+/* ── Canvas ──────────────────────────────────────────────────────────── */
+#canvas-wrapper {
+  width: 100%;
+  max-width: 700px;
+  border: 1px solid #333;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.6);
+}
+
+#poster-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: high-quality;
+}
+
+/* ── Hidden utility elements ─────────────────────────────────────────── */
+#webcam, #work-canvas {
+  position: fixed;
+  top: -9999px;
+  left: -9999px;
+  pointer-events: none;
+}
+
+/* ── Kiosk mode (?kiosk=1) — no controls, canvas fills viewport ──────── */
+body.kiosk {
+  background: #eae5dc;
+  overflow: hidden;
+}
+body.kiosk #app      { padding: 0; gap: 0; justify-content: center; height: 100vh; }
+body.kiosk #controls { display: none; }
+body.kiosk #canvas-wrapper {
+  max-width: none;
+  width: 100%;
+  height: 100%;
+  border: none;
+  box-shadow: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+body.kiosk #poster-canvas {
+  max-height: 100vh;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+}
