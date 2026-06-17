@@ -108,23 +108,18 @@ function drawSubjectOverlay(s) {
 
   // ── Reticle: angular L-brackets ──────────────────────────────────────────
   if (s.state === 'ALARM') {
-    const hue     = (t * 0.3 + s.id * 60) % 360;
-    const flicker = random(0.75, 1.0);
-    colorMode(HSB, 360, 100, 100, 255);
+    // White brackets — the stamp is the only colour
+    const flicker = random(0.80, 1.0);
     const bW = Math.max(2, Math.round(4 * uiScale));
     strokeWeight(bW);
-    stroke(hue, 90, 100, 210 * flicker);
+    stroke(255, 255, 255, 130 * flicker);
     line(tlx, tly, tlx + tick, tly); line(tlx, tly, tlx, tly + tick);
-    stroke((hue + 90) % 360, 90, 100, 210 * flicker);
     line(brx - tick, tly, brx, tly); line(brx, tly, brx, tly + tick);
-    stroke((hue + 180) % 360, 90, 100, 210 * flicker);
     line(tlx, bry - tick, tlx, bry); line(tlx, bry, tlx + tick, bry);
-    stroke((hue + 270) % 360, 90, 100, 210 * flicker);
     line(brx - tick, bry, brx, bry); line(brx, bry - tick, brx, bry);
-    stroke(hue, 50, 100, 10 * flicker);
+    stroke(255, 255, 255, 6);
     strokeWeight(1);
     rect(tlx, tly, s.w * 1.1, s.h * 1.2);
-    colorMode(RGB, 255);
   } else {
     const flicker = random(0.88, 1.0);
     const bW = Math.max(2, Math.round(4 * uiScale));
@@ -317,72 +312,57 @@ function drawSubjectOverlay(s) {
 
   // ── ALARM ─────────────────────────────────────────────────────────────────
   if (s.state === 'ALARM') {
-    const flash   = sin(t * 0.012) > 0;
-    const textA   = flash ? 255 : 210;
-    const closeS  = Math.max(28, Math.round(82 * uiScale));   // enormous closer
-    const headS   = Math.max(18, Math.round(36 * uiScale));   // bold headline
-    const subS    = Math.max(13, Math.round(19 * uiScale));   // sub description
-    const gap     = Math.round(14 * uiScale);
-    const outOff  = Math.max(2, Math.round(4 * uiScale));
-    const subN    = (s.alarmSub.match(/\n/g) || []).length + 1;
-    const subH    = Math.round(subS * 1.4 * subN);
-    const ruleW   = Math.min(s.w * 2.8, Math.round(360 * uiScale));
-
-    // Bounce animation on the closer
-    const bounce  = sin(t * 0.004 + s.id) * Math.round(7 * uiScale);
-    const baseY   = tly - Math.round(14 * uiScale) + bounce;
-    const ruleY   = baseY - Math.round(closeS * 1.3) - Math.round(gap * 0.4);
-    const subBot  = ruleY - gap;
-    const headBot = subBot - subH - gap;
-
-    // Closer — pop art: black outline + enormous rainbow text
-    const closeHue = (t * 0.3 + s.id * 30) % 360;
-    textFont("Arial");
-    textStyle(BOLD);
-    textAlign(CENTER, BOTTOM);
-    textSize(closeS);
-    // Black outline (4-direction)
-    fill(0, 0, 0, 220);
-    text(s.alarmNext, s.x - outOff, baseY - outOff);
-    text(s.alarmNext, s.x + outOff, baseY - outOff);
-    text(s.alarmNext, s.x - outOff, baseY + outOff);
-    text(s.alarmNext, s.x + outOff, baseY + outOff);
-    // Rainbow fill
-    colorMode(HSB, 360, 100, 100, 255);
-    fill(closeHue, 95, 100, textA);
-    colorMode(RGB, 255);
-    text(s.alarmNext, s.x, baseY);
-    textStyle(NORMAL);
-
-    // Rainbow rule
-    colorMode(HSB, 360, 100, 100, 255);
-    stroke((t * 0.2 + s.id * 40) % 360, 90, 100, 180);
-    strokeWeight(Math.max(2, Math.round(3 * uiScale)));
-    line(s.x - ruleW * 0.5, ruleY, s.x + ruleW * 0.5, ruleY);
-    noStroke();
-    colorMode(RGB, 255);
-
-    // Sub description — rainbow monospace
-    colorMode(HSB, 360, 100, 100, 255);
-    fill((t * 0.25 + s.id * 45 + 120) % 360, 90, 100, textA);
-    colorMode(RGB, 255);
-    textFont("monospace");
-    textSize(subS);
-    textLeading(Math.round(subS * 1.4));
-    text(s.alarmSub, s.x, subBot);
-
-    // Headline — bold white Arial, pop art black outline
-    textFont("Arial");
-    textStyle(BOLD);
-    textSize(headS);
-    fill(0, 0, 0, 200);
-    text(s.alarmPrimary, s.x - outOff, headBot + outOff);
-    text(s.alarmPrimary, s.x + outOff, headBot + outOff);
-    fill(255, 255, 255, textA);
-    text(s.alarmPrimary, s.x, headBot);
-    textStyle(NORMAL);
-    textFont("monospace");
+    drawHomosexualStamp(s);
   }
+}
+
+// ── HOMOSEXUAL stamp — animated, styled per subject, the only colour on screen ──
+function drawHomosexualStamp(s) {
+  const t        = millis();
+  const stampAge = t - s.stateAt;
+  const ANIM_DUR = 650;
+
+  // Stamp "thwack" animation: plummets in, tiny bounce, settles
+  const p = min(stampAge / ANIM_DUR, 1);
+  let stampScale;
+  if      (p < 0.28) stampScale = map(p, 0,    0.28, 4.2, 0.84);
+  else if (p < 0.52) stampScale = map(p, 0.28, 0.52, 0.84, 1.07);
+  else if (p < 0.72) stampScale = map(p, 0.52, 0.72, 1.07, 1.00);
+  else               stampScale = 1.00;
+
+  const alpha = min(p / 0.12, 1) * 255;
+  if (alpha < 2) return;
+
+  const isWarhol   = (s.subjectKey ?? 'warhol') === 'warhol';
+  const stampAngle = isWarhol ? -0.17 : 0.12;   // radians: Warhol tilts left, Haring right
+  const baseFontSz = max(28, round(s.w * 1.05));
+  const fontSize   = baseFontSz * stampScale;
+
+  push();
+  translate(s.x, s.y + s.h * 0.08);
+  rotate(stampAngle);
+  textAlign(CENTER, CENTER);
+  textFont("Arial");
+  textStyle(BOLD);
+  textSize(fontSize);
+
+  if (isWarhol) {
+    // Warhol: official red rubber-stamp — bureaucratic, unadorned
+    noStroke();
+    fill(185, 8, 8, alpha);
+    text("HOMOSEXUAL", 0, 0);
+  } else {
+    // Haring: thick black outline + bright yellow fill (his characteristic line art)
+    const sw = max(2, fontSize * 0.065);
+    strokeWeight(sw);
+    stroke(0, 0, 0, alpha);
+    fill(255, 210, 0, alpha);
+    text("HOMOSEXUAL", 0, 0);
+    noStroke();
+  }
+
+  textStyle(NORMAL);
+  pop();
 }
 
 function drawAllSubjectOverlays() {
@@ -402,25 +382,8 @@ function drawGlobalHUD() {
   const anyAlarm = faceTracker.hasAlarm();
   const t        = millis();
 
-  function _hFill(a) {
-    if (anyAlarm) {
-      colorMode(HSB, 360, 100, 100, 255);
-      fill((t * 0.2) % 360, 90, 100, a);
-      colorMode(RGB, 255);
-    } else {
-      fill(M_RED[0], M_RED[1], M_RED[2], a);
-    }
-  }
-
-  function _hStroke(a) {
-    if (anyAlarm) {
-      colorMode(HSB, 360, 100, 100, 255);
-      stroke((t * 0.2) % 360, 90, 100, a);
-      colorMode(RGB, 255);
-    } else {
-      stroke(M_RED[0], M_RED[1], M_RED[2], a);
-    }
-  }
+  function _hFill(a)   { fill(M_RED[0], M_RED[1], M_RED[2], a); }
+  function _hStroke(a) { stroke(M_RED[0], M_RED[1], M_RED[2], a); }
 
   // ── Header ───────────────────────────────────────────────────────────────
   noStroke();
@@ -450,49 +413,14 @@ function drawGlobalHUD() {
   text("SUBJECTS: " + String(faceTracker.subjects.length).padStart(2, '0'), width - pad, pad * 0.7);
   textStyle(NORMAL);
 
-  // ── Alarm extras ─────────────────────────────────────────────────────────
+  // ── Alarm status (monochrome — stamp is the only colour) ─────────────────
   if (anyAlarm) {
-    const flash  = sin(t * 0.012) > 0;
-    const flash2 = sin(t * 0.018) > 0;
-    const prideS = Math.max(18, Math.round(26 * uiScale));
-    const outOff = Math.max(2, Math.round(3 * uiScale));
-
-    if (flash) {
-      textFont("Arial");
-      textStyle(BOLD);
-      textAlign(LEFT, TOP);
-      textSize(prideS);
-      fill(0, 0, 0, 200);
-      text("★ PRIDE ★", pad - outOff, pad * 0.7 + Math.round(lh * 1.9) + outOff);
-      text("★ PRIDE ★", pad + outOff, pad * 0.7 + Math.round(lh * 1.9) + outOff);
-      colorMode(HSB, 360, 100, 100, 255);
-      fill((t * 0.3) % 360, 95, 100, 255);
-      colorMode(RGB, 255);
-      text("★ PRIDE ★", pad, pad * 0.7 + Math.round(lh * 1.9));
-      textStyle(NORMAL);
-    }
-    if (flash2) {
-      textFont("Arial");
-      textStyle(BOLD);
-      textAlign(RIGHT, TOP);
-      textSize(prideS);
-      fill(0, 0, 0, 200);
-      text("★ PRIDE ★", width - pad + outOff, pad * 0.7 + Math.round(lh * 1.9) + outOff);
-      text("★ PRIDE ★", width - pad - outOff, pad * 0.7 + Math.round(lh * 1.9) + outOff);
-      colorMode(HSB, 360, 100, 100, 255);
-      fill((t * 0.3 + 120) % 360, 95, 100, 255);
-      colorMode(RGB, 255);
-      text("★ PRIDE ★", width - pad, pad * 0.7 + Math.round(lh * 1.9));
-      textStyle(NORMAL);
-    }
-
+    noStroke();
+    fill(M_RED[0], M_RED[1], M_RED[2], 50);
     textFont("monospace");
-    textAlign(CENTER, BOTTOM);
-    colorMode(HSB, 360, 100, 100, 255);
-    fill((t * 0.2 + 180) % 360, 85, 100, flash ? 220 : 90);
-    colorMode(RGB, 255);
     textSize(Math.max(10, Math.round(14 * uiScale)));
-    text("PRIDE RESPONSE PROTOCOL INITIATED — ALL UNITS RESPOND", width * 0.5, height - Math.round(14 * uiScale));
+    textAlign(CENTER, BOTTOM);
+    text("CLASSIFICATION CONFIRMED", width * 0.5, height - Math.round(14 * uiScale));
   }
 
   // ── Idle phrase (no subjects) ─────────────────────────────────────────────
@@ -525,9 +453,7 @@ function drawGlobalHUD() {
       textSize(xs);
       text("SUBJ " + String(i + 1).padStart(2, '0') + ":", pad, rowY);
       if (s.state === 'ALARM') {
-        colorMode(HSB, 360, 100, 100, 255);
-        fill((t * 0.25 + i * 60) % 360, 90, 100, 220);
-        colorMode(RGB, 255);
+        fill(255, 255, 255, 200);
       } else {
         fill(M_RED[0], M_RED[1], M_RED[2], 190);
       }
