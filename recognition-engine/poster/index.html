@@ -154,6 +154,11 @@ document.getElementById('anchor-btn').addEventListener('click', () => {
   showAnchorOverlay(SUBJECTS[activeSubject]);
 });
 
+// ── Kiosk mode (?kiosk=1) ────────────────────────────────────────────
+if (new URLSearchParams(location.search).has('kiosk')) {
+  document.body.classList.add('kiosk');
+}
+
 // ── Init ──────────────────────────────────────────────────────────────
 render(null);
 </script>

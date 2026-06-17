@@ -57,9 +57,15 @@ function _showSlug(slug) {
 }
 
 function showAlarmScreen() {
-  if (!ENGINE_SLUGS.length) return;
-  const slug = ENGINE_SLUGS[Math.floor(Math.random() * ENGINE_SLUGS.length)];
-  _showSlug(slug);
+  const el = _ensureOverlay();
+  if (_animFrame)         { cancelAnimationFrame(_animFrame); _animFrame = null; }
+  if (el._cardInterval)  { clearInterval(el._cardInterval); el._cardInterval = null; }
+
+  el.innerHTML = '<iframe src="poster/index.html?kiosk=1" style="width:100%;height:100%;border:none;display:block;"></iframe>';
+
+  el.getBoundingClientRect();
+  requestAnimationFrame(() => el.classList.add('visible'));
+  alarmOverlayActive = true;
 }
 
 function hideAlarmScreen() {
