@@ -27,8 +27,9 @@ jobs:
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          # Serve only the recognition-engine/ folder as the site root
-          path: recognition-engine/
+          # Serve the imported poster design as the site root.
+          # The legacy p5.js app still lives in recognition-engine/ if needed.
+          path: recognition-engine-poster/
 
       - id: deploy
         uses: actions/deploy-pages@v4

@@ -16,12 +16,15 @@ serves. The original p5.js + MediaPipe app is untouched and still reachable at
 ## Files
 
 ```
-index.html                   convenience redirect → the .dc.html
-Recognition Engine.dc.html   the whole app (markup + logic). EDIT HERE.
+index.html                   the whole app (markup + logic). EDIT HERE. (the dc source of truth)
 support.js                   the dc runtime. Do not edit. Auto-loads React 18 from unpkg.
 assets/warhol-cutout.png     Warhol portrait, face knocked out to transparency
 HANDOFF.md                   the original developer handoff (full docs)
 ```
+
+> The original handoff named this file `Recognition Engine.dc.html`; it was
+> renamed to `index.html` so static hosts (GitHub Pages / Vercel) serve it at
+> the folder root with no redirect. It's the same dc source — edit it here.
 
 ## Running it (camera needs a secure context)
 
@@ -45,6 +48,6 @@ you vendor React locally.
 
 See **HANDOFF.md §4** — drop an `assets/<id>-cutout.png` (front-facing portrait
 with the face knocked out to transparency) and flip the matching block in the
-`subjects` array (near the top of the `<script>` in the `.dc.html`) to
+`subjects` array (near the top of the `<script>` in `index.html`) to
 `enabled: true`. The placeholders for Haring, Milk, and Turing are already
 filled in and just need their cutout PNGs. No other code changes.
