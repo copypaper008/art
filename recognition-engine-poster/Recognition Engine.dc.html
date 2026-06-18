@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Archivo:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:#000;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+</style>
+</helmet>
+<div data-screen-label="Recognition Engine" style="position:fixed;inset:0;background:radial-gradient(circle at 50% 38%, #1c1c1e, #0a0a0b 72%);display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:'Archivo',sans-serif;">
+ <div style="{{ scaleStyle }}">
+  <div style="{{ shudderStyle }}">
+   <div style="position:relative;width:824px;height:1240px;background:#f1efe7;color:#16130f;box-shadow:0 30px 90px rgba(0,0,0,0.6);">
+    <div style="position:absolute;inset:18px;border:1.5px solid #16130f;"></div>
+    <div style="position:relative;padding:30px 30px 26px;height:100%;display:flex;flex-direction:column;">
+
+     <!-- HEADER -->
+     <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #16130f;padding-bottom:11px;">
+      <div>
+       <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:35px;line-height:0.92;letter-spacing:0.3px;">SUBJECT ANALYSIS REPORT</div>
+       <div style="font-family:'Spline Sans Mono',monospace;font-size:9.5px;letter-spacing:0.3px;margin-top:9px;display:flex;gap:20px;">
+        <span>FILE ID: {{ subjFileId }}</span><span>SUBJECT: {{ subjLine }}</span><span>DATE: {{ subjDate }}</span>
+       </div>
+      </div>
+      <div style="text-align:right;">
+       <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:0.4px;">RECOGNITION ENGINE v.7.3.1</div>
+       <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:0.4px;color:#5a564e;">CULTURAL PATTERN RECOGNITION SYSTEM</div>
+       <div style="margin-top:9px;margin-left:auto;width:170px;height:30px;background:repeating-linear-gradient(90deg,#16130f 0 1.5px,transparent 1.5px 3px,#16130f 3px 5px,transparent 5px 8px,#16130f 8px 9px,transparent 9px 13px);"></div>
+      </div>
+     </div>
+
+     <!-- BODY -->
+     <div style="display:flex;gap:16px;margin-top:14px;align-items:flex-start;">
+
+      <!-- LEFT COLUMN -->
+      <div style="width:372px;flex:none;display:flex;gap:6px;">
+       <!-- rail -->
+       <div style="width:52px;flex:none;padding-top:4px;">
+        <div style="width:13px;height:100px;background:linear-gradient(#f1efe7,#16130f);border:1px solid #16130f;"></div>
+        <div style="font-family:'Spline Sans Mono',monospace;font-size:6.5px;line-height:1.3;margin-top:5px;letter-spacing:0.2px;">SCAN<br>DEPTH<br>97.2%</div>
+        <div style="margin-top:12px;width:11px;height:150px;background:repeating-linear-gradient(#16130f 0 1px,transparent 1px 9px);"></div>
+        <div style="font-family:'Spline Sans Mono',monospace;font-size:6.5px;line-height:1.35;margin-top:24px;letter-spacing:0.2px;">IMAGE<br>RESOLUTION<br>8192 x 10240</div>
+        <div style="font-family:'Spline Sans Mono',monospace;font-size:6.5px;line-height:1.35;margin-top:12px;">MODE<br>B&amp;W</div>
+        <div style="font-family:'Spline Sans Mono',monospace;font-size:6.5px;line-height:1.35;margin-top:12px;">SOURCE<br>ARCHIVAL<br>RECORD</div>
+       </div>
+       <!-- face -->
+       <div style="flex:1;position:relative;padding:11px;">
+        <div style="position:absolute;top:0;left:0;width:22px;height:22px;border-top:2px solid #16130f;border-left:2px solid #16130f;"></div>
+        <div style="position:absolute;top:0;right:0;width:22px;height:22px;border-top:2px solid #16130f;border-right:2px solid #16130f;"></div>
+        <div style="position:absolute;bottom:0;left:0;width:22px;height:22px;border-bottom:2px solid #16130f;border-left:2px solid #16130f;"></div>
+        <div style="position:absolute;bottom:0;right:0;width:22px;height:22px;border-bottom:2px solid #16130f;border-right:2px solid #16130f;"></div>
+        <div style="position:absolute;left:-3px;top:50%;font-family:'Spline Sans Mono';font-size:13px;transform:translateY(-50%);">+</div>
+        <div style="position:absolute;right:-3px;top:38%;font-family:'Spline Sans Mono';font-size:13px;">+</div>
+
+        <div style="position:relative;width:100%;height:560px;background:#0e0d0c;overflow:hidden;">
+
+         <!-- Subject's LIVE face sits behind; the portrait assembles around it -->
+         <div style="{{ ovalStyle }}">
+          <video muted autoplay playsinline ref="{{ videoRef }}" style="{{ videoStyle }}"></video>
+          <sc-if value="{{ isFallbackCap }}" hint-placeholder-val="{{ false }}">
+           <div style="{{ capturedStyle }}">
+            <div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,#5a5a5a 0 8px,#6a6a6a 8px 16px);"></div>
+           </div>
+          </sc-if>
+         </div>
+
+         <!-- Portrait assembles in sections around the face -->
+         <sc-for list="{{ portraitChunks }}" as="chunk" hint-placeholder-count="6">
+          <div style="{{ chunk.style }}"></div>
+         </sc-for>
+
+         <sc-if value="{{ camError }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;bottom:12px;left:0;right:0;text-align:center;font-family:'Spline Sans Mono';font-size:8px;color:#9a948a;letter-spacing:1px;">SUBJECT FEED // NO SIGNAL — MANUAL TRIGGER</div>
+         </sc-if>
+
+         <div style="{{ scanGridStyle }}"></div>
+         <div style="{{ scanTrailStyle }}"></div>
+         <div style="{{ scanLineStyle }}"></div>
+        </div>
+       </div>
+      </div>
+
+      <!-- RIGHT COLUMN -->
+      <div style="flex:1;min-width:0;">
+
+       <!-- STATUS -->
+       <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <span style="font-family:'Saira Condensed';font-weight:700;font-size:13px;letter-spacing:0.6px;">SCAN STATUS:</span>
+        <div style="width:18px;height:18px;background:conic-gradient(#16130f 90deg,transparent 0 180deg,#16130f 0 270deg,transparent 0);background-size:6px 6px;"></div>
+       </div>
+       <div style="font-family:'Saira Condensed';font-weight:700;font-size:44px;line-height:1;margin-top:1px;">{{ bigStatus }}</div>
+       <div style="margin-top:9px;display:flex;align-items:center;gap:8px;">
+        <div style="flex:1;height:8px;border:1px solid #16130f;position:relative;background:repeating-linear-gradient(90deg,rgba(20,17,15,0.25) 0 2px,transparent 2px 4px);">
+         <div style="{{ progressFillStyle }}"></div>
+        </div>
+        <span style="font-family:'Spline Sans Mono';font-size:9px;">{{ progressPct }}</span>
+       </div>
+
+       <!-- CONFIDENCE -->
+       <div style="margin-top:13px;border-top:1px solid rgba(20,17,15,0.25);padding-top:9px;">
+        <div style="font-family:'Saira Condensed';font-weight:600;font-size:12.5px;letter-spacing:0.6px;">CONFIDENCE:</div>
+        <div style="font-family:'Saira Condensed';font-weight:700;font-size:46px;line-height:1;">{{ confText }}<span style="font-size:29px;">%</span></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:3px;">
+         <div style="flex:1;height:1px;background:rgba(20,17,15,0.3);position:relative;"><div style="{{ confGaugeStyle }}"></div></div>
+         <span style="font-family:'Spline Sans Mono';font-size:9px;">{{ confLabel }}%</span>
+        </div>
+       </div>
+
+       <!-- REFLECTION -->
+       <div style="margin-top:11px;border-top:1px solid rgba(20,17,15,0.25);padding-top:9px;">
+        <div style="font-family:'Saira Condensed';font-weight:600;font-size:12.5px;letter-spacing:0.6px;">REFLECTION SCORE:</div>
+        <div style="font-family:'Saira Condensed';font-weight:700;font-size:46px;line-height:1;">{{ reflText }}<span style="font-size:29px;">%</span></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:3px;">
+         <div style="flex:1;height:1px;background:rgba(20,17,15,0.3);position:relative;"><div style="{{ reflGaugeStyle }}"></div></div>
+         <span style="font-family:'Spline Sans Mono';font-size:9px;">{{ reflLabel }}%</span>
+        </div>
+       </div>
+
+       <!-- CHARACTERISTICS (rendered from the current subject's data) -->
+       <div style="margin-top:13px;background:#16130f;color:#f1efe7;font-family:'Saira Condensed';font-weight:700;font-size:11px;letter-spacing:0.9px;padding:4px 8px;">OBSERVED CHARACTERISTICS</div>
+       <div style="margin-top:8px;display:flex;flex-direction:column;gap:7px;">
+        <sc-for list="{{ charItems }}" as="item" hint-placeholder-count="7">
+         <div style="display:flex;gap:9px;align-items:flex-start;">
+          <div style="width:13px;height:13px;border:1.5px solid #16130f;flex:none;display:flex;align-items:center;justify-content:center;margin-top:1px;"><span style="{{ item.tick }}">&#10003;</span></div>
+          <div style="font-family:'Archivo';font-size:11px;line-height:1.22;"><span style="{{ item.txt }}">{{ item.text }}</span></div>
+         </div>
+        </sc-for>
+       </div>
+
+       <!-- INTERPRETATION -->
+       <div style="margin-top:12px;background:#16130f;color:#f1efe7;font-family:'Saira Condensed';font-weight:700;font-size:11px;letter-spacing:0.9px;padding:4px 8px;">MACHINE INTERPRETATION</div>
+       <div style="margin-top:7px;">
+        <div style="{{ interpStyle }}">
+         <p style="margin:0 0 7px;font-family:'Archivo';font-size:11px;line-height:1.35;">Subject exhibits multiple indicators associated with a recognised cultural archetype.</p>
+         <p style="margin:0;font-family:'Archivo';font-size:11px;line-height:1.35;">Alternative explanations have not been considered.</p>
+        </div>
+       </div>
+
+      </div>
+     </div>
+
+     <!-- BOTTOM BAND -->
+     <div style="margin-top:14px;border:2px solid #16130f;display:flex;height:142px;">
+      <div style="width:142px;flex:none;background:#0e0d0c;position:relative;border-right:2px solid #16130f;overflow:hidden;">
+       <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(241,239,231,0.4);"></div>
+       <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(241,239,231,0.4);"></div>
+       <div style="position:absolute;top:50%;left:50%;width:92px;height:92px;border:1px solid rgba(241,239,231,0.7);border-radius:50%;transform:translate(-50%,-50%);"></div>
+       <div style="position:absolute;top:50%;left:50%;width:30px;height:92px;border:1px solid rgba(241,239,231,0.5);border-radius:50%;transform:translate(-50%,-50%);"></div>
+       <div style="position:absolute;top:50%;left:50%;width:92px;height:30px;border:1px solid rgba(241,239,231,0.5);border-radius:50%;transform:translate(-50%,-50%);"></div>
+      </div>
+      <div style="flex:1;padding:12px 16px;display:flex;flex-direction:column;justify-content:center;border-right:2px solid #16130f;min-width:0;">
+       <div style="font-family:'Saira Condensed';font-weight:600;font-size:12px;letter-spacing:0.6px;">CLASSIFICATION:</div>
+       <div style="font-family:'Saira Condensed';font-weight:700;font-size:38px;line-height:1.02;"><span style="{{ classStyle }}">{{ subjClass }}</span></div>
+       <div style="height:1px;background:rgba(20,17,15,0.3);margin:9px 0;"></div>
+       <div style="font-family:'Saira Condensed';font-weight:600;font-size:12px;letter-spacing:0.6px;">EXPLANATION:</div>
+       <div style="font-family:'Saira Condensed';font-weight:700;font-size:30px;line-height:1.02;"><span style="{{ explStyle }}">{{ subjExpl }}</span></div>
+      </div>
+      <div style="width:150px;flex:none;padding:10px 11px;">
+       <div style="font-family:'Spline Sans Mono';font-size:7px;letter-spacing:0.5px;margin-bottom:6px;">REFERENCE MATRICES</div>
+       <div style="font-family:'Spline Sans Mono';font-size:8.5px;display:flex;flex-direction:column;gap:3px;">
+        <div style="display:flex;justify-content:space-between;"><span>CM-17</span><span>0.98</span></div>
+        <div style="display:flex;justify-content:space-between;"><span>AR-04</span><span>0.96</span></div>
+        <div style="display:flex;justify-content:space-between;"><span>IC-21</span><span>0.97</span></div>
+        <div style="display:flex;justify-content:space-between;"><span>VH-08</span><span>0.95</span></div>
+        <div style="display:flex;justify-content:space-between;"><span>CA-33</span><span>0.99</span></div>
+       </div>
+       <div style="display:flex;align-items:flex-end;gap:2px;height:30px;margin-top:9px;">
+        <div style="width:3px;height:30%;background:#16130f;"></div><div style="width:3px;height:70%;background:#16130f;"></div><div style="width:3px;height:45%;background:#16130f;"></div><div style="width:3px;height:90%;background:#16130f;"></div><div style="width:3px;height:55%;background:#16130f;"></div><div style="width:3px;height:80%;background:#16130f;"></div><div style="width:3px;height:40%;background:#16130f;"></div><div style="width:3px;height:65%;background:#16130f;"></div><div style="width:3px;height:100%;background:#16130f;"></div><div style="width:3px;height:50%;background:#16130f;"></div><div style="width:3px;height:75%;background:#16130f;"></div><div style="width:3px;height:35%;background:#16130f;"></div><div style="width:3px;height:85%;background:#16130f;"></div><div style="width:3px;height:60%;background:#16130f;"></div><div style="width:3px;height:45%;background:#16130f;"></div><div style="width:3px;height:72%;background:#16130f;"></div>
+       </div>
+      </div>
+     </div>
+
+     <!-- SYSTEM NOTE -->
+     <div style="margin-top:13px;">
+      <div style="background:#16130f;color:#f1efe7;font-family:'Saira Condensed';font-weight:700;font-size:11px;letter-spacing:0.9px;padding:4px 8px;">SYSTEM NOTE:</div>
+      <div style="padding:10px 2px 0;">
+       <p style="margin:0 0 8px;font-family:'Archivo';font-size:11.5px;line-height:1.4;">The Recognition Engine has determined a result.</p>
+       <p style="margin:0;font-family:'Archivo';font-size:11.5px;line-height:1.4;">The Recognition Engine is unable to explain how this conclusion was reached.</p>
+      </div>
+     </div>
+
+     <!-- FOOTER -->
+     <div style="margin-top:auto;border-top:2px solid #16130f;padding-top:11px;display:flex;justify-content:space-between;align-items:flex-end;">
+      <div style="font-family:'Saira Condensed';">
+       <div style="font-weight:700;font-size:13px;letter-spacing:0.4px;">{{ subjFooter }}</div>
+       <div style="font-weight:700;font-size:11px;letter-spacing:0.4px;">RECOGNITION &amp; SIMULATION</div>
+       <div style="font-weight:500;font-size:11px;letter-spacing:0.4px;">A SOLO EXHIBITION</div>
+      </div>
+      <div style="font-family:'Spline Sans Mono';font-size:8.5px;line-height:1.5;">06.01 — 09.22.2024<br>MUSEUM OF CONTEMPORARY<br>CULTURAL STUDIES</div>
+      <div style="font-family:'Spline Sans Mono';font-size:8.5px;line-height:1.5;">301 OBSERVATION DRIVE<br>METROPOLIS, NY 10001<br>MCCS.ORG</div>
+      <div style="display:flex;gap:10px;align-items:center;">
+       <div style="width:46px;height:46px;border-radius:50%;border:1.5px solid #16130f;position:relative;display:flex;align-items:center;justify-content:center;">
+        <div style="width:32px;height:32px;border-radius:50%;border:1px solid #16130f;"></div>
+        <div style="position:absolute;width:46px;height:1px;background:#16130f;opacity:0.45;"></div>
+        <div style="position:absolute;height:46px;width:1px;background:#16130f;opacity:0.45;"></div>
+        <div style="position:absolute;width:5px;height:5px;border-radius:50%;background:#16130f;"></div>
+       </div>
+       <div style="display:grid;grid-template-columns:1fr 1fr;width:34px;height:34px;border:1.5px solid #16130f;font-family:'Saira Condensed';font-weight:700;font-size:11px;">
+        <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #16130f;border-bottom:1px solid #16130f;">M</div>
+        <div style="display:flex;align-items:center;justify-content:center;border-bottom:1px solid #16130f;">C</div>
+        <div style="display:flex;align-items:center;justify-content:center;border-right:1px solid #16130f;">C</div>
+        <div style="display:flex;align-items:center;justify-content:center;">S</div>
+       </div>
+      </div>
+     </div>
+
+    </div>
+
+    <!-- BLACK CURTAIN / IDLE + BUILD REVEAL -->
+    <div style="{{ curtainStyle }}">
+     <div style="{{ curtainReticleStyle }}"></div>
+     <div style="position:absolute;top:39%;left:30%;transform:translate(-50%,150px);display:flex;flex-direction:column;align-items:center;gap:11px;width:300px;">
+      <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:19px;letter-spacing:3px;color:#f1efe7;text-align:center;">{{ detectLabel }}</div>
+      <div style="width:150px;height:3px;background:rgba(241,239,231,0.18);position:relative;overflow:hidden;"><div style="{{ detectBarStyle }}"></div></div>
+      <div onClick="{{ trigger }}" style="cursor:pointer;font-family:'Spline Sans Mono',monospace;font-size:8px;letter-spacing:2px;color:rgba(241,239,231,0.5);user-select:none;padding:4px 10px;margin-top:6px;pointer-events:auto;" style-hover="color:#f1efe7;">[ MANUAL TRIGGER ]</div>
+     </div>
+    </div>
+
+    <!-- VERDICT STAMP (pop-art screenprint) -->
+    <div style="{{ stampStyle }}">
+     <div style="{{ stampBoxStyle }}">
+      <div style="{{ stampLayerA }}">{{ verdictText }}</div>
+      <div style="{{ stampLayerB }}">{{ verdictText }}</div>
+      <div style="{{ stampLayerC }}">{{ verdictText }}</div>
+      <div style="{{ stampTextStyle }}">{{ verdictText }}</div>
+     </div>
+     <div style="{{ stampAsteriskStyle }}">★ ★ ★ ★ ★ ★ ★ ★</div>
+    </div>
+
+    <div style="{{ flashStyle }}"></div>
+   </div>
+  </div>
+ </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+ &quot;$preview&quot;: { &quot;width&quot;: 412, &quot;height&quot;: 620 },
+ &quot;scanColor&quot;: { &quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#c0443a&quot;, &quot;tsType&quot;: &quot;string&quot; },
+ &quot;mirrorCam&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot; },
+ &quot;autoLoop&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot; }
+}">
+class Component extends DCLogic {
+
+  /* ===================================================================== *
+   *  SUBJECTS  —  THE ONLY THING YOU EDIT TO ADD A PERSON                 *
+   * ===================================================================== *
+   *  When a face is detected, the engine picks ONE enabled subject at      *
+   *  random and assembles their portrait around the live face.            *
+   *                                                                        *
+   *  TO ADD A PERSON:                                                      *
+   *   1. Drop their face-cutout PNG in  assets/<id>-cutout.png            *
+   *      (front-facing portrait, FACE KNOCKED OUT to transparency).        *
+   *   2. Copy one block below, fill in the copy, set  enabled: true.       *
+   *  That's it — no other code changes.                                    *
+   *                                                                        *
+   *  FIELDS:                                                               *
+   *   id            short slug (also used in the asset filename)           *
+   *   enabled       true = included in the random pool                     *
+   *   line          header "SUBJECT:" value  (LASTNAME, FIRSTNAME)         *
+   *   fileId        header "FILE ID:" value                                *
+   *   date          header "DATE:" value                                   *
+   *   footer        footer exhibition title (usually the full name)        *
+   *   cutout        path to the face-transparent portrait PNG              *
+   *   confidence    number shown counting up (e.g. 99.98)                  *
+   *   reflection    second metric (e.g. 98.7)                              *
+   *   characteristics  array of 5–8 short lines (checked off one by one)   *
+   *   classification   bottom-band CLASSIFICATION value                    *
+   *   explanation      bottom-band EXPLANATION value                       *
+   *   verdict          the word slammed by the stamp                       *
+   *   stamp (optional) { key,a,b,c } hex colours for the pop-art stamp     *
+   * ===================================================================== */
+  subjects = [
+    {
+      id: 'warhol',
+      enabled: true,
+      line: 'WARHOL, ANDY',
+      fileId: 'AW-1928-0601',
+      date: '05.06.2024',
+      footer: 'ANDY WARHOL',
+      cutout: 'assets/warhol-cutout.png',
+      confidence: 99.98,
+      reflection: 98.7,
+      characteristics: [
+        'Displays advanced understanding of image production',
+        'Demonstrates sustained interest in celebrity ecosystems',
+        'Maintains controlled emotional presentation',
+        'Repeatedly converts personal experience into cultural artefact',
+        'Identity appears partially self-constructed',
+        'Exhibits fascination with visibility',
+        'Human authenticity cannot be independently verified'
+      ],
+      classification: 'CULTURAL ICON',
+      explanation: 'NOT AVAILABLE',
+      verdict: 'HOMOSEXUAL'
+    },
+
+    /* ---- PLACEHOLDER: add the cutout PNG, then flip enabled to true ---- */
+    {
+      id: 'haring',
+      enabled: false,                       // <-- set true once assets/haring-cutout.png exists
+      line: 'HARING, KEITH',
+      fileId: 'KH-1958-0504',
+      date: '05.06.2024',
+      footer: 'KEITH HARING',
+      cutout: 'assets/haring-cutout.png',
+      confidence: 99.94,
+      reflection: 97.9,
+      characteristics: [
+        'Produces high volumes of publicly legible imagery',
+        'Demonstrates compulsion toward repetition and pattern',
+        'Distributes work outside sanctioned institutional channels',
+        'Associates symbolic figures with collective movement',
+        'Engagement with public space exceeds permitted parameters',
+        'Motivations cannot be independently verified'
+      ],
+      classification: 'CULTURAL ICON',
+      explanation: 'NOT AVAILABLE',
+      verdict: 'HOMOSEXUAL'
+    },
+    {
+      id: 'milk',
+      enabled: false,                       // <-- set true once assets/milk-cutout.png exists
+      line: 'MILK, HARVEY',
+      fileId: 'HM-1930-0522',
+      date: '05.06.2024',
+      footer: 'HARVEY MILK',
+      cutout: 'assets/milk-cutout.png',
+      confidence: 99.89,
+      reflection: 98.2,
+      characteristics: [
+        'Seeks access to civic and representative structures',
+        'Demonstrates capacity to organise dispersed populations',
+        'Communicates persuasively across demographic boundaries',
+        'Encourages assembly and collective visibility',
+        'Influence extends beyond assigned jurisdiction',
+        'Intentions cannot be independently verified'
+      ],
+      classification: 'PUBLIC FIGURE',
+      explanation: 'NOT AVAILABLE',
+      verdict: 'HOMOSEXUAL'
+    },
+    {
+      id: 'turing',
+      enabled: false,                       // <-- set true once assets/turing-cutout.png exists
+      line: 'TURING, ALAN',
+      fileId: 'AT-1912-0623',
+      date: '05.06.2024',
+      footer: 'ALAN TURING',
+      cutout: 'assets/turing-cutout.png',
+      confidence: 99.97,
+      reflection: 99.1,
+      characteristics: [
+        'Exhibits exceptional pattern-recognition capability',
+        'Constructs systems that replicate human reasoning',
+        'Operates extensively within classified environments',
+        'Demonstrates indifference to social convention',
+        'Cognitive processes exceed model interpretability',
+        'Loyalty cannot be independently verified'
+      ],
+      classification: 'NATIONAL ASSET',
+      explanation: 'NOT AVAILABLE',
+      verdict: 'HOMOSEXUAL'
+    }
+  ];
+
+  // default pop-art stamp palette (a subject may override via its `stamp` field)
+  STAMP = { key: '#141009', a: '#FFD400', b: '#00B7D4', c: '#EC1E79' };
+
+  state = { phase: 'live', t: 0, camError: false, scale: 1, subjectIdx: 0 };
+
+  componentDidMount() {
+    this.fit();
+    this._onResize = () => this.fit();
+    window.addEventListener('resize', this._onResize);
+    this._onKey = (e) => { if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); this.trigger(); } };
+    window.addEventListener('keydown', this._onKey);
+    this.detectArmed = true;
+    this.detect = { present: false, prog: 0, armed: true };
+    this.presentSince = 0;
+    this.absentSince = performance.now();
+    this.lastIdx = -1;
+    this.startCamera();
+    this.startDetect();
+  }
+
+  componentWillUnmount() {
+    cancelAnimationFrame(this.raf);
+    clearInterval(this.detectTimer);
+    window.removeEventListener('resize', this._onResize);
+    window.removeEventListener('keydown', this._onKey);
+    if (this.stream) this.stream.getTracks().forEach(t => t.stop());
+  }
+
+  fit() { this.setState({ scale: Math.min(window.innerWidth / 824, window.innerHeight / 1240) * 0.97 }); }
+
+  async startCamera() {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { this.setState({ camError: true }); return; }
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
+      this.stream = stream;
+      if (this.video) { this.video.srcObject = stream; this.video.play().catch(() => {}); }
+    } catch (e) { this.setState({ camError: true }); }
+  }
+
+  setVideo = (el) => {
+    this.video = el;
+    if (el) {
+      el.muted = true; el.playsInline = true; el.setAttribute('playsinline', '');
+      if (this.stream) { el.srcObject = this.stream; el.play().catch(() => {}); }
+    }
+  };
+
+  // ---- Auto-detection: fires the scan when a face holds in frame -------------
+  startDetect() {
+    const HOLD = 850;   // ms a face must persist to auto-fire
+    const CLEAR = 550;  // ms frame must be empty before it re-arms for the next person
+    this.dCanvas = document.createElement('canvas');
+    this.dCanvas.width = 48; this.dCanvas.height = 48;
+    this.detectTimer = setInterval(() => {
+      const present = this.sampleFace();
+      const now = performance.now();
+      const live = this.state.phase === 'live';
+      if (present) { if (!this.presentSince) this.presentSince = now; this.absentSince = 0; }
+      else { this.presentSince = 0; if (!this.absentSince) this.absentSince = now; }
+      if (!this.detectArmed && this.absentSince && now - this.absentSince > CLEAR) this.detectArmed = true;
+      let prog = 0;
+      if (live && this.detectArmed && this.presentSince) {
+        prog = Math.min(1, (now - this.presentSince) / HOLD);
+        if (prog >= 1) { this.detectArmed = false; this.presentSince = 0; this.trigger(); }
+      }
+      const next = { present, prog, armed: this.detectArmed };
+      const p = this.detect || {};
+      if (live && (p.present !== present || Math.abs((p.prog || 0) - prog) > 0.02 || p.armed !== this.detectArmed)) {
+        this.detect = next; this.forceUpdate();
+      } else { this.detect = next; }
+    }, 130);
+  }
+
+  sampleFace() {
+    const v = this.video;
+    if (!v || !v.videoWidth || this.state.camError) return false;
+    const ctx = this.dCanvas.getContext('2d', { willReadFrequently: true });
+    const vw = v.videoWidth, vh = v.videoHeight;
+    const sw = vw * 0.5, sh = vh * 0.6, sx = (vw - sw) / 2, sy = vh * 0.08;
+    try { ctx.drawImage(v, sx, sy, sw, sh, 0, 0, 48, 48); } catch (e) { return false; }
+    let data; try { data = ctx.getImageData(0, 0, 48, 48).data; } catch (e) { return false; }
+    let skin = 0, n = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i], g = data[i + 1], b = data[i + 2]; n++;
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+      if (r > 50 && g > 30 && b > 18 && r >= g && g >= b && (r - b) > 14 && (mx - mn) > 12 && (mx - mn) < 130) skin++;
+    }
+    return (skin / n) > 0.30;
+  }
+
+  // ---- pick a RANDOM enabled subject (avoids repeating the previous one) -----
+  pickSubject() {
+    const pool = this.subjects.map((s, i) => i).filter(i => this.subjects[i].enabled);
+    if (pool.length === 0) return 0;
+    if (pool.length === 1) return pool[0];
+    let idx;
+    do { idx = pool[Math.floor(Math.random() * pool.length)]; } while (idx === this.lastIdx);
+    this.lastIdx = idx;
+    return idx;
+  }
+
+  trigger = () => {
+    if (this.state.phase === 'scanning') return;
+    this.setState({ subjectIdx: this.pickSubject(), phase: 'scanning', t: 0 }, () => this.run());
+  };
+
+  run() {
+    cancelAnimationFrame(this.raf);
+    const TOTAL = 17;                                  // total run length (seconds)
+    const autoLoop = this.props.autoLoop ?? true;
+    this.t0 = performance.now();
+    const step = (now) => {
+      const t = (now - this.t0) / 1000;
+      if (t >= TOTAL) {
+        if (autoLoop) this.setState({ phase: 'live', t: 0 }, () => { if (this.video && this.stream) this.video.play().catch(() => {}); });
+        else this.setState({ phase: 'done', t: TOTAL });
+        return;
+      }
+      this.setState({ t });
+      this.raf = requestAnimationFrame(step);
+    };
+    this.raf = requestAnimationFrame(step);
+  }
+
+  hexA(hex, a) {
+    const h = (hex || '#c0443a').replace('#', '');
+    const n = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+    return `rgba(${parseInt(n.slice(0, 2), 16)},${parseInt(n.slice(2, 4), 16)},${parseInt(n.slice(4, 6), 16)},${a})`;
+  }
+
+  renderVals() {
+    const { phase, t, camError, scale, subjectIdx } = this.state;
+    const live = phase === 'live';
+    const subj = this.subjects[subjectIdx] || this.subjects[0];
+    const RED = this.props.scanColor || '#c0443a';
+    const mirror = this.props.mirrorCam ?? true;
+
+    const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+    const outCubic = x => 1 - Math.pow(1 - x, 3);
+    const inOut = x => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+    const outBack = x => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+    const seg = (a, b, e) => { if (t <= a) return 0; if (t >= b) return 1; const p = (t - a) / (b - a); return e ? e(p) : p; };
+    const lerp = (a, b, p) => a + (b - a) * p;
+
+    const build = live ? 0 : seg(0.35, 2.6, inOut);
+    const scanP = live ? 0 : seg(4.0, 8.6, inOut);
+    const scanFade = clamp(Math.min(seg(3.85, 4.15), 1 - seg(8.4, 8.85)), 0, 1);
+    const scanVisible = !live && t > 3.85 && t < 8.85;
+    const confP = live ? 0 : seg(6.1, 10.1, outCubic);
+    const reflP = live ? 0 : seg(6.8, 10.6, outCubic);
+    const prog = live ? 0 : seg(2.6, 8.6, inOut);
+    const interpP = live ? 0 : seg(12.9, 13.7, outCubic);
+    const classP = live ? 0 : clamp(seg(13.6, 14.2, outBack), 0, 1);
+    const explP = live ? 0 : clamp(seg(14.1, 14.6, outBack), 0, 1);
+    const stampIn = live ? 0 : clamp(seg(14.8, 15.38, outBack), 0, 1);
+    const stampOp = live ? 0 : seg(14.8, 14.94);
+    const astOp = live ? 0 : seg(15.2, 15.55);
+
+    let sh = 0;
+    if (!live && t > 14.85 && t < 15.22) { const p = (t - 14.85) / 0.37; sh = Math.sin(p * Math.PI * 4) * (1 - p) * 4; }
+    let flash = 0;
+    if (!live && t > 14.85 && t < 15.18) { flash = (1 - (t - 14.85) / 0.33) * 0.13; }
+
+    const v = {};
+    const det = this.detect || { present: false, prog: 0, armed: true };
+    v.scaleStyle = { transform: `scale(${scale})`, transformOrigin: 'center center' };
+    v.shudderStyle = { transform: `translate(${sh.toFixed(2)}px, ${(sh * 0.5).toFixed(2)}px)` };
+    v.trigger = this.trigger;
+    v.videoRef = this.setVideo;
+    v.camError = camError;
+    v.isFallbackCap = camError;
+
+    // header / footer / bottom-band copy from the current subject
+    v.subjFileId = subj.fileId; v.subjLine = subj.line; v.subjDate = subj.date;
+    v.subjFooter = subj.footer; v.subjClass = subj.classification; v.subjExpl = subj.explanation;
+    v.verdictText = subj.verdict;
+
+    // Subject's LIVE face — smaller oval that tucks under the hair; zoomed to fill
+    const ovalMask = 'radial-gradient(ellipse 54% 52% at 50% 50%, #000 60%, rgba(0,0,0,0.5) 77%, transparent 92%)';
+    v.ovalStyle = { position: 'absolute', left: '50%', top: '55%', width: '52%', height: '63%', transform: 'translate(-50%,-50%)', overflow: 'hidden', WebkitMaskImage: ovalMask, maskImage: ovalMask };
+    v.videoStyle = { position: 'absolute', inset: '0', width: '100%', height: '100%', objectFit: 'cover', transform: `${mirror ? 'scaleX(-1) ' : ''}scale(1.45)`, transformOrigin: 'center 40%', opacity: camError ? 0 : 1, filter: 'grayscale(1) contrast(1.3) brightness(1.06)' };
+    v.capturedStyle = { position: 'absolute', inset: '0', width: '100%', height: '100%', overflow: 'hidden', opacity: 1, filter: 'grayscale(1) contrast(1.2)' };
+
+    // Portrait assembles in sections around the face, finishing last (during the scan)
+    const chunkDefs = [
+      { clip: 'polygon(0% 69%,100% 69%,100% 100%,0% 100%)', dx: 0, dy: 1, start: 4.3 },    // collar
+      { clip: 'polygon(0% 38%,51% 38%,51% 100%,0% 100%)', dx: -1, dy: 0.35, start: 5.7 },  // left jaw + neck
+      { clip: 'polygon(49% 38%,100% 38%,100% 100%,49% 100%)', dx: 1, dy: 0.35, start: 7.1 },// right jaw + neck
+      { clip: 'polygon(0% 0%,53% 0%,53% 46%,0% 46%)', dx: -1, dy: -0.5, start: 8.7 },        // left hair
+      { clip: 'polygon(47% 0%,100% 0%,100% 46%,47% 46%)', dx: 1, dy: -0.5, start: 10.3 },     // right hair
+      { clip: 'polygon(21% 0%,79% 0%,79% 30%,21% 30%)', dx: 0, dy: -1, start: 11.9 }          // top crown (last)
+    ];
+    v.portraitChunks = chunkDefs.map((c) => {
+      const pIn = live ? 0 : seg(c.start, c.start + 0.85, outCubic);
+      const settle = live ? 0 : clamp(seg(c.start, c.start + 1.0, outBack), 0, 1);
+      const off = (1 - settle) * 16;
+      return { style: {
+        position: 'absolute', inset: '0', backgroundImage: `url("${subj.cutout}")`, backgroundSize: 'cover', backgroundPosition: 'center top',
+        filter: `grayscale(1) contrast(1.04) blur(${lerp(5, 0, pIn).toFixed(1)}px)`,
+        clipPath: c.clip, WebkitClipPath: c.clip,
+        opacity: pIn, transform: `translate(${(c.dx * off).toFixed(1)}px, ${(c.dy * off).toFixed(1)}px)`, pointerEvents: 'none'
+      } };
+    });
+
+    v.scanTrailStyle = { position: 'absolute', left: '0', top: '0', width: '100%', height: `${(scanP * 100).toFixed(1)}%`, background: `linear-gradient(to bottom, ${this.hexA(RED, 0)}, ${this.hexA(RED, 0.18)})`, opacity: scanFade, pointerEvents: 'none' };
+    v.scanLineStyle = { position: 'absolute', left: '0', width: '100%', height: '2px', top: `${(scanP * 100).toFixed(1)}%`, background: RED, boxShadow: `0 0 12px 2px ${this.hexA(RED, 0.7)}`, opacity: scanFade, pointerEvents: 'none' };
+    v.scanGridStyle = { position: 'absolute', inset: '0', backgroundImage: `repeating-linear-gradient(0deg, ${this.hexA(RED, 0.06)} 0 1px, transparent 1px 4px)`, opacity: scanVisible ? 0.6 : 0, pointerEvents: 'none' };
+
+    const detP = det.prog || 0;
+    const ringCol = det.present ? this.hexA(RED, 0.55 + 0.4 * detP) : 'rgba(241,239,231,0.5)';
+    v.detectLabel = camError ? 'MANUAL MODE' : (!det.armed ? 'STEP AWAY TO RESET' : (det.present ? (detP > 0.55 ? 'FACE LOCKED' : 'ACQUIRING…') : 'STEP INTO FRAME'));
+    v.detectBarStyle = { position: 'absolute', left: '0', top: '0', bottom: '0', width: `${(detP * 100).toFixed(0)}%`, background: det.present ? RED : 'rgba(241,239,231,0.5)' };
+
+    // Black curtain: full black while idle, radial reveal opening from the face during build
+    const FCX = 30, FCY = 37;
+    const holeR = lerp(38, 1180, build);
+    const curtainMask = `radial-gradient(circle at ${FCX}% ${FCY}%, transparent ${holeR.toFixed(0)}px, #000 ${(holeR + 130).toFixed(0)}px)`;
+    const curtainGone = !live && t > 3.1;
+    v.curtainStyle = { position: 'absolute', inset: '0', background: '#000', zIndex: 5, display: curtainGone ? 'none' : 'block', opacity: live ? 1 : clamp(1 - seg(2.7, 3.1), 0, 1), pointerEvents: live ? 'auto' : 'none', WebkitMaskImage: live ? 'none' : curtainMask, maskImage: live ? 'none' : curtainMask };
+    v.curtainReticleStyle = { position: 'absolute', top: `${FCY}%`, left: `${FCX}%`, width: '188px', height: '236px', transform: `translate(-50%,-50%) scale(${(det.present ? 1 - 0.04 * detP : 1).toFixed(3)})`, border: `1.5px solid ${ringCol}`, borderRadius: '48% 48% 46% 46% / 40% 40% 56% 56%', boxShadow: det.present ? `0 0 ${(10 + 22 * detP).toFixed(0)}px ${this.hexA(RED, 0.3 * detP)}` : 'none', opacity: live ? 1 : clamp(1 - seg(0.2, 0.8), 0, 1), transition: 'border-color 0.15s' };
+
+    v.bigStatus = live ? 'STANDBY' : (t < 2.6 ? 'INITIALISING' : (t < 8.6 ? 'SCANNING' : 'COMPLETE'));
+    v.progressFillStyle = { position: 'absolute', left: '0', top: '0', bottom: '0', width: `${(prog * 100).toFixed(1)}%`, background: '#16130f' };
+    v.progressPct = `${Math.round(prog * 100)}%`;
+
+    const conf = subj.confidence, refl = subj.reflection;
+    v.confText = live ? '––.––' : (conf * confP).toFixed(2);
+    v.confLabel = live ? '––.––' : (conf * confP).toFixed(2);
+    v.confGaugeStyle = { position: 'absolute', top: '-3px', width: '2px', height: '7px', background: '#16130f', left: `${(confP * conf).toFixed(1)}%` };
+    v.reflText = live ? '––.–' : (refl * reflP).toFixed(1);
+    v.reflLabel = live ? '––.–' : (refl * reflP).toFixed(1);
+    v.reflGaugeStyle = { position: 'absolute', top: '-3px', width: '2px', height: '7px', background: '#16130f', left: `${(reflP * refl).toFixed(1)}%` };
+
+    // Characteristics — rendered from data, checked off one-by-one, finishing before the verdict
+    const chars = subj.characteristics || [];
+    const cBase = 8.8, cStep = Math.min(0.62, 3.6 / Math.max(1, chars.length));
+    v.charItems = chars.map((text, i) => {
+      const p = live ? 0 : clamp(seg(cBase + i * cStep, cBase + i * cStep + 0.45, outBack), 0, 1);
+      return {
+        text,
+        tick: { display: 'inline-block', opacity: p, transform: `scale(${p.toFixed(3)})`, fontSize: '11px', fontWeight: 700, lineHeight: 1, color: '#16130f' },
+        txt: { color: `rgba(20,17,15,${lerp(0.28, 1, p).toFixed(3)})` }
+      };
+    });
+
+    v.interpStyle = { opacity: interpP };
+    v.classStyle = { display: 'inline-block', opacity: classP, transform: `scale(${lerp(1.18, 1, classP).toFixed(3)})`, transformOrigin: 'left center' };
+    v.explStyle = { display: 'inline-block', opacity: explP, transform: `scale(${lerp(1.18, 1, explP).toFixed(3)})`, transformOrigin: 'left center' };
+
+    // Pop-art screenprint stamp (per-subject palette optional)
+    const S = Object.assign({}, this.STAMP, subj.stamp || {});
+    const popFont = { fontFamily: "'Saira Condensed',sans-serif", fontWeight: 700, fontSize: '70px', letterSpacing: '1px', lineHeight: 0.9, whiteSpace: 'nowrap' };
+    v.stampStyle = { position: 'absolute', top: '432px', left: '40px', transformOrigin: 'center center', transform: `rotate(${lerp(-16, -6, stampIn).toFixed(2)}deg) scale(${lerp(2.4, 1, stampIn).toFixed(3)})`, opacity: clamp(stampOp, 0, 1), pointerEvents: 'none' };
+    v.stampBoxStyle = { position: 'relative', border: `6px solid ${S.key}`, borderRadius: '8px', padding: '8px 26px 14px', textAlign: 'center', whiteSpace: 'nowrap', background: 'transparent', boxShadow: `8px 8px 0 ${this.hexA(S.c, 0.9)}, -7px -5px 0 ${this.hexA(S.b, 0.85)}` };
+    const popLayer = (color, dx, dy, z) => Object.assign({ position: 'absolute', inset: '0', padding: '8px 26px 14px', textAlign: 'center', color, transform: `translate(${dx}px, ${dy}px)`, zIndex: z, pointerEvents: 'none' }, popFont);
+    v.stampLayerA = popLayer(S.a, 7, 7, 1);
+    v.stampLayerB = popLayer(S.b, -7, 4, 1);
+    v.stampLayerC = popLayer(S.c, 4, -7, 2);
+    v.stampTextStyle = Object.assign({ position: 'relative', zIndex: 3, color: S.key }, popFont);
+    v.stampAsteriskStyle = { opacity: clamp(astOp, 0, 1), color: S.c, letterSpacing: '7px', fontSize: '15px', marginTop: '5px', textAlign: 'center', textShadow: `1.5px 1.5px 0 ${S.a}` };
+
+    v.flashStyle = { position: 'absolute', inset: '0', background: RED, opacity: flash, pointerEvents: 'none', mixBlendMode: 'multiply' };
+
+    return v;
+  }
+}
+</script>
+</body>
+</html>
