@@ -1,6 +1,6 @@
 'use strict';
 
-// ── Full subject configs (mirrors poster/subjects/*.js) ───────────────────────
+// ── Subject configs ───────────────────────────────────────────────────────────
 const GALLERY_CONFIGS = {
   warhol: {
     fileId: 'AW-1928-0601', name: 'WARHOL, ANDY', date: '05.06.2024',
@@ -18,9 +18,9 @@ const GALLERY_CONFIGS = {
       ],
     },
     exhibitionTitle: 'ANDY WARHOL\nRECOGNITION & SIMULATION\nA SOLO EXHIBITION',
-    dateRange:       '06.01 — 09.22.2024',
-    venue:           'MUSEUM OF CONTEMPORARY CULTURAL STUDIES',
-    address:         '301 OBSERVATION DRIVE\nMETROPOLIS, NY 10001',
+    dateRange: '06.01 — 09.22.2024',
+    venue: 'MUSEUM OF CONTEMPORARY CULTURAL STUDIES',
+    address: '301 OBSERVATION DRIVE\nMETROPOLIS, NY 10001',
     stamp: { text: 'HOMOSEXUAL', treatment: 'warhol_pop' },
   },
   haring: {
@@ -39,26 +39,26 @@ const GALLERY_CONFIGS = {
       ],
     },
     exhibitionTitle: 'KEITH HARING\nLINES OF RECOGNITION\nA SOLO EXHIBITION',
-    dateRange:       '10.01 — 01.15.2025',
-    venue:           'MUSEUM OF CONTEMPORARY CULTURAL STUDIES',
-    address:         '301 OBSERVATION DRIVE\nMETROPOLIS, NY 10001',
+    dateRange: '10.01 — 01.15.2025',
+    venue: 'MUSEUM OF CONTEMPORARY CULTURAL STUDIES',
+    address: '301 OBSERVATION DRIVE\nMETROPOLIS, NY 10001',
     stamp: { text: 'HOMOSEXUAL', treatment: 'haring_bold' },
   },
 };
 
 // ── Beat durations (ms) ───────────────────────────────────────────────────────
-const GB_A     = 1500;   // scan / processing screen
-const GB_B     = 3500;   // poster wipes in top-to-bottom
-const GB_D     = 900;    // HOMOSEXUAL stamp slams
-const GB_HOLD  = 5000;   // dwell on finished poster
-const GB_FADE  = 700;    // fade to black
+const GB_A     = 1500;
+const GB_B     = 3500;
+const GB_D     = 900;
+const GB_HOLD  = 5000;
+const GB_FADE  = 700;
 
 const GB_A_END = GB_A;
 const GB_B_END = GB_A + GB_B;
 const GB_D_END = GB_B_END + GB_D;
 const GB_TOTAL = GB_D_END + GB_HOLD + GB_FADE;
 
-// ── Oval path helper (caller must call ctx.beginPath() first) ─────────────────
+// ── Oval path helper ──────────────────────────────────────────────────────────
 function _ovalPath(ctx, oval) {
   ctx.moveTo(oval[0].x, oval[0].y);
   for (let i = 1; i < oval.length; i++) {
@@ -69,79 +69,219 @@ function _ovalPath(ctx, oval) {
   ctx.closePath();
 }
 
-// ── Build composited portrait: captured face composited into face oval ────────
-// Returns null on any failure — renderPoster will fall back to the portrait URL.
-function _buildCompositedPortrait(portImg, anchors, capturedSnap, faceInfo) {
+// ── Composite captured face into the portrait oval of a poster canvas ─────────
+// Knows the poster layout constants from renderer.js to find the portrait area.
+function _compositeIntoPoster(posterCanvas, portImgW, portImgH, anchors, capturedSnap, faceInfo) {
   try {
-    // p5.Image stores pixel data on .canvas (HTMLCanvasElement)
-    const portSrc = portImg.canvas || portImg.elt || null;
-    if (!portSrc) return null;
+    if (!capturedSnap || !capturedSnap.elt || !faceInfo) return;
 
-    const c   = document.createElement('canvas');
-    c.width   = portImg.width;
-    c.height  = portImg.height;
-    const ctx = c.getContext('2d');
+    // Match renderer.js drawPortrait() layout constants exactly
+    const PAD_L = 46, PAD_T = 14, PAD_B = 88;
+    const BODY_Y_V = 80, LEFT_W_V = 570, BODY_H_V = 1090;
+    const pw = LEFT_W_V - PAD_L - 4;   // 520
+    const ph = BODY_H_V - PAD_T - PAD_B; // 988
 
-    // Portrait base — greyscale + slight contrast
+    const scale = Math.min(pw / portImgW, ph / portImgH);
+    const dw    = portImgW * scale;
+    const dx    = PAD_L + (pw - dw) / 2;
+    const dy    = BODY_Y_V + PAD_T;
+
+    // Transform anchors to poster-canvas space
+    const posterOval = anchors.faceOval.map(pt => ({
+      x: dx + pt.x * scale, y: dy + pt.y * scale,
+    }));
+    const lEyePX = dx + anchors.leftEye.x  * scale;
+    const lEyePY = dy + anchors.leftEye.y  * scale;
+    const rEyePX = dx + anchors.rightEye.x * scale;
+    const rEyePY = dy + anchors.rightEye.y * scale;
+
+    const portEyeMidX = (lEyePX + rEyePX) / 2;
+    const portEyeMidY = (lEyePY + rEyePY) / 2;
+    const portEyeDist = Math.hypot(rEyePX - lEyePX, rEyePY - lEyePY);
+
+    const captEyeX    = faceInfo.x;
+    const captEyeY    = faceInfo.y - faceInfo.h * 0.18;
+    const faceEyeDist = faceInfo.w * 0.46;
+    const faceScale   = portEyeDist / faceEyeDist;
+
+    const faceDX = portEyeMidX - captEyeX * faceScale;
+    const faceDY = portEyeMidY - captEyeY * faceScale;
+
+    const ctx = posterCanvas.getContext('2d');
+    ctx.save();
+    ctx.beginPath();
+    _ovalPath(ctx, posterOval);
+    ctx.clip();
     ctx.filter = 'grayscale(1) contrast(1.05)';
-    ctx.drawImage(portSrc, 0, 0);
+    ctx.drawImage(
+      capturedSnap.elt,
+      faceDX, faceDY,
+      capturedSnap.width  * faceScale,
+      capturedSnap.height * faceScale,
+    );
     ctx.filter = 'none';
-
-    if (capturedSnap && faceInfo && capturedSnap.elt) {
-      // Align captured face eyes to portrait face-anchor eyes
-      const portEyeMidX = (anchors.leftEye.x + anchors.rightEye.x) / 2;
-      const portEyeMidY = (anchors.leftEye.y + anchors.rightEye.y) / 2;
-      const portEyeDist = Math.hypot(
-        anchors.rightEye.x - anchors.leftEye.x,
-        anchors.rightEye.y - anchors.leftEye.y,
-      );
-
-      const captEyeX    = faceInfo.x;
-      const captEyeY    = faceInfo.y - faceInfo.h * 0.18;
-      const faceEyeDist = faceInfo.w * 0.46;
-      const faceScale   = portEyeDist / faceEyeDist;
-
-      const dx = portEyeMidX - captEyeX * faceScale;
-      const dy = portEyeMidY - captEyeY * faceScale;
-
-      ctx.save();
-      ctx.beginPath();
-      _ovalPath(ctx, anchors.faceOval);
-      ctx.clip();
-      ctx.filter = 'grayscale(1) contrast(1.05)';
-      ctx.drawImage(
-        capturedSnap.elt,
-        dx, dy,
-        capturedSnap.width  * faceScale,
-        capturedSnap.height * faceScale,
-      );
-      ctx.filter = 'none';
-      ctx.restore();
-    }
-
-    return c;
+    ctx.restore();
   } catch (e) {
-    console.warn('GalleryReveal: portrait compositing failed, using plain portrait.', e);
-    return null;
+    console.warn('_compositeIntoPoster:', e);
   }
+}
+
+// ── Fallback poster: drawn directly, no dependency on renderer.js ─────────────
+function _buildFallbackPoster(config, portImgCanvas, portImgW, portImgH) {
+  const c   = document.createElement('canvas');
+  c.width   = 1024;
+  c.height  = 1536;
+  const ctx = c.getContext('2d');
+
+  ctx.fillStyle = '#eae5dc';
+  ctx.fillRect(0, 0, 1024, 1536);
+
+  // Top rule
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, 1024, 2);
+
+  // Header
+  ctx.font = 'bold 38px Arial, sans-serif';
+  ctx.fillStyle = '#000';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('SUBJECT ANALYSIS REPORT', 22, 52);
+  ctx.font = '11px "Courier New", monospace';
+  ctx.fillText('FILE ID: ' + config.fileId + '   SUBJECT: ' + config.name + '   DATE: ' + config.date, 22, 68);
+  ctx.fillRect(0, 80, 1024, 1);
+
+  // Portrait
+  if (portImgCanvas && portImgW > 0 && portImgH > 0) {
+    const pw = 520, ph = 988, px = 46, py = 94;
+    const sc = Math.min(pw / portImgW, ph / portImgH);
+    const dw = portImgW * sc, dh = portImgH * sc;
+    const pdx = px + (pw - dw) / 2;
+    try {
+      ctx.filter = 'grayscale(1) contrast(1.05)';
+      ctx.drawImage(portImgCanvas, pdx, py, dw, dh);
+      ctx.filter = 'none';
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(pdx, py, dw, dh);
+    } catch (_) {}
+  }
+
+  // Column divider
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(570, 80);
+  ctx.lineTo(570, 1170);
+  ctx.stroke();
+
+  // Right column — scan status
+  const rx = 588;
+  ctx.font = '10px "Courier New", monospace';
+  ctx.fillStyle = '#000';
+  ctx.fillText('ANALYSIS METRICS', rx, 94);
+  ctx.font = '11px "Courier New", monospace';
+  ctx.fillText('SCAN STATUS:', rx, 122);
+  ctx.font = 'bold 32px Arial, sans-serif';
+  ctx.fillText('COMPLETE', rx, 152);
+
+  ctx.font = '11px "Courier New", monospace';
+  ctx.fillText('CONFIDENCE:', rx, 196);
+  ctx.font = 'bold 52px Arial, sans-serif';
+  ctx.fillText('99%', rx, 248);
+
+  ctx.font = 'bold 11px Arial, sans-serif';
+  ctx.fillStyle = '#fff';
+  ctx.fillStyle = '#000';
+  ctx.fillRect(rx, 362, 414, 26);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 11px Arial, sans-serif';
+  ctx.fillText('OBSERVED CHARACTERISTICS', rx + 8, 380);
+
+  const chars = [
+    'Identity appears partially self-constructed',
+    'Sustains public identity through repetition',
+    'Occupies multiple cultural registers',
+    'Exhibits fascination with visibility',
+    'Demonstrates systematic cultural legibility',
+    'Engages with commodity structures reflexively',
+  ];
+  ctx.fillStyle = '#000';
+  ctx.font = '11px Arial, sans-serif';
+  chars.forEach((ch, i) => {
+    ctx.fillText('✓  ' + ch, rx + 8, 402 + i * 28);
+  });
+
+  // System note
+  ctx.fillRect(0, 1170, 1024, 2);
+  ctx.font = '11px "Courier New", monospace';
+  ctx.fillText('SYSTEM NOTE:', 22, 1196);
+  ctx.font = '17px Arial, sans-serif';
+  ctx.fillText('The Recognition Engine has determined a result.', 22, 1222);
+  ctx.fillText('The Recognition Engine is unable to explain', 22, 1244);
+  ctx.fillText('how this conclusion was reached.', 22, 1266);
+
+  // Footer
+  ctx.fillRect(0, 1318, 1024, 1);
+  const ftLines = config.exhibitionTitle.split('\n');
+  ctx.font = 'bold 18px Arial, sans-serif';
+  ctx.fillText(ftLines[0], 22, 1352);
+  ctx.font = '13px Arial, sans-serif';
+  ftLines.slice(1).forEach((ln, i) => ctx.fillText(ln, 22, 1374 + i * 18));
+  ctx.font = '11px "Courier New", monospace';
+  ctx.fillText(config.dateRange, 22, 1420);
+  ctx.fillText(config.venue,     22, 1440);
+  config.address.split('\n').forEach((ln, i) => ctx.fillText(ln, 22, 1458 + i * 16));
+
+  // Bottom rules
+  ctx.fillRect(0, 1533, 1024, 2);
+  ctx.fillRect(0, 1535, 1024, 1);
+
+  return c;
 }
 
 // ── GalleryReveal ─────────────────────────────────────────────────────────────
 class GalleryReveal {
   constructor() {
-    this.active       = false;
-    this._rendering   = false;
-    this.posterCanvas = null;
-    this.cardKey      = null;
-    this.startMs      = 0;
-    this.capturedSnap = null;
-    this.faceInfo     = null;
+    this.active         = false;
+    this.posterCanvas   = null;
+    this.cardKey        = null;
+    this.startMs        = 0;
+    this.capturedSnap   = null;
+    this.faceInfo       = null;
+    this._cachedPosters = {};
+    this._prerendering  = false;
+  }
+
+  // Called from setup() — render both posters while user interaction hasn't started yet
+  async prerender() {
+    if (this._prerendering) return;
+    this._prerendering = true;
+    for (const key of Object.keys(GALLERY_CONFIGS)) {
+      const config  = GALLERY_CONFIGS[key];
+      const portImg = _portraitImages[key];
+      let c = null;
+      try {
+        if (typeof renderPoster === 'function') {
+          c = document.createElement('canvas');
+          await renderPoster(c, config, generateDetermination(), null);
+        }
+      } catch (e) {
+        console.warn('GalleryReveal: renderPoster failed for', key, '—', e.message);
+        c = null;
+      }
+      if (!c || c.width === 0) {
+        const src = portImg && portImg.canvas && portImg.width > 0 ? portImg.canvas : null;
+        c = _buildFallbackPoster(config, src, portImg ? portImg.width : 0, portImg ? portImg.height : 0);
+      }
+      this._cachedPosters[key] = c;
+    }
+    this._prerendering = false;
   }
 
   trigger(subject) {
-    if (this.active || this._rendering) return;
+    if (this.active) return;
 
-    // Freeze a mirrored camera frame so face coords match tracking space
+    // Freeze camera frame
     if (this.capturedSnap) { this.capturedSnap.remove(); this.capturedSnap = null; }
     const snap = createGraphics(width, height);
     snap.pixelDensity(1);
@@ -156,40 +296,54 @@ class GalleryReveal {
     this.capturedSnap = snap;
     this.faceInfo     = { x: subject.x, y: subject.y, w: subject.w, h: subject.h };
     this.cardKey      = subject.subjectKey;
-    this.posterCanvas = null;
-    this._rendering   = true;
 
-    // Start Beat A immediately — don't wait for the poster to render
-    this.startMs = millis();
-    this.active  = true;
-
-    // Render poster in the background; Beat A holds until posterCanvas is set
     const config  = GALLERY_CONFIGS[this.cardKey];
     const portImg = _portraitImages[this.cardKey];
-    let composited = null;
-    if (portImg && portImg.width > 0) {
-      composited = _buildCompositedPortrait(portImg, config.faceAnchors, snap, this.faceInfo);
-    }
-    this._renderPosterAsync(config, composited);
-  }
+    const cached  = this._cachedPosters[this.cardKey];
 
-  async _renderPosterAsync(config, composited) {
-    try {
-      const canvas = document.createElement('canvas');
-      await renderPoster(canvas, config, generateDetermination(), composited);
-      this.posterCanvas = canvas;
-    } catch (err) {
-      console.error('GalleryReveal: poster render failed.', err);
-    } finally {
-      this._rendering = false;
+    if (cached) {
+      // Copy cached poster so we don't mutate the original
+      const c   = document.createElement('canvas');
+      c.width   = cached.width;
+      c.height  = cached.height;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(cached, 0, 0);
+      // Composite captured face into portrait oval
+      if (portImg && portImg.width > 0) {
+        _compositeIntoPoster(c, portImg.width, portImg.height, config.faceAnchors, snap, this.faceInfo);
+      }
+      this.posterCanvas = c;
+    } else {
+      // Pre-render not finished — show beat A while prerender completes
+      this.posterCanvas = null;
     }
+
+    this.startMs = millis();
+    this.active  = true;
   }
 
   draw() {
     if (!this.active) return;
     const elapsed = millis() - this.startMs;
 
-    // Poster is 1024:1536 (2:3). Fit to screen with 4% margin on each side.
+    // While active, check if prerender just finished
+    if (!this.posterCanvas) {
+      const cached  = this._cachedPosters[this.cardKey];
+      const config  = GALLERY_CONFIGS[this.cardKey];
+      const portImg = _portraitImages[this.cardKey];
+      if (cached) {
+        const c   = document.createElement('canvas');
+        c.width   = cached.width; c.height = cached.height;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(cached, 0, 0);
+        if (portImg && portImg.width > 0) {
+          _compositeIntoPoster(c, portImg.width, portImg.height, config.faceAnchors, this.capturedSnap, this.faceInfo);
+        }
+        this.posterCanvas = c;
+      }
+    }
+
+    // Card dimensions — poster is 1024:1536 (2:3)
     const aspect = 1536 / 1024;
     const cw     = Math.min(height * 0.92 / aspect, width * 0.92);
     const ch     = cw * aspect;
@@ -207,17 +361,14 @@ class GalleryReveal {
       this._beatA(elapsed / GB_A, lx, ty, cw, ch);
     } else if (elapsed < GB_B_END) {
       if (!this.posterCanvas) {
-        // Poster not ready yet — hold on Beat A
-        this._beatA(1, lx, ty, cw, ch);
+        this._beatA(1, lx, ty, cw, ch);   // hold on Beat A while poster renders
       } else {
         this._beatB((elapsed - GB_A_END) / GB_B, lx, ty, cw, ch);
       }
     } else {
-      // Full poster visible
       if (this.posterCanvas) {
         drawingContext.drawImage(this.posterCanvas, lx, ty, cw, ch);
       }
-      // Stamp overlaid on top
       this._beatD(elapsed - GB_B_END, lx, ty, cw, ch);
     }
 
@@ -225,24 +376,21 @@ class GalleryReveal {
 
     if (elapsed >= GB_TOTAL) {
       this.active       = false;
-      this._rendering   = false;
       this.posterCanvas = null;
       if (this.capturedSnap) { this.capturedSnap.remove(); this.capturedSnap = null; }
     }
   }
 
-  isActive() { return this.active || this._rendering; }
+  isActive() { return this.active; }
 
   // ── Beat A: scan / processing screen ─────────────────────────────────────
   _beatA(p, lx, ty, cw, ch) {
     const ctx    = drawingContext;
     const config = GALLERY_CONFIGS[this.cardKey] || {};
 
-    // Dark card
     ctx.fillStyle = 'rgba(6,6,6,0.97)';
     ctx.fillRect(lx, ty, cw, ch);
 
-    // Animated scan line crawling down
     const scanFrac = ((millis() * 0.00022) % 1);
     const scanY    = ty + ch * scanFrac;
     const sg = ctx.createLinearGradient(0, scanY - ch * 0.08, 0, scanY + 3);
@@ -251,21 +399,18 @@ class GalleryReveal {
     ctx.fillStyle = sg;
     ctx.fillRect(lx, Math.max(ty, scanY - ch * 0.08), cw, Math.min(ch * 0.08 + 3, ch));
 
-    // Progress bar at bottom
     ctx.fillStyle = `rgba(220,20,20,${0.85 * p})`;
     ctx.fillRect(lx, ty + ch - 3, cw * _gEaseOut(p), 3);
 
-    // Card border
     ctx.strokeStyle = `rgba(220,20,20,${0.65 * p})`;
     ctx.lineWidth = 2;
     ctx.strokeRect(lx + 1, ty + 1, cw - 2, ch - 2);
 
-    // Center text
-    const ta = Math.min(p * 3, 1);
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
+    const ta  = Math.min(p * 3, 1);
     const midX = lx + cw * 0.5;
     const midY = ty + ch * 0.5;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
 
     ctx.font = `bold ${Math.round(cw * 0.038)}px monospace`;
     ctx.fillStyle = `rgba(220,20,20,${ta * 0.9})`;
@@ -285,7 +430,6 @@ class GalleryReveal {
     const ctx = drawingContext;
     const ep  = _gEaseOut(p);
 
-    // Revealed section (clipped)
     if (this.posterCanvas) {
       ctx.save();
       ctx.beginPath();
@@ -295,13 +439,11 @@ class GalleryReveal {
       ctx.restore();
     }
 
-    // Unrevealed section — dark
     if (ep < 0.999) {
       ctx.fillStyle = 'rgba(6,6,6,0.97)';
       ctx.fillRect(lx, ty + ch * ep, cw, ch * (1 - ep) + 1);
     }
 
-    // Glowing wipe edge
     if (ep > 0.01 && ep < 0.999) {
       const edgeY = ty + ch * ep;
       const eg    = ctx.createLinearGradient(0, edgeY - 24, 0, edgeY + 4);
@@ -312,7 +454,7 @@ class GalleryReveal {
     }
   }
 
-  // ── Beat D: HOMOSEXUAL stamp slams down ───────────────────────────────────
+  // ── Beat D: stamp ─────────────────────────────────────────────────────────
   _beatD(stampAge, lx, ty, cw, ch) {
     const ANIM = 650;
     const p    = Math.min(stampAge / ANIM, 1);
@@ -349,7 +491,6 @@ class GalleryReveal {
       fill(185, 8, 8, alpha * 0.88);
       text('HOMOSEXUAL', 0, 0);
     } else {
-      // haring_bold: radiant lines + yellow fill + black outline
       strokeWeight(max(3, fontSize * 0.028));
       for (let i = 0; i < 18; i++) {
         const a = (i / 18) * TWO_PI;
@@ -373,5 +514,4 @@ function _gEaseOut(t) {
   return 1 - Math.pow(1 - Math.min(Math.max(t, 0), 1), 2.5);
 }
 
-// ── Singleton ─────────────────────────────────────────────────────────────────
 const galleryReveal = new GalleryReveal();

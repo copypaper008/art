@@ -79,6 +79,7 @@ function setup() {
   idlePhrase      = getRandomPhrase("idle");
   idlePhraseTimer = millis();
   initMediaPipe();
+  galleryReveal.prerender();
 }
 
 function draw() {
@@ -370,9 +371,7 @@ function drawGlobalHUD() {
   textStyle(BOLD);
   _hFill(210);
   textSize(sm);
-  const _subjectCount = galleryReveal.isActive()
-    ? galleryReveal.cards.length
-    : faceTracker.subjects.length;
+  const _subjectCount = faceTracker.subjects.length;
   text("SUBJECTS: " + String(_subjectCount).padStart(2, '0'), width - pad, pad * 0.7);
   textStyle(NORMAL);
 
