@@ -52,9 +52,9 @@
         <div style="position:absolute;bottom:0;left:0;width:30px;height:30px;border-bottom:2px solid #2c2a27;border-left:2px solid #2c2a27;"></div>
         <div style="position:absolute;bottom:0;right:0;width:30px;height:30px;border-bottom:2px solid #2c2a27;border-right:2px solid #2c2a27;"></div>
 
-        <!-- visitor's LIVE face (this station's camera zone); portrait assembles around it -->
+        <!-- visitor's GRABBED face, composited into this figure's face-hole; portrait assembles around it -->
         <div style="{{ p.ovalStyle }}">
-         <video muted autoplay playsinline ref="{{ p.videoRef }}" style="{{ p.videoStyle }}"></video>
+         <div style="{{ p.faceImgStyle }}"></div>
          <sc-if value="{{ p.isFallbackCap }}" hint-placeholder-val="{{ false }}">
           <div style="{{ p.capturedStyle }}">
            <div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,#5a5a5a 0 8px,#6a6a6a 8px 16px);"></div>
@@ -147,10 +147,15 @@
       <div style="{{ p.flashStyle }}"></div>
      </div>
 
-     <!-- BLACK CURTAIN / IDLE — this station's own face reticle + prompt -->
+     <!-- BLACK CURTAIN / IDLE — live alignment preview: "put your face in the red oval" -->
      <div style="{{ p.curtainStyle }}">
-      <div style="{{ p.curtainReticleStyle }}"></div>
-      <div style="position:absolute;top:34%;left:50%;transform:translate(-50%,150px);display:flex;flex-direction:column;align-items:center;gap:12px;width:80%;">
+      <div style="{{ p.curtainReticleStyle }}">
+       <div style="{{ p.reticleVideoWrapStyle }}">
+        <video muted autoplay playsinline ref="{{ p.videoRef }}" style="{{ p.previewVideoStyle }}"></video>
+       </div>
+       <div style="{{ p.reticleRingStyle }}"></div>
+      </div>
+      <div style="position:absolute;top:34%;left:50%;transform:translate(-50%,180px);display:flex;flex-direction:column;align-items:center;gap:12px;width:80%;">
        <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:24px;letter-spacing:4px;color:#f1efe7;text-align:center;">{{ p.detectLabel }}</div>
        <div style="width:180px;height:4px;background:rgba(241,239,231,0.18);position:relative;overflow:hidden;"><div style="{{ p.detectBarStyle }}"></div></div>
       </div>
@@ -193,6 +198,7 @@ class Component extends DCLogic {
       date: '05.06.2024',
       footer: 'ANDY WARHOL',
       cutout: 'assets/warhol-cutout.png',
+      face: { cx: 0.505, cy: 0.644, w: 0.60, h: 0.66, scale: 1.32, posY: 38 },
       confidence: 99.98,
       reflection: 98.7,
       characteristics: [
@@ -218,6 +224,7 @@ class Component extends DCLogic {
       date: '05.06.2024',
       footer: 'KEITH HARING',
       cutout: 'assets/haring-cutout.png',
+      face: { cx: 0.50, cy: 0.60, w: 0.60, h: 0.66, scale: 1.32, posY: 38 },
       confidence: 99.94,
       reflection: 97.9,
       characteristics: [
@@ -240,6 +247,7 @@ class Component extends DCLogic {
       date: '05.06.2024',
       footer: 'HARVEY MILK',
       cutout: 'assets/milk-cutout.png',
+      face: { cx: 0.50, cy: 0.60, w: 0.60, h: 0.66, scale: 1.32, posY: 38 },
       confidence: 99.89,
       reflection: 98.2,
       characteristics: [
@@ -262,6 +270,7 @@ class Component extends DCLogic {
       date: '05.06.2024',
       footer: 'ALAN TURING',
       cutout: 'assets/turing-cutout.png',
+      face: { cx: 0.50, cy: 0.60, w: 0.60, h: 0.66, scale: 1.32, posY: 38 },
       confidence: 99.97,
       reflection: 99.1,
       characteristics: [
@@ -285,6 +294,7 @@ class Component extends DCLogic {
   // instance fields initialised before first render (refs attach pre-mount)
   videos = [];
   _vrefs = {};
+  captures = [null, null, null, null];   // frozen still per station, grabbed when the face locks
   det = [0, 1, 2, 3].map(() => ({ present: false, prog: 0, armed: true }));
 
   state = {
@@ -301,6 +311,7 @@ class Component extends DCLogic {
     this._onKey = (e) => { if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); this.trigger(0); } };
     window.addEventListener('keydown', this._onKey);
 
+    this.captures = [null, null, null, null];
     this.presentSince = [0, 0, 0, 0];
     this.absentSince = [performance.now(), performance.now(), performance.now(), performance.now()];
     this.detectArmed = [true, true, true, true];
@@ -412,10 +423,26 @@ class Component extends DCLogic {
 
   trigger(i) {
     if (this.state.stations[i].phase === 'scanning') return;
+    this.captureFrame(i);                              // grab the still the moment the face locks
     const stations = this.state.stations.slice();
     stations[i] = { phase: 'scanning', t: 0, subjectIdx: this.pickSubject(i) };
     this.t0[i] = performance.now();
     this.setState({ stations }, () => this.ensureRaf());
+  }
+
+  // Freeze the current camera frame for station i. We store the WHOLE frame; the panel
+  // re-frames it (zone pan + scale + mirror) exactly like the live preview did, so the
+  // face the visitor lined up in the red oval is what gets composited into the poster.
+  captureFrame(i) {
+    try {
+      const v = (this.videos[i] && this.videos[i].videoWidth) ? this.videos[i] : this.sampleVideo();
+      if (!v || !v.videoWidth) return;
+      const cw = 960, sc = cw / v.videoWidth, ch = Math.round(v.videoHeight * sc);
+      const c = this._capCanvas || (this._capCanvas = document.createElement('canvas'));
+      c.width = cw; c.height = ch;
+      c.getContext('2d').drawImage(v, 0, 0, cw, ch);
+      this.captures[i] = c.toDataURL('image/jpeg', 0.85);
+    } catch (e) { /* keep previous/empty capture on failure (e.g. no camera) */ }
   }
 
   // Single shared animation loop advances every scanning station independently.
@@ -466,6 +493,7 @@ class Component extends DCLogic {
     const lerp = (a, b, pr) => a + (b - a) * pr;
 
     const build = live ? 0 : seg(0.35, 2.6, inOut);
+    const faceReveal = live ? 0 : seg(3.0, 4.4, outCubic);   // grabbed face fades into the blank window
     const scanP = live ? 0 : seg(4.0, 8.6, inOut);
     const scanFade = clamp(Math.min(seg(3.85, 4.15), 1 - seg(8.4, 8.85)), 0, 1);
     const scanVisible = !live && t > 3.85 && t < 8.85;
@@ -494,14 +522,29 @@ class Component extends DCLogic {
     o.subjFooter = subj.footer; o.subjClass = subj.classification; o.subjExpl = subj.explanation;
     o.verdictText = subj.verdict;
 
-    // Live face oval inside the tall hero window
-    const ovalMask = 'radial-gradient(ellipse 54% 52% at 50% 50%, #000 60%, rgba(0,0,0,0.5) 77%, transparent 92%)';
-    o.ovalStyle = { position: 'absolute', left: '50%', top: '50%', width: '62%', height: '74%', transform: 'translate(-50%,-50%)', overflow: 'hidden', WebkitMaskImage: ovalMask, maskImage: ovalMask };
-    // each station shows its own slice of the camera; objectPosition pans across the frame
+    // ---- per-figure face placement -----------------------------------------
+    // Composite the grabbed face into THIS figure's transparent face-hole.
+    //   face.cx / face.cy  = centre of the hole (fractions of the hero window)
+    //   face.w  / face.h   = oval size (fractions of the hero window)
+    //   face.scale         = how tight the grabbed frame is cropped (bigger = closer)
+    //   face.posY          = vertical framing of the grabbed frame (% objectPosition)
+    // Calibrate per cutout PNG so the face lands inside the hole. (See HANDOFF §5.)
     const reverse = this.props.reverseZones ?? false;
     const zone = reverse ? (this.STATIONS - 1 - i) : i;
     const posX = mirror ? ((this.STATIONS - 1 - zone) / (this.STATIONS - 1)) * 100 : (zone / (this.STATIONS - 1)) * 100;
-    o.videoStyle = { position: 'absolute', inset: '0', width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${posX.toFixed(0)}% 38%`, transform: `${mirror ? 'scaleX(-1) ' : ''}scale(1.32)`, transformOrigin: 'center 40%', opacity: camError ? 0 : 1, filter: 'grayscale(1) contrast(1.3) brightness(1.06)' };
+    const face = subj.face || { cx: 0.5, cy: 0.5, w: 0.62, h: 0.74, scale: 1.32, posY: 38 };
+    const fScale = face.scale || 1.32, fPosY = face.posY ?? 38;
+
+    const ovalMask = 'radial-gradient(ellipse 54% 52% at 50% 50%, #000 60%, rgba(0,0,0,0.5) 77%, transparent 92%)';
+    o.ovalStyle = { position: 'absolute', left: `${(face.cx * 100).toFixed(2)}%`, top: `${(face.cy * 100).toFixed(2)}%`, width: `${(face.w * 100).toFixed(1)}%`, height: `${(face.h * 100).toFixed(1)}%`, transform: 'translate(-50%,-50%)', overflow: 'hidden', WebkitMaskImage: ovalMask, maskImage: ovalMask };
+
+    // GRABBED still, composited into the hole (frozen the instant the face locked).
+    const cap = (this.captures && this.captures[i]) || null;
+    const frame = { backgroundSize: 'cover', backgroundPosition: `${posX.toFixed(0)}% ${fPosY}%`, transform: `${mirror ? 'scaleX(-1) ' : ''}scale(${fScale})`, transformOrigin: 'center 40%' };
+    o.faceImgStyle = Object.assign({ position: 'absolute', inset: '0', backgroundImage: cap ? `url("${cap}")` : 'none', backgroundRepeat: 'no-repeat', filter: 'grayscale(1) contrast(1.3) brightness(1.06)', opacity: cap ? faceReveal : 0, pointerEvents: 'none' }, frame);
+
+    // Live alignment preview (idle): the visitor sees themselves in the red oval before the grab.
+    o.previewVideoStyle = { position: 'absolute', inset: '0', width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${posX.toFixed(0)}% ${fPosY}%`, transform: `${mirror ? 'scaleX(-1) ' : ''}scale(${fScale})`, transformOrigin: 'center 40%', opacity: camError ? 0 : 1, filter: 'grayscale(1) contrast(1.2) brightness(1.06)' };
     o.capturedStyle = { position: 'absolute', inset: '0', width: '100%', height: '100%', overflow: 'hidden', opacity: 1, filter: 'grayscale(1) contrast(1.2)' };
 
     const chunkDefs = [
@@ -530,7 +573,7 @@ class Component extends DCLogic {
 
     const detP = det.prog || 0;
     const ringCol = det.present ? this.hexA(RED, 0.55 + 0.4 * detP) : 'rgba(241,239,231,0.5)';
-    o.detectLabel = camError ? 'CAMERA NEEDED' : (!det.armed ? 'STEP AWAY TO RESET' : (det.present ? (detP > 0.55 ? 'FACE LOCKED' : 'ACQUIRING…') : 'STEP INTO FRAME'));
+    o.detectLabel = camError ? 'CAMERA NEEDED' : (!det.armed ? 'STEP AWAY TO RESET' : (det.present ? (detP > 0.55 ? 'HOLD STILL…' : 'ACQUIRING…') : 'PUT YOUR FACE IN THE OVAL'));
     o.detectBarStyle = { position: 'absolute', left: '0', top: '0', bottom: '0', width: `${(detP * 100).toFixed(0)}%`, background: det.present ? RED : 'rgba(241,239,231,0.5)' };
 
     const FCX = 50, FCY = 32;
@@ -538,7 +581,10 @@ class Component extends DCLogic {
     const curtainMask = `radial-gradient(circle at ${FCX}% ${FCY}%, transparent ${holeR.toFixed(0)}px, #000 ${(holeR + 200).toFixed(0)}px)`;
     const curtainGone = !live && t > 3.1;
     o.curtainStyle = { position: 'absolute', inset: '0', background: '#000', zIndex: 5, display: curtainGone ? 'none' : 'block', opacity: live ? 1 : clamp(1 - seg(2.7, 3.1), 0, 1), pointerEvents: 'none', WebkitMaskImage: live ? 'none' : curtainMask, maskImage: live ? 'none' : curtainMask };
-    o.curtainReticleStyle = { position: 'absolute', top: `${FCY}%`, left: `${FCX}%`, width: '300px', height: '380px', transform: `translate(-50%,-50%) scale(${(det.present ? 1 - 0.04 * detP : 1).toFixed(3)})`, border: `2px solid ${ringCol}`, borderRadius: '48% 48% 46% 46% / 40% 40% 56% 56%', boxShadow: det.present ? `0 0 ${(14 + 30 * detP).toFixed(0)}px ${this.hexA(RED, 0.3 * detP)}` : 'none', opacity: live ? 1 : clamp(1 - seg(0.2, 0.8), 0, 1), transition: 'border-color 0.15s' };
+    const reticleR = '48% 48% 46% 46% / 40% 40% 56% 56%';
+    o.curtainReticleStyle = { position: 'absolute', top: `${FCY}%`, left: `${FCX}%`, width: '340px', height: '430px', transform: `translate(-50%,-50%) scale(${(det.present ? 1 - 0.03 * detP : 1).toFixed(3)})`, opacity: live ? 1 : clamp(1 - seg(0.2, 0.8), 0, 1) };
+    o.reticleVideoWrapStyle = { position: 'absolute', inset: '0', overflow: 'hidden', borderRadius: reticleR, WebkitMaskImage: ovalMask, maskImage: ovalMask, opacity: camError ? 0 : 0.92, background: '#000' };
+    o.reticleRingStyle = { position: 'absolute', inset: '0', border: `3px solid ${ringCol}`, borderRadius: reticleR, boxShadow: det.present ? `0 0 ${(14 + 34 * detP).toFixed(0)}px ${this.hexA(RED, 0.35 * detP)}` : 'none', transition: 'border-color 0.15s', pointerEvents: 'none' };
 
     o.bigStatus = live ? 'STANDBY' : (t < 2.6 ? 'INITIALISING' : (t < 8.6 ? 'SCANNING' : 'COMPLETE'));
     o.progressFillStyle = { position: 'absolute', left: '0', top: '0', bottom: '0', width: `${(prog * 100).toFixed(1)}%`, background: '#16130f' };

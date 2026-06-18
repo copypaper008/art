@@ -49,22 +49,27 @@ forces a scan for testing.
 
 ## 3. How it works (the flow)
 
-1. **Idle** — black screen, a face-shaped reticle, "STEP INTO FRAME".
+1. **Idle** — black screen with a red face-oval showing a **live preview** of
+   the visitor's own camera zone, plus "PUT YOUR FACE IN THE OVAL".
 2. **Detect** — a lightweight skin-presence check samples the webcam ~8×/sec.
-   When a face holds for ~0.85s the reticle locks and the scan fires.
-3. **Pick** — one **enabled** subject is chosen at **random** (never the same
+   When a face holds for ~0.85s the ring locks ("HOLD STILL…").
+3. **Grab** — the instant it locks, a **still frame is captured** of that
+   visitor's face (this is the face that gets composited onto the figure).
+4. **Pick** — one **enabled** subject is chosen at **random** (never the same
    one twice in a row).
-4. **Build** — the report + the person's live face reveal outward from the face.
-5. **Scan** — scan-line sweep, confidence/reflection count up, characteristics
+5. **Build** — the curtain opens to a blank window, then the grabbed face
+   **fades in**, composited into that figure's face-hole.
+6. **Scan** — scan-line sweep, confidence/reflection count up, characteristics
    check off one by one, classification resolves.
-6. **Assemble** — the chosen portrait grows in around the live face in 6
-   sections, finishing last (top of the hair).
-7. **Verdict** — the pop-art stamp slams down with a shake + colour flash.
-8. **Reset** — holds, then returns to black. It re-arms once the person steps
-   away, so the next person triggers a fresh scan with a new random subject.
+7. **Assemble** — the chosen portrait grows in around the grabbed face in 6
+   sections (hair / collar), finishing last (top of the hair) — so the face
+   ends up "on the body of" Warhol / Milk / etc.
+8. **Verdict** — the pop-art stamp slams down with a shake + colour flash.
+9. **Reset** — holds, then returns to black. It re-arms once the person steps
+   away, so the next person triggers a fresh grab with a new random subject.
 
-The live camera feed stays running inside the face the whole time (it is not a
-freeze-frame).
+The face is a **frozen grab**, not the live feed — captured the moment the
+ring locks, then aligned into each figure's transparent face-hole.
 
 ---
 
@@ -94,6 +99,10 @@ Copy an existing block in `subjects` and fill it in:
   date: '05.06.2024',                  // header  DATE:
   footer: 'KEITH HARING',              // footer exhibition title
   cutout: 'assets/haring-cutout.png',  // the PNG from Step 1
+  // ALIGN the grabbed face to THIS cutout's transparent hole (fractions of the
+  // face window). cx/cy = hole centre, w/h = oval size, scale = crop tightness,
+  // posY = vertical framing of the grab. Nudge until the face fills the hole.
+  face: { cx: 0.50, cy: 0.60, w: 0.60, h: 0.66, scale: 1.32, posY: 38 },
   confidence: 99.94,                   // big % that counts up
   reflection: 97.9,                    // second metric
   characteristics: [                   // 5–8 short lines, checked off in order
@@ -128,8 +137,8 @@ flip to `true`.
 | Skin threshold | `> 0.30` in `sampleFace()` | raise if it false-triggers |
 | Total run length | `TOTAL = 17` in `run()` | seconds |
 | Beat timing | the `seg(start,end)` calls in `renderVals()` | seconds into the run |
-| Camera zoom | `scale(1.45)` in `videoStyle` | bigger = tighter on the face |
-| Face oval size/position | `ovalStyle` (`width/height/left/top`) | align to your cutouts' face hole |
+| Grabbed-face alignment | each subject's `face: {cx,cy,w,h,scale,posY}` | **the main fix-it knob** — move/scale the face into the cutout's hole |
+| Face fade-in timing | `faceReveal = seg(3.0, 4.4, …)` in `panel()` | when the grabbed face appears in the blank window |
 | Section order/timing | `chunkDefs` in `renderVals()` | each piece's clip + `start` time |
 | Stamp colours | `STAMP = {…}` (default) or a subject's `stamp` | pop-art palette |
 
