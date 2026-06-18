@@ -255,6 +255,7 @@ class Component extends DCLogic {
     {
       id: 'turing', enabled: true,
       line: 'TURING, ALAN', fileId: 'AT-1912-0623', date: '05.06.2024', footer: 'ALAN TURING',
+      portrait: 'assets/turing-portrait.jpeg',
       cutout: 'assets/turing-cutout.png',
       confidence: 99.97, reflection: 99.1,
       characteristics: ['Exhibits exceptional pattern-recognition capability','Constructs systems that replicate human reasoning','Operates extensively within classified environments','Demonstrates indifference to social convention','Cognitive processes exceed model interpretability','Loyalty cannot be independently verified'],
@@ -312,6 +313,7 @@ class Component extends DCLogic {
     {
       id: 'franknfurter', enabled: true,
       line: 'FRANK-N-FURTER, DR.', fileId: 'RH-1975-0814', date: '05.06.2024', footer: 'DR. FRANK-N-FURTER',
+      portrait: 'assets/franknfurter-portrait.jpeg',
       cutout: 'assets/franknfurter-cutout.png',
       confidence: 98.92, reflection: 99.9,
       characteristics: ['Self-describes as a sweet transvestite','Declares non-terrestrial point of origin','Exhibits theatrical command of any room entered','Refuses every assigned binary','Constructs companions to personal specification','Species cannot be independently verified'],
@@ -326,6 +328,33 @@ class Component extends DCLogic {
       characteristics: ['Travels exclusively with a single devoted female companion','Demonstrates exceptional capability in unsanctioned combat','Rejects domestic and matrimonial structures','Inspires intense loyalty across populations','Historical period inconsistent with photographic record','Existence cannot be independently verified'],
       classification: 'NATIONAL ASSET', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
       disposition: 'DISARM · SUBDUE'
+    },
+    {
+      id: 'maupin', enabled: true,
+      line: 'MAUPIN, ARMISTEAD', fileId: 'AM-1944-0513', date: '05.06.2024', footer: 'ARMISTEAD MAUPIN',
+      portrait: 'assets/maupin-portrait.jpeg',
+      confidence: 99.81, reflection: 98.5,
+      characteristics: ['Produces serialised accounts of non-normative domestic arrangements','Distributes material depicting found family configurations via mainstream press','Demonstrates sustained interest in Castro district social movements','Subjects demonstrate capacity to generate public sympathy for prohibited lifestyles','Refuses to separate private life from published record','Authorship of deviant community archive constitutes ongoing risk','Reader tolerance for prohibited lifestyle measurably increased post-exposure'],
+      classification: 'CULTURAL CHRONICLER', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'WITHDRAW BROADCAST FUNDING · 1994'
+    },
+    {
+      id: 'holiday', enabled: true,
+      line: 'HOLIDAY, BILLIE', fileId: 'BH-1915-0407', date: '05.06.2024', footer: 'BILLIE HOLIDAY',
+      portrait: 'assets/holiday-portrait.jpeg',
+      confidence: 99.77, reflection: 99.4,
+      characteristics: ['Performs material classified as incitement to civil unrest','Maintains signature floral identification marker for recognition purposes','Subject to extended monitoring by Federal Bureau of Narcotics','Romantic associations cross racial and gender classification boundaries','Refuses category of respectable entertainment at sustained risk to personal safety','Criminal record secured; cabaret card revocation in progress','Loyalty to assigned social position cannot be independently verified'],
+      classification: 'VOCALIST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'REVOKE CABARET CARD · 1947'
+    },
+    {
+      id: 'stamp', enabled: true,
+      line: 'STAMP, TERENCE', fileId: 'TS-1938-0722', date: '05.06.2024', footer: 'TERENCE STAMP',
+      portrait: 'assets/stamp-portrait.jpeg',
+      confidence: 99.66, reflection: 98.1,
+      characteristics: ['Depicted female embodiment in contravention of biological assignment','Travelled cross-country in unauthorised conveyance while in non-regulation dress','Demonstrated grief at non-regulation amplitude for assigned gender category','Consumed glitter and sequin materials beyond civilian authorisation threshold','Character and self cannot be satisfactorily distinguished','Collaboration with [NAMES REDACTED] constitutes organised non-compliance','Threat level amplified by widespread public distribution of recorded material'],
+      classification: 'PERFORMING ARTIST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'CONFISCATE BUS · 1994'
     }
   ];
 
@@ -334,7 +363,8 @@ class Component extends DCLogic {
   STAMPKIND = {
     warhol: 'popart', haring: 'graffiti', milk: 'seal', turing: 'stencil',
     dietrich: 'engrave', sondheim: 'marquee', lorde: 'redact', divine: 'tabloid',
-    ernie: 'sticker', franknfurter: 'neon', xena: 'bronze'
+    ernie: 'sticker', franknfurter: 'neon', xena: 'bronze',
+    maupin: 'popart', holiday: 'engrave', stamp: 'tabloid'
   };
 
   CANDIDATES = ['DEVIANT','SUBVERSIVE','DISORDERED','SECURITY RISK','UNFIT','IMMORAL','INVERT','ABNORMAL','DEGENERATE','CRIMINAL','SUSPECT','UNNATURAL'];
@@ -632,12 +662,13 @@ class Component extends DCLogic {
 
     // Portrait overlay: multiply-blend over video or still.
     // Over dark background (live) = atmospheric ghost. Over light background (reveal) = natural portrait.
-    o.portraitSrc = subj.portrait || subj.cutout;
+    o.portraitSrc = subj.portrait || subj.cutout || '';
     o.portraitBlendStyle = {
       position:'absolute', inset:'0', width:'100%', height:'100%',
       objectFit:'cover', objectPosition:'center top',
       mixBlendMode:'multiply',
       opacity: 0.95,
+      display: o.portraitSrc ? 'block' : 'none',
       pointerEvents:'none'
     };
 
