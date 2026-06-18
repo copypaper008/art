@@ -12,6 +12,33 @@ to explain."
 This folder **is** the deployed site root. The original p5.js + MediaPipe app
 is preserved (unused) under [`legacy/`](./legacy/).
 
+## Installation layout (4 stations)
+
+Built for a **43" 4K monitor in landscape (3840×2160)** showing **four
+independent stations** side by side — four people stand on four floor marks
+and each gets their own analysis at once:
+
+```
+4 panels × 945 px  +  3 gaps × 20 px  =  3840 px      (each panel 945 × 2160)
+```
+
+One webcam feeds all four: the camera frame is split into **four vertical
+detection zones** (left→right = panel 1→4). Each zone independently arms,
+locks onto a held face (~0.85 s), and runs its own scan with its own randomly
+chosen subject. The whole 3840×2160 stage scales to fit any screen.
+
+**Calibration / tuning knobs:**
+
+| What | Where | Notes |
+|---|---|---|
+| Mirror the feed | `mirrorCam` prop | selfie mirror per panel |
+| Flip zone order | `reverseZones` prop | set true if floor marks read backwards |
+| Lock time | `HOLD = 850` in `startDetect()` | ms a face must hold to fire |
+| Sensitivity | `> 0.30` in `sampleZone()` | lower = easier to trigger |
+| Scan accent | `scanColor` prop | the red scan line / flash |
+| Loop vs hold | `autoLoop` prop | reset to black & wait for the next person |
+| Outer margin | the row `gap` / panel width | 3 gaps = panels flush to screen edges |
+
 ## Files
 
 ```
