@@ -1,4 +1,3 @@
-(function () {
 'use strict';
 
 // ── Canvas dimensions ───────────────────────────────────────────────────
@@ -51,7 +50,7 @@ function fnt(size, weight = 400, family = FD) {
 
 // ── Primitive helpers ────────────────────────────────────────────────────
 
-function fill(ctx, x, y, w, h, col = C.BLACK) {
+function _rfill(ctx, x, y, w, h, col = C.BLACK) {
   ctx.fillStyle = col;
   ctx.fillRect(x, y, w, h);
 }
@@ -132,7 +131,7 @@ function drawBarcode(ctx, x, y, w, h) {
   let dark = true;
   while (cx < x + w - 1) {
     const bw = Math.max(1, Math.floor(next() * 3));
-    if (dark) fill(ctx, cx, y, bw, h - 10);
+    if (dark) _rfill(ctx, cx, y, bw, h - 10);
     cx += bw;
     dark = !dark;
   }
@@ -155,7 +154,7 @@ function drawBracket(ctx, x, y, dir, len = 18, lw = 1.5) {
 
 function drawProgressBar(ctx, x, y, w, h, frac) {
   orect(ctx, x, y, w, h, 0.8);
-  fill(ctx, x + 1, y + 1, Math.max(0, Math.floor((w - 2) * Math.min(1, frac))), h - 2);
+  _rfill(ctx, x + 1, y + 1, Math.max(0, Math.floor((w - 2) * Math.min(1, frac))), h - 2);
 }
 
 function drawStepWedge(ctx, x, y, w, h, steps = 8) {
@@ -266,7 +265,7 @@ function wrapLines(ctx, str, maxW) {
 // ═══════════════════════════════════════════════════════════════════════
 
 function drawHeader(ctx, config) {
-  fill(ctx, 0, 0, POSTER_W, 2);
+  _rfill(ctx, 0, 0, POSTER_W, 2);
 
   txt(ctx, 'SUBJECT ANALYSIS REPORT', MARGIN, 38, { size: 31, weight: 800, ls: 0.5 });
 
@@ -402,7 +401,7 @@ function drawMetrics(ctx, det) {
   // Status icon (filled square)
   const sq = 14;
   orect(ctx, x + w - sq - 2, cy + 8, sq, sq, 1);
-  fill(ctx, x + w - sq, cy + 10, sq - 4, sq - 4);
+  _rfill(ctx, x + w - sq, cy + 10, sq - 4, sq - 4);
 
   cy += 60;
   hline(ctx, x, cy, x + w, 0.5, C.LGRAY);
@@ -435,7 +434,7 @@ function drawCharacteristics(ctx, det) {
   const x = RIGHT_X, y = S4_Y, w = RIGHT_W;
 
   // Header bar
-  fill(ctx, x, y, w, 24);
+  _rfill(ctx, x, y, w, 24);
   txt(ctx, 'OBSERVED CHARACTERISTICS', x + 8, y + 15, { size: 8.5, weight: 700, col: C.WHITE, ls: 0.3 });
 
   const rows = det.characteristics;
@@ -536,7 +535,7 @@ function drawClassification(ctx, det) {
 
     // Bar
     const bw = Math.max(1, bcW * parseFloat(row.value));
-    fill(ctx, barChartX + 4, ry + 4, Math.round(bw), 7);
+    _rfill(ctx, barChartX + 4, ry + 4, Math.round(bw), 7);
   });
 }
 
@@ -594,7 +593,7 @@ function drawFooter(ctx, config) {
 // ═══════════════════════════════════════════════════════════════════════
 
 /** Load an image from src; returns a placeholder canvas if the file is missing. */
-function loadImage(src) {
+function _rloadImage(src) {
   if (src instanceof HTMLCanvasElement || src instanceof ImageBitmap) {
     return Promise.resolve(src);
   }
@@ -638,10 +637,10 @@ async function renderPoster(canvas, config, determination, compositedPortrait = 
   const ctx = canvas.getContext('2d');
 
   // Background
-  fill(ctx, 0, 0, POSTER_W, POSTER_H, C.BG);
+  _rfill(ctx, 0, 0, POSTER_W, POSTER_H, C.BG);
 
   const portraitSrc = compositedPortrait ?? config.portrait;
-  const img = await loadImage(portraitSrc);
+  const img = await _rloadImage(portraitSrc);
 
   drawHeader(ctx, config);
   drawPortrait(ctx, img, config);
@@ -655,5 +654,4 @@ async function renderPoster(canvas, config, determination, compositedPortrait = 
   return canvas;
 }
 
-window.renderPoster = renderPoster;
-})();
+// renderPoster is a global function — callable from any other script
