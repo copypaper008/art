@@ -80,7 +80,7 @@
          </sc-for>
 
          <sc-if value="{{ camError }}" hint-placeholder-val="{{ false }}">
-          <div style="position:absolute;bottom:12px;left:0;right:0;text-align:center;font-family:'Spline Sans Mono';font-size:8px;color:#9a948a;letter-spacing:1px;">SUBJECT FEED // NO SIGNAL — MANUAL TRIGGER</div>
+          <div style="position:absolute;bottom:12px;left:0;right:0;text-align:center;font-family:'Spline Sans Mono';font-size:8px;color:#9a948a;letter-spacing:1px;">SUBJECT FEED // NO SIGNAL — CHECK CAMERA</div>
          </sc-if>
 
          <div style="{{ scanGridStyle }}"></div>
@@ -222,7 +222,6 @@
      <div style="position:absolute;top:39%;left:30%;transform:translate(-50%,150px);display:flex;flex-direction:column;align-items:center;gap:11px;width:300px;">
       <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:19px;letter-spacing:3px;color:#f1efe7;text-align:center;">{{ detectLabel }}</div>
       <div style="width:150px;height:3px;background:rgba(241,239,231,0.18);position:relative;overflow:hidden;"><div style="{{ detectBarStyle }}"></div></div>
-      <div onClick="{{ trigger }}" style="cursor:pointer;font-family:'Spline Sans Mono',monospace;font-size:8px;letter-spacing:2px;color:rgba(241,239,231,0.5);user-select:none;padding:4px 10px;margin-top:6px;pointer-events:auto;" style-hover="color:#f1efe7;">[ MANUAL TRIGGER ]</div>
      </div>
     </div>
 
@@ -583,7 +582,7 @@ class Component extends DCLogic {
 
     const detP = det.prog || 0;
     const ringCol = det.present ? this.hexA(RED, 0.55 + 0.4 * detP) : 'rgba(241,239,231,0.5)';
-    v.detectLabel = camError ? 'MANUAL MODE' : (!det.armed ? 'STEP AWAY TO RESET' : (det.present ? (detP > 0.55 ? 'FACE LOCKED' : 'ACQUIRING…') : 'STEP INTO FRAME'));
+    v.detectLabel = camError ? 'CAMERA NEEDED' : (!det.armed ? 'STEP AWAY TO RESET' : (det.present ? (detP > 0.55 ? 'FACE LOCKED' : 'ACQUIRING…') : 'STEP INTO FRAME'));
     v.detectBarStyle = { position: 'absolute', left: '0', top: '0', bottom: '0', width: `${(detP * 100).toFixed(0)}%`, background: det.present ? RED : 'rgba(241,239,231,0.5)' };
 
     // Black curtain: full black while idle, radial reveal opening from the face during build
