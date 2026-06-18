@@ -1,5 +1,5 @@
 {
   "redirects": [
-    { "source": "/", "destination": "/recognition-engine-poster/", "permanent": false }
+    { "source": "/", "destination": "/recognition-engine/", "permanent": false }
   ]
 }

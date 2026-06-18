@@ -9,9 +9,8 @@ down — then it resets and waits for the next person. It's a critique of
 automated classification: the machine reaches a confident verdict it "is unable
 to explain."
 
-The site root (`vercel.json`) redirects here, so this is what the deployment
-serves. The original p5.js + MediaPipe app is untouched and still reachable at
-`/recognition-engine/`.
+This folder **is** the deployed site root. The original p5.js + MediaPipe app
+is preserved (unused) under [`legacy/`](./legacy/).
 
 ## Files
 
@@ -20,11 +19,12 @@ index.html                   the whole app (markup + logic). EDIT HERE. (the dc 
 support.js                   the dc runtime. Do not edit. Auto-loads React 18 from unpkg.
 assets/warhol-cutout.png     Warhol portrait, face knocked out to transparency
 HANDOFF.md                   the original developer handoff (full docs)
+legacy/                      the previous p5.js + MediaPipe app (not served)
 ```
 
-> The original handoff named this file `Recognition Engine.dc.html`; it was
-> renamed to `index.html` so static hosts (GitHub Pages / Vercel) serve it at
-> the folder root with no redirect. It's the same dc source — edit it here.
+> The original handoff named the app file `Recognition Engine.dc.html`; it was
+> renamed to `index.html` so static hosts serve it at the folder root with no
+> redirect. It's the same dc source — edit it here.
 
 ## Running it (camera needs a secure context)
 
