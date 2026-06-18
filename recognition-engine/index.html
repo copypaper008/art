@@ -67,28 +67,14 @@
           <div style="position:absolute;left:-3px;top:50%;font-family:'Spline Sans Mono';font-size:13px;transform:translateY(-50%);">+</div>
           <div style="position:absolute;right:-3px;top:38%;font-family:'Spline Sans Mono';font-size:13px;">+</div>
 
-          <div style="position:relative;width:100%;height:560px;background:#0e0d0c;overflow:hidden;">
-
-           <!-- Face oval: live video zoomed/panned to the face sits here; portrait assembles around it -->
-           <div style="{{ p.ovalStyle }}" ref="{{ p.ovalRef }}">
-            <video muted autoplay playsinline ref="{{ p.videoRef }}" style="{{ p.videoStyle }}"></video>
-            {{ p.captureEl }}
-            <sc-if value="{{ p.isFallbackCap }}" hint-placeholder-val="{{ false }}">
-             <div style="{{ p.capturedStyle }}">
-              <div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,#5a5a5a 0 8px,#6a6a6a 8px 16px);"></div>
-             </div>
-            </sc-if>
-           </div>
-
-           <!-- Portrait assembles in sections around the face -->
-           <sc-for list="{{ p.portraitChunks }}" as="chunk" hint-placeholder-count="6">
-            <div style="{{ chunk.style }}"></div>
-           </sc-for>
-
+          <!-- Face window: video + multiply-blend portrait overlay -->
+          <div style="{{ p.faceWinStyle }}">
+           <video muted autoplay playsinline ref="{{ p.videoRef }}" style="{{ p.videoStyle }}"></video>
+           {{ p.captureEl }}
+           <img src="{{ p.portraitSrc }}" alt="" style="{{ p.portraitBlendStyle }}" />
            <sc-if value="{{ p.camError }}" hint-placeholder-val="{{ false }}">
             <div style="position:absolute;bottom:12px;left:0;right:0;text-align:center;font-family:'Spline Sans Mono';font-size:8px;color:#9a948a;letter-spacing:1px;">SUBJECT FEED // NO SIGNAL — MANUAL TRIGGER</div>
            </sc-if>
-
            <div style="{{ p.scanGridStyle }}"></div>
            <div style="{{ p.scanTrailStyle }}"></div>
            <div style="{{ p.scanLineStyle }}"></div>
@@ -211,7 +197,7 @@
        </div>
        <!-- detect label -->
        <div style="position:absolute;bottom:10px;left:0;right:0;text-align:center;font-family:'Spline Sans Mono';font-size:10px;letter-spacing:1.5px;color:rgba(241,239,231,0.6);">{{ p.detectLabel }}</div>
-       <!-- live preview oval in the curtain -->
+       <!-- live preview: centered oval in curtain -->
        <div style="{{ p.curtainOvalStyle }}">
         <video muted autoplay playsinline ref="{{ p.previewRef }}" style="{{ p.previewVideoStyle }}"></video>
         <div style="{{ p.curtainRingStyle }}"></div>
@@ -233,15 +219,14 @@ class Component extends DCLogic {
 
   /* ===================================================================== *
    *  SUBJECTS                                                              *
-   *  face: { cx, cy, w, h } are percentages of the face-window div.       *
-   *  face.cx/cy = centre of the transparent hole in the portrait PNG.      *
+   *  portrait: full B&W photo (used for multiply-blend composite)         *
+   *  cutout: transparent-face PNG (fallback for subjects without portrait) *
    * ===================================================================== */
   subjects = [
     {
       id: 'warhol', enabled: true,
       line: 'WARHOL, ANDY', fileId: 'AW-1928-0601', date: '05.06.2024', footer: 'ANDY WARHOL',
       cutout: 'assets/warhol-cutout.png',
-      face: { cx: 50, cy: 55, w: 46.5, h: 56 },
       confidence: 99.98, reflection: 98.7,
       characteristics: ['Displays advanced understanding of image production','Demonstrates sustained interest in celebrity ecosystems','Maintains controlled emotional presentation','Repeatedly converts personal experience into cultural artefact','Identity appears partially self-constructed','Exhibits fascination with visibility','Human authenticity cannot be independently verified'],
       classification: 'CULTURAL ICON', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
@@ -250,8 +235,8 @@ class Component extends DCLogic {
     {
       id: 'haring', enabled: true,
       line: 'HARING, KEITH', fileId: 'KH-1958-0504', date: '05.06.2024', footer: 'KEITH HARING',
+      portrait: 'assets/haring-portrait.jpeg',
       cutout: 'assets/haring-cutout.png',
-      face: { cx: 53.3, cy: 37.6, w: 46.1, h: 42.5 },
       confidence: 99.94, reflection: 97.9,
       characteristics: ['Produces high volumes of publicly legible imagery','Demonstrates compulsion toward repetition and pattern','Distributes work outside sanctioned institutional channels','Associates symbolic figures with collective movement','Engagement with public space exceeds permitted parameters','Motivations cannot be independently verified'],
       classification: 'CULTURAL ICON', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
@@ -260,8 +245,8 @@ class Component extends DCLogic {
     {
       id: 'milk', enabled: true,
       line: 'MILK, HARVEY', fileId: 'HM-1930-0522', date: '05.06.2024', footer: 'HARVEY MILK',
+      portrait: 'assets/milk-portrait.jpeg',
       cutout: 'assets/milk-cutout.png',
-      face: { cx: 47, cy: 37.1, w: 50.6, h: 41.9 },
       confidence: 99.89, reflection: 98.2,
       characteristics: ['Seeks access to civic and representative structures','Demonstrates capacity to organise dispersed populations','Communicates persuasively across demographic boundaries','Encourages assembly and collective visibility','Influence extends beyond assigned jurisdiction','Intentions cannot be independently verified'],
       classification: 'PUBLIC FIGURE', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
@@ -271,7 +256,6 @@ class Component extends DCLogic {
       id: 'turing', enabled: true,
       line: 'TURING, ALAN', fileId: 'AT-1912-0623', date: '05.06.2024', footer: 'ALAN TURING',
       cutout: 'assets/turing-cutout.png',
-      face: { cx: 55.9, cy: 29.8, w: 50, h: 31.5 },
       confidence: 99.97, reflection: 99.1,
       characteristics: ['Exhibits exceptional pattern-recognition capability','Constructs systems that replicate human reasoning','Operates extensively within classified environments','Demonstrates indifference to social convention','Cognitive processes exceed model interpretability','Loyalty cannot be independently verified'],
       classification: 'NATIONAL ASSET', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
@@ -280,8 +264,8 @@ class Component extends DCLogic {
     {
       id: 'dietrich', enabled: true,
       line: 'DIETRICH, MARLENE', fileId: 'MD-1901-1227', date: '05.06.2024', footer: 'MARLENE DIETRICH',
+      portrait: 'assets/dietrich-portrait.jpeg',
       cutout: 'assets/dietrich-cutout.png',
-      face: { cx: 49.2, cy: 33.8, w: 50, h: 41.7 },
       confidence: 99.41, reflection: 98.0,
       characteristics: ['Presents in tailored masculine attire without authorisation','Maintains deliberately ambiguous self-presentation','Generates desire across multiple demographic categories at once','Performs identity as a constructed surface','Resists assignment to any single classification','Sincerity cannot be independently verified'],
       classification: 'CULTURAL ICON', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
@@ -290,8 +274,8 @@ class Component extends DCLogic {
     {
       id: 'sondheim', enabled: true,
       line: 'SONDHEIM, STEPHEN', fileId: 'SS-1930-0322', date: '05.06.2024', footer: 'STEPHEN SONDHEIM',
+      portrait: 'assets/sondheim-portrait.jpeg',
       cutout: 'assets/sondheim-cutout.png',
-      face: { cx: 57.3, cy: 34.6, w: 56.4, h: 36 },
       confidence: 99.72, reflection: 99.0,
       characteristics: ['Demonstrates compulsive engagement with musical theatre','Structures emotion into elaborate formal systems','Exhibits preference for ambiguity and unresolved cadence','Communicates primarily through orchestrated subtext','Operates within insular cultural mentorship networks','Intentions cannot be independently verified'],
       classification: 'CULTURAL ASSET', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
@@ -301,7 +285,6 @@ class Component extends DCLogic {
       id: 'lorde', enabled: true,
       line: 'LORDE, AUDRE', fileId: 'AL-1934-0218', date: '05.06.2024', footer: 'AUDRE LORDE',
       cutout: 'assets/lorde-cutout.png',
-      face: { cx: 38.2, cy: 29.5, w: 41.8, h: 26.5 },
       confidence: 99.93, reflection: 99.3,
       characteristics: ['Refuses to remain silent when silence is expected','Identifies across multiple categories simultaneously','Converts personal experience into collective instruction','Organises language as an instrument of resistance','Declines to separate the self into manageable parts','Compliance cannot be independently verified'],
       classification: 'SUBJECT OF INTEREST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
@@ -310,8 +293,8 @@ class Component extends DCLogic {
     {
       id: 'divine', enabled: true,
       line: 'DIVINE', fileId: 'DV-1945-1019', date: '05.06.2024', footer: 'DIVINE',
+      portrait: 'assets/divine-portrait.jpeg',
       cutout: 'assets/divine-cutout.png',
-      face: { cx: 50, cy: 42, w: 45.5, h: 28.3 },
       confidence: 99.84, reflection: 97.6,
       characteristics: ['Exceeds permitted parameters of glamour','Performs femininity at non-regulation amplitude','Refuses distinction between beauty and provocation','Commands attention through deliberate excess','Operates outside sanctioned taste structures','Underlying identity cannot be independently verified'],
       classification: 'CULTURAL ICON', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
@@ -321,7 +304,6 @@ class Component extends DCLogic {
       id: 'ernie', enabled: true,
       line: 'ERNIE', fileId: 'SS-1969-1123', date: '05.06.2024', footer: 'ERNIE',
       cutout: 'assets/ernie-cutout.png',
-      face: { cx: 51.5, cy: 36.2, w: 61, h: 30.6 },
       confidence: 99.61, reflection: 96.4,
       characteristics: ['Cohabits long-term with a single male associate','Displays cheerful indifference to social expectation','Demonstrates fixation on a rubber bathtime object','Shares one bedroom across all observed records','Felt-based composition complicates biometric analysis','Pulse cannot be independently verified'],
       classification: 'DOMESTIC COHABITANT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
@@ -331,7 +313,6 @@ class Component extends DCLogic {
       id: 'franknfurter', enabled: true,
       line: 'FRANK-N-FURTER, DR.', fileId: 'RH-1975-0814', date: '05.06.2024', footer: 'DR. FRANK-N-FURTER',
       cutout: 'assets/franknfurter-cutout.png',
-      face: { cx: 56.5, cy: 36.5, w: 33, h: 25 },
       confidence: 98.92, reflection: 99.9,
       characteristics: ['Self-describes as a sweet transvestite','Declares non-terrestrial point of origin','Exhibits theatrical command of any room entered','Refuses every assigned binary','Constructs companions to personal specification','Species cannot be independently verified'],
       classification: 'VISITING DIGNITARY', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
@@ -341,7 +322,6 @@ class Component extends DCLogic {
       id: 'xena', enabled: true,
       line: 'XENA, OF AMPHIPOLIS', fileId: 'XW-1995-0904', date: '05.06.2024', footer: 'XENA',
       cutout: 'assets/xena-cutout.png',
-      face: { cx: 52.5, cy: 31.4, w: 41, h: 22.7 },
       confidence: 99.55, reflection: 98.8,
       characteristics: ['Travels exclusively with a single devoted female companion','Demonstrates exceptional capability in unsanctioned combat','Rejects domestic and matrimonial structures','Inspires intense loyalty across populations','Historical period inconsistent with photographic record','Existence cannot be independently verified'],
       classification: 'NATIONAL ASSET', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
@@ -369,11 +349,6 @@ class Component extends DCLogic {
   previewVideos = [];
   _vrefs = {};
   _pvrefs = {};
-  _ovalRefs = {};
-  ovalWH = {};
-  faceBoxes = {};
-  fdBusy = {};
-  fdOK = {};
   captures = [null, null, null, null];
 
   state = {
@@ -399,24 +374,13 @@ class Component extends DCLogic {
     this._rafs = [null, null, null, null];
     this._mainRaf = null;
 
-    // Face tracking state per station
-    this.faceBoxes = {};
-    this.ovalWH = {};
-    this.fdBusy = {};
-    this.fdOK = {};
-
     this.startCamera();
     this.startDetect();
-    this.startTrack();
-
-    // Native browser FaceDetector (Chromium kiosk mode)
-    try { if ('FaceDetector' in window) this.fd = new window.FaceDetector({ fastMode: true, maxDetectedFaces: 1 }); } catch (e) { this.fd = null; }
   }
 
   componentWillUnmount() {
     cancelAnimationFrame(this._mainRaf);
     this._rafs.forEach(r => r && cancelAnimationFrame(r));
-    cancelAnimationFrame(this._trackRaf);
     clearInterval(this.detectTimer);
     window.removeEventListener('resize', this._onResize);
     window.removeEventListener('keydown', this._onKey);
@@ -453,133 +417,9 @@ class Component extends DCLogic {
     return this._pvrefs[i];
   }
 
-  makeOvalRef(i) {
-    if (!this._ovalRefs[i]) this._ovalRefs[i] = (el) => {
-      if (el) { const w = el.clientWidth, h = el.clientHeight; if (w && h) this.ovalWH[i] = { w, h }; }
-    };
-    return this._ovalRefs[i];
-  }
-
   sampleVideo() { return this.videos.find(v => v && v.videoWidth); }
 
-  // ---- Continuous face tracking at ~15 fps per station ----
-  startTrack() {
-    this.tCanvas = document.createElement('canvas');
-    this.tCanvas.width = 84; this.tCanvas.height = 64;
-    let last = 0;
-    const loop = (now) => {
-      this._trackRaf = requestAnimationFrame(loop);
-      if (now - last < 66) return;
-      last = now;
-      // Refresh oval sizes from DOM
-      for (let i = 0; i < this.STATIONS; i++) {
-        const el = this._ovalRefs[i] && this._ovalRefs[i]._el;
-        // Oval size is measured via ref callback; fallback to a known design size
-        if (!this.ovalWH[i]) this.ovalWH[i] = { w: 314, h: 560 };
-        this.trackFace(i);
-      }
-    };
-    this._trackRaf = requestAnimationFrame(loop);
-  }
-
-  trackFace(i) {
-    const v = this.sampleVideo();
-    if (!v || !v.videoWidth || this.state.camError) return;
-    const live = this.state.stations[i] && this.state.stations[i].phase === 'live';
-
-    // Native FaceDetector (async, non-blocking)
-    if (this.fd && !this.fdBusy[i]) {
-      this.fdBusy[i] = true;
-      this.fd.detect(v).then((faces) => {
-        this.fdBusy[i] = false;
-        if (!faces || !faces.length) return;
-        const face = faces[0], bb = face.boundingBox, VW = v.videoWidth, VH = v.videoHeight;
-        const reverse = this.props.reverseZones ?? false;
-        const zone = reverse ? (this.STATIONS - 1 - i) : i;
-        // Only use faces in this station's zone
-        const zoneL = (zone / this.STATIONS) * VW, zoneR = ((zone + 1) / this.STATIONS) * VW;
-        if (bb.x + bb.width / 2 < zoneL || bb.x + bb.width / 2 > zoneR) return;
-
-        let eyeX = bb.x + bb.width / 2, eyeY = bb.y + bb.height * 0.42;
-        const lms = face.landmarks || [];
-        const eyes = lms.filter(l => l.type === 'eye');
-        if (eyes.length) {
-          let sx = 0, sy = 0, n = 0;
-          eyes.forEach(e => { const pt = e.locations && e.locations[0]; if (pt) { sx += pt.x; sy += pt.y; n++; } });
-          if (n) { eyeX = sx / n; eyeY = sy / n; }
-        }
-        // Normalise within this zone
-        const cx = (eyeX - zoneL) / (VW / this.STATIONS);
-        const ey = eyeY / VH;
-        const fw = bb.width / (VW / this.STATIONS);
-        const fh = (bb.height / VH) * 1.5;
-        const prev = this.faceBoxes[i], k = 0.3, mix = (a, b) => a + (b - a) * k;
-        this.faceBoxes[i] = prev ? { cx: mix(prev.cx, cx), ey: mix(prev.ey, ey), fw: mix(prev.fw, fw), fh: mix(prev.fh, fh) } : { cx, ey, fw, fh };
-        this.fdOK[i] = true;
-        if (live) this.applyFaceTransform(i);
-      }).catch(() => { this.fdBusy[i] = false; this.fd = null; });
-      if (this.fdOK[i]) return;
-    }
-
-    // Skin-tone fallback
-    const TW = this.tCanvas.width, TH = this.tCanvas.height;
-    const ctx = this.tCanvas.getContext('2d', { willReadFrequently: true });
-    const reverse = this.props.reverseZones ?? false;
-    const zone = reverse ? (this.STATIONS - 1 - i) : i;
-    const vw = v.videoWidth, vh = v.videoHeight;
-    const zw = vw / this.STATIONS, sx = zone * zw;
-    try { ctx.drawImage(v, sx, vh * 0.05, zw, vh * 0.75, 0, 0, TW, TH); } catch (e) { return; }
-    let data; try { data = ctx.getImageData(0, 0, TW, TH).data; } catch (e) { return; }
-    let minx = TW, maxx = 0, miny = TH, maxy = 0, count = 0, sumx = 0, sumy = 0;
-    for (let y = 0; y < TH; y++) for (let x = 0; x < TW; x++) {
-      const j = (y * TW + x) * 4, r = data[j], g = data[j+1], b = data[j+2];
-      const mx = Math.max(r,g,b), mn = Math.min(r,g,b);
-      if (r > 50 && g > 30 && b > 18 && r >= g && g >= b && (r-b) > 14 && (mx-mn) > 12 && (mx-mn) < 130) {
-        count++; sumx += x; sumy += y;
-        if (x < minx) minx = x; if (x > maxx) maxx = x; if (y < miny) miny = y; if (y > maxy) maxy = y;
-      }
-    }
-    if (count < TW * TH * 0.02) return;
-    const cxc = (sumx / count) / TW, cyc = (sumy / count) / TH;
-    const bw = (maxx - minx) / TW, bh = (maxy - miny) / TH;
-    const cx = ((minx + maxx) / 2 / TW) * 0.45 + cxc * 0.55;
-    const ey = miny / TH + bh * 0.34;
-    const fw = bw, fh = Math.max(bh * 1.55, bw * 1.6);
-    const prev = this.faceBoxes[i], k = 0.22, mix = (a, b) => a + (b - a) * k;
-    this.faceBoxes[i] = prev ? { cx: mix(prev.cx, cx), ey: mix(prev.ey, ey), fw: mix(prev.fw, fw), fh: mix(prev.fh, fh) } : { cx, ey, fw, fh };
-    if (live) this.applyFaceTransform(i);
-  }
-
-  // Scale/pan the video so the tracked face fills the oval, anchored on the eye-line.
-  facePlace(box, ow, vw, vh) {
-    const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
-    const FILL = 1.12;   // head fills oval at 112% oval height
-    const EYE_Y = 0.44;  // eye-line at 44% from the top of the oval
-    const fh = clamp(box.fh, 0.15, 1.4);
-    const Dh = (FILL * ow.h) / fh;
-    const Dw = Dh * (vw / vh);
-    const left = ow.w * 0.5 - box.cx * Dw;
-    const top = ow.h * EYE_Y - box.ey * Dh;
-    return { left, top, Dw, Dh };
-  }
-
-  applyFaceTransform(i) {
-    const el = this.videos[i], box = this.faceBoxes[i], ow = this.ovalWH[i];
-    if (!el || !box || !ow) return;
-    const vw = el.videoWidth, vh = el.videoHeight;
-    if (!vw || !vh) return;
-    const mirror = this.props.mirrorCam ?? true;
-    const p = this.facePlace(box, ow, vw, vh);
-    el.style.left = p.left.toFixed(1) + 'px';
-    el.style.top = p.top.toFixed(1) + 'px';
-    el.style.width = p.Dw.toFixed(1) + 'px';
-    el.style.height = p.Dh.toFixed(1) + 'px';
-    el.style.maxWidth = 'none';
-    el.style.inset = 'auto';
-    el.style.transform = mirror ? 'scaleX(-1)' : 'none';
-  }
-
-  // ---- Auto-detection: fires when a face holds still long enough ----------
+  // ---- Auto-detection: fires when skin tone holds still long enough --------
   startDetect() {
     const HOLD = 850, CLEAR = 550;
     this.dCanvas = document.createElement('canvas');
@@ -637,7 +477,7 @@ class Component extends DCLogic {
     return idx;
   }
 
-  // Snapshot the current frame plus the tracked face box
+  // Snapshot the current video frame for Option D processing
   captureFrame(i) {
     const v = this.sampleVideo();
     if (!v || !v.videoWidth || this.state.camError) return null;
@@ -645,10 +485,7 @@ class Component extends DCLogic {
     c.width = v.videoWidth; c.height = v.videoHeight;
     try { c.getContext('2d').drawImage(v, 0, 0); } catch (e) { return null; }
     let src; try { src = c.toDataURL('image/jpeg', 0.88); } catch (e) { return null; }
-    const box = this.faceBoxes[i] ? { ...this.faceBoxes[i] } : { cx: 0.5, ey: 0.42, fw: 0.4, fh: 0.72 };
-    // For multi-station: adjust cx to be within the zone's own coordinate space
-    // (faceBoxes[i] already stores zone-normalized cx from trackFace)
-    return { src, box, vw: v.videoWidth, vh: v.videoHeight };
+    return { src, vw: v.videoWidth, vh: v.videoHeight };
   }
 
   trigger(i) {
@@ -709,7 +546,6 @@ class Component extends DCLogic {
           h('div', { style: layer(S.c, 4, -7, 2) }, W),
           h('div', { style: Object.assign({ position:'relative', zIndex:3, color:S.key }, f) }, W)));
     }
-    // Default fallback stamp
     return h('div', { style: baseStyle },
       h('div', { style: { border:`5px solid ${S.key}`, display:'inline-block', padding:'6px 22px 10px', borderRadius:'4px' } },
         h('div', { style: Object.assign({ color: S.key }, f) }, W)));
@@ -756,64 +592,63 @@ class Component extends DCLogic {
     const o = {};
     o.shudderStyle = { transform:`translate(${sh.toFixed(2)}px,${(sh*0.5).toFixed(2)}px)` };
 
-    // ---- Face oval placement ----
-    const F = subj.face || { cx:50, cy:55, w:46.5, h:56 };
-    const ovalMult = 1.12;
-    const ovalMask = 'radial-gradient(ellipse 52% 54% at 50% 47%, #000 56%, rgba(0,0,0,0.85) 78%, transparent 100%)';
-    o.ovalRef = this.makeOvalRef(i);
-    o.ovalStyle = { position:'absolute', left:`${F.cx}%`, top:`${F.cy}%`, width:`${(F.w*ovalMult).toFixed(1)}%`, height:`${(F.h*ovalMult).toFixed(1)}%`, transform:'translate(-50%,-50%)', overflow:'hidden', WebkitMaskImage:ovalMask, maskImage:ovalMask };
+    // ---- OPTION A: face window — live video under multiply-blend portrait ----
+    // Background transitions from dark to warm paper as portrait develops (Option D reveal)
+    const bgFade = live ? 0 : clamp(seg(6.5, 9.5, outCubic), 0, 1);
+    const bgR = Math.round(lerp(14, 232, bgFade));
+    const bgG = Math.round(lerp(13, 228, bgFade));
+    const bgB = Math.round(lerp(12, 218, bgFade));
+    o.faceWinStyle = { position:'relative', width:'100%', height:'560px', background:`rgb(${bgR},${bgG},${bgB})`, overflow:'hidden' };
 
-    // ---- Live video style (zoomed to face via applyFaceTransform during idle; fallback during scan) ----
-    const ow = this.ovalWH[i] || { w:314, h:560 };
-    const box = this.faceBoxes[i];
-    const vEl = this.videos[i];
-    const vw = vEl && vEl.videoWidth, vh = vEl && vEl.videoHeight;
+    // Live video: fills area behind the multiply-blend portrait
     o.videoRef = this.makeVideoRef(i);
-    if (box && ow && vw && vh) {
-      const p = this.facePlace(box, ow, vw, vh);
-      o.videoStyle = { position:'absolute', left:`${p.left.toFixed(1)}px`, top:`${p.top.toFixed(1)}px`, width:`${p.Dw.toFixed(1)}px`, height:`${p.Dh.toFixed(1)}px`, maxWidth:'none', objectFit:'cover', transform:mirror?'scaleX(-1)':'none', opacity:(camError||!live)?0:1, filter:'grayscale(1) contrast(1.3) brightness(1.06)' };
-    } else {
-      o.videoStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', transform:mirror?'scaleX(-1) scale(1.45)':'scale(1.45)', transformOrigin:'center 40%', opacity:(camError||!live)?0:1, filter:'grayscale(1) contrast(1.3) brightness(1.06)' };
-    }
+    o.videoStyle = {
+      position:'absolute', inset:'0', width:'100%', height:'100%',
+      objectFit:'cover', objectPosition:'center 20%',
+      transform: mirror ? 'scaleX(-1)' : 'none',
+      filter:'grayscale(1) contrast(1.15) brightness(1.05)',
+      opacity: live ? 1 : 0
+    };
 
-    // ---- Frozen capture: same facePlace logic, but static for the whole scan ----
-    const faceIn = live ? 0 : clamp(seg(0.4, 2.0, outCubic), 0, 1);
+    // ---- OPTION D: captured still with progressive filter intensification ----
+    // Visitor looks increasingly like an archival photograph, then fades out
+    // as background lightens and the portrait is revealed
+    const stillIn = live ? 0 : clamp(seg(0, 0.55), 0, 1);
+    const filterP = live ? 0 : clamp(seg(2.5, 7.0, inOut), 0, 1);
+    const stillOut = live ? 0 : clamp(seg(6.5, 9.5), 0, 1);
+    const capContrast = lerp(1.2, 2.4, filterP).toFixed(2);
+    const capBrightness = lerp(1.05, 0.70, filterP).toFixed(2);
+    const capBlur = lerp(0, 0.6, filterP).toFixed(1);
     const cap = this.captures[i];
     const showCap = !live && cap && cap.src;
-    let capStyle;
-    if (showCap && ow && cap.vw && cap.vh) {
-      const cp = this.facePlace(cap.box, ow, cap.vw, cap.vh);
-      capStyle = { position:'absolute', left:`${cp.left.toFixed(1)}px`, top:`${cp.top.toFixed(1)}px`, width:`${cp.Dw.toFixed(1)}px`, height:`${cp.Dh.toFixed(1)}px`, maxWidth:'none', objectFit:'cover', transform:mirror?'scaleX(-1)':'none', filter:'grayscale(1) contrast(1.3) brightness(1.06)', opacity:faceIn };
-    } else {
-      capStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', transform:mirror?'scaleX(-1)':'none', filter:'grayscale(1) contrast(1.3) brightness(1.06)', opacity:faceIn };
-    }
+    const capStyle = {
+      position:'absolute', inset:'0', width:'100%', height:'100%',
+      objectFit:'cover', objectPosition:'center 20%',
+      transform: mirror ? 'scaleX(-1)' : 'none',
+      filter:`grayscale(1) contrast(${capContrast}) brightness(${capBrightness}) blur(${capBlur}px)`,
+      opacity: stillIn * (1 - stillOut)
+    };
     o.captureEl = showCap ? React.createElement('img', { src:cap.src, alt:'', style:capStyle }) : null;
-    o.capturedStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', overflow:'hidden', opacity:1, filter:'grayscale(1) contrast(1.2)' };
-    o.isFallbackCap = camError;
 
-    // ---- Portrait chunks ----
-    const chunkDefs = [
-      { clip:'polygon(0% 69%,100% 69%,100% 100%,0% 100%)', dx:0, dy:1, start:4.3 },
-      { clip:'polygon(0% 38%,51% 38%,51% 100%,0% 100%)', dx:-1, dy:0.35, start:5.7 },
-      { clip:'polygon(49% 38%,100% 38%,100% 100%,49% 100%)', dx:1, dy:0.35, start:7.1 },
-      { clip:'polygon(0% 0%,53% 0%,53% 46%,0% 46%)', dx:-1, dy:-0.5, start:8.7 },
-      { clip:'polygon(47% 0%,100% 0%,100% 46%,47% 46%)', dx:1, dy:-0.5, start:10.3 },
-      { clip:'polygon(21% 0%,79% 0%,79% 30%,21% 30%)', dx:0, dy:-1, start:11.9 }
-    ];
-    o.portraitChunks = chunkDefs.map(c => {
-      const pIn = live ? 0 : seg(c.start, c.start+0.85, outCubic);
-      const settle = live ? 0 : clamp(seg(c.start, c.start+1.0, outBack), 0, 1);
-      const off = (1-settle)*16;
-      return { style:{ position:'absolute', inset:'0', backgroundImage:`url("${subj.cutout}")`, backgroundSize:'cover', backgroundPosition:'center top', filter:`grayscale(1) contrast(1.04) blur(${lerp(5,0,pIn).toFixed(1)}px)`, clipPath:c.clip, WebkitClipPath:c.clip, opacity:pIn, transform:`translate(${(c.dx*off).toFixed(1)}px,${(c.dy*off).toFixed(1)}px)`, pointerEvents:'none' } };
-    });
+    // Portrait overlay: multiply-blend over video or still.
+    // Over dark background (live) = atmospheric ghost. Over light background (reveal) = natural portrait.
+    o.portraitSrc = subj.portrait || subj.cutout;
+    o.portraitBlendStyle = {
+      position:'absolute', inset:'0', width:'100%', height:'100%',
+      objectFit:'cover', objectPosition:'center top',
+      mixBlendMode:'multiply',
+      opacity: 0.95,
+      pointerEvents:'none'
+    };
 
+    // Scan overlay effects
     o.scanTrailStyle = { position:'absolute', left:'0', top:'0', width:'100%', height:`${(scanP*100).toFixed(1)}%`, background:`linear-gradient(to bottom,${this.hexA(RED,0)},${this.hexA(RED,0.18)})`, opacity:scanFade, pointerEvents:'none' };
     o.scanLineStyle = { position:'absolute', left:'0', width:'100%', height:'2px', top:`${(scanP*100).toFixed(1)}%`, background:RED, boxShadow:`0 0 12px 2px ${this.hexA(RED,0.7)}`, opacity:scanFade, pointerEvents:'none' };
     o.scanGridStyle = { position:'absolute', inset:'0', backgroundImage:`repeating-linear-gradient(0deg,${this.hexA(RED,0.06)} 0 1px,transparent 1px 4px)`, opacity:scanVisible?0.6:0, pointerEvents:'none' };
 
     // ---- Text values ----
     o.subjFileId = subj.fileId; o.subjLine = subj.line; o.subjDate = subj.date;
-    o.subjFooter = subj.footer; o.subjClass = subj.classification; o.subjExpl = subj.explanation;
+    o.subjClass = subj.classification; o.subjExpl = subj.explanation;
     let verdictText = subj.verdict;
     if (searching) { const ci = Math.floor((t-searchStart)/0.07) % this.CANDIDATES.length; verdictText = this.CANDIDATES[ci]; }
     o.verdictText = verdictText;
@@ -857,14 +692,13 @@ class Component extends DCLogic {
     const curtainGone = !live && t > 0.75;
     o.curtainStyle = { position:'absolute', inset:'0', background:'#08080a', zIndex:5, display:curtainGone?'none':'block', opacity:live?1:clamp(1-seg(0.0,0.6),0,1), pointerEvents:live?'auto':'none' };
 
-    // Curtain preview oval: same face.cx/cy as the poster oval so it looks continuous on reveal
+    // Curtain preview: centered oval so visitor can frame themselves
     const curtainMask = 'radial-gradient(ellipse 52% 54% at 50% 47%, #000 56%, rgba(0,0,0,0.85) 78%, transparent 100%)';
     const detP = det.prog || 0;
     const ringCol = det.present ? this.hexA(RED, 0.55+0.4*detP) : 'rgba(241,239,231,0.5)';
-    o.curtainOvalStyle = { position:'absolute', left:`${F.cx}%`, top:`${F.cy}%`, width:`${(F.w*ovalMult).toFixed(1)}%`, height:`${(F.h*ovalMult).toFixed(1)}%`, transform:'translate(-50%,-50%)', overflow:'hidden', WebkitMaskImage:curtainMask, maskImage:curtainMask };
-    // Preview video fills the oval with the same face tracking
+    o.curtainOvalStyle = { position:'absolute', left:'50%', top:'42%', width:'82%', height:'68%', transform:'translate(-50%,-50%)', overflow:'hidden', WebkitMaskImage:curtainMask, maskImage:curtainMask };
     o.previewRef = this.makePreviewRef(i);
-    o.previewVideoStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', transform:mirror?'scaleX(-1)':'none', transformOrigin:'center 40%', opacity:camError?0:1, filter:'grayscale(1) contrast(1.2) brightness(1.06)' };
+    o.previewVideoStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', transform:mirror?'scaleX(-1)':'none', opacity:camError?0:1, filter:'grayscale(1) contrast(1.15) brightness(1.05)' };
     o.curtainRingStyle = { position:'absolute', inset:'0', border:`3px solid ${ringCol}`, borderRadius:'48% 48% 46% 46% / 40% 40% 56% 56%', boxShadow:det.present?`0 0 ${(14+34*detP).toFixed(0)}px ${this.hexA(RED,0.35*detP)}`:'none', transition:'border-color 0.15s', pointerEvents:'none' };
 
     o.detectLabel = camError ? 'MANUAL MODE' : (!det.armed ? 'STEP AWAY TO RESET' : (det.present ? (detP>0.55?'FACE LOCKED':'ACQUIRING…') : 'STEP INTO FRAME'));
