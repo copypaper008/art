@@ -9,8 +9,9 @@ down — then it resets and waits for the next person. It's a critique of
 automated classification: the machine reaches a confident verdict it "is unable
 to explain."
 
-This lives alongside the original p5.js + MediaPipe `recognition-engine/`; it
-does not change that app or the site's root deployment.
+The site root (`vercel.json`) redirects here, so this is what the deployment
+serves. The original p5.js + MediaPipe app is untouched and still reachable at
+`/recognition-engine/`.
 
 ## Files
 
