@@ -1,6 +1,5 @@
 {
-  "rewrites": [
-    { "source": "/",      "destination": "/recognition-engine/index.html" },
-    { "source": "/(.*)", "destination": "/recognition-engine/$1" }
+  "redirects": [
+    { "source": "/", "destination": "/recognition-engine/", "permanent": false }
   ]
 }

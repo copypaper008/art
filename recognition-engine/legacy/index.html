@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Recognition Engine</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="engines.css" />
+  <link rel="stylesheet" href="warhol-card.css" />
+  <link rel="stylesheet" href="haring-card.css" />
+  <link rel="stylesheet" href="leather-card.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.min.js"></script>
+  <!--
+    MediaPipe is loaded as an ES module then bridged to window globals.
+    Tries local vendor/ first (offline exhibition mode); falls back to CDN
+    automatically (GitHub Pages, iPhone, any remote URL).
+  -->
+  <script type="module">
+    const CDN = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+    let FaceDetector, FilesetResolver, localOk = false;
+    try {
+      ({ FaceDetector, FilesetResolver } =
+        await import("./vendor/mediapipe/vision_bundle.mjs"));
+      localOk = true;
+    } catch (_) {
+      ({ FaceDetector, FilesetResolver } =
+        await import(CDN + "/vision_bundle.mjs"));
+    }
+    window._mp_FaceDetector  = FaceDetector;
+    window._mp_FilesetResolver = FilesetResolver;
+    window._mp_localVendor   = localOk;
+    if (window._mp_resolve) window._mp_resolve();
+  </script>
+</head>
+<body>
+  <script src="phrases.js"></script>
+  <script src="warhol-card.js"></script>
+  <script src="haring-card.js"></script>
+  <script src="leather-card.js"></script>
+  <script src="alarmScreen.js"></script>
+  <script src="detection.js"></script>
+  <script src="visualEffects.js"></script>
+  <script src="faceTracker.js"></script>
+  <script src="sketch.js"></script>
+</body>
+</html>

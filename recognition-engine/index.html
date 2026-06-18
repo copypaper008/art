@@ -1,46 +1,640 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Recognition Engine</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="engines.css" />
-  <link rel="stylesheet" href="warhol-card.css" />
-  <link rel="stylesheet" href="haring-card.css" />
-  <link rel="stylesheet" href="leather-card.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.3/p5.min.js"></script>
-  <!--
-    MediaPipe is loaded as an ES module then bridged to window globals.
-    Tries local vendor/ first (offline exhibition mode); falls back to CDN
-    automatically (GitHub Pages, iPhone, any remote URL).
-  -->
-  <script type="module">
-    const CDN = "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
-    let FaceDetector, FilesetResolver, localOk = false;
-    try {
-      ({ FaceDetector, FilesetResolver } =
-        await import("./vendor/mediapipe/vision_bundle.mjs"));
-      localOk = true;
-    } catch (_) {
-      ({ FaceDetector, FilesetResolver } =
-        await import(CDN + "/vision_bundle.mjs"));
-    }
-    window._mp_FaceDetector  = FaceDetector;
-    window._mp_FilesetResolver = FilesetResolver;
-    window._mp_localVendor   = localOk;
-    if (window._mp_resolve) window._mp_resolve();
-  </script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
 </head>
 <body>
-  <script src="phrases.js"></script>
-  <script src="warhol-card.js"></script>
-  <script src="haring-card.js"></script>
-  <script src="leather-card.js"></script>
-  <script src="alarmScreen.js"></script>
-  <script src="detection.js"></script>
-  <script src="visualEffects.js"></script>
-  <script src="faceTracker.js"></script>
-  <script src="sketch.js"></script>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Archivo:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:#000;}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+</style>
+</helmet>
+
+<!-- ============================================================= -->
+<!-- 3840 x 2160 STAGE  —  FOUR INDEPENDENT 945-wide STATIONS       -->
+<!-- ============================================================= -->
+<div style="position:fixed;inset:0;background:#050506;display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:'Archivo',sans-serif;">
+ <div style="{{ stageStyle }}">
+  <div style="position:relative;width:3840px;height:2160px;display:flex;gap:20px;background:#0a0a0b;">
+
+   <sc-for list="{{ panels }}" as="p" hint-placeholder-count="4">
+    <div style="{{ p.panelStyle }}">
+
+     <!-- shudder wrapper: report + stamp + flash all shake on the verdict -->
+     <div style="{{ p.shudderStyle }}">
+
+      <!-- TALL REPORT (single column, fills 945 x 2160) -->
+      <div style="position:absolute;inset:0;padding:34px;display:flex;flex-direction:column;color:#16130f;">
+       <div style="position:absolute;inset:20px;border:1.5px solid #16130f;pointer-events:none;"></div>
+
+       <!-- HEADER -->
+       <div style="border-bottom:2px solid #16130f;padding-bottom:14px;flex:none;">
+        <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:44px;line-height:0.9;letter-spacing:0.3px;">SUBJECT<br>ANALYSIS REPORT</div>
+        <div style="display:flex;justify-content:space-between;margin-top:13px;font-family:'Spline Sans Mono',monospace;font-size:11px;line-height:1.5;letter-spacing:0.3px;">
+         <div>FILE ID: {{ p.subjFileId }}<br>SUBJECT: {{ p.subjLine }}<br>DATE: {{ p.subjDate }}</div>
+         <div style="text-align:right;">RECOGNITION ENGINE v.7.3.1<br><span style="color:#5a564e;">CULTURAL PATTERN<br>RECOGNITION SYSTEM</span></div>
+        </div>
+        <div style="margin-top:11px;height:26px;background:repeating-linear-gradient(90deg,#16130f 0 1.5px,transparent 1.5px 3px,#16130f 3px 5px,transparent 5px 8px,#16130f 8px 9px,transparent 9px 13px);"></div>
+       </div>
+
+       <!-- FACE WINDOW (hero) -->
+       <div style="position:relative;margin-top:16px;width:100%;height:1010px;background:#0e0d0c;overflow:hidden;flex:none;">
+        <div style="position:absolute;top:0;left:0;width:30px;height:30px;border-top:2px solid #2c2a27;border-left:2px solid #2c2a27;"></div>
+        <div style="position:absolute;top:0;right:0;width:30px;height:30px;border-top:2px solid #2c2a27;border-right:2px solid #2c2a27;"></div>
+        <div style="position:absolute;bottom:0;left:0;width:30px;height:30px;border-bottom:2px solid #2c2a27;border-left:2px solid #2c2a27;"></div>
+        <div style="position:absolute;bottom:0;right:0;width:30px;height:30px;border-bottom:2px solid #2c2a27;border-right:2px solid #2c2a27;"></div>
+
+        <!-- visitor's GRABBED face, composited into this figure's face-hole; portrait assembles around it -->
+        <div style="{{ p.ovalStyle }}">
+         <div style="{{ p.faceImgStyle }}"></div>
+         <sc-if value="{{ p.isFallbackCap }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ p.capturedStyle }}">
+           <div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,#5a5a5a 0 8px,#6a6a6a 8px 16px);"></div>
+          </div>
+         </sc-if>
+        </div>
+
+        <sc-for list="{{ p.portraitChunks }}" as="chunk" hint-placeholder-count="6">
+         <div style="{{ chunk.style }}"></div>
+        </sc-for>
+
+        <sc-if value="{{ p.camError }}" hint-placeholder-val="{{ false }}">
+         <div style="position:absolute;bottom:14px;left:0;right:0;text-align:center;font-family:'Spline Sans Mono',monospace;font-size:11px;color:#9a948a;letter-spacing:1px;">SUBJECT FEED // NO SIGNAL — CHECK CAMERA</div>
+        </sc-if>
+
+        <div style="{{ p.scanGridStyle }}"></div>
+        <div style="{{ p.scanTrailStyle }}"></div>
+        <div style="{{ p.scanLineStyle }}"></div>
+       </div>
+
+       <!-- SCAN STATUS -->
+       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex:none;">
+        <span style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:0.6px;">SCAN STATUS:</span>
+        <div style="width:20px;height:20px;background:conic-gradient(#16130f 90deg,transparent 0 180deg,#16130f 0 270deg,transparent 0);background-size:7px 7px;"></div>
+       </div>
+       <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:54px;line-height:1;flex:none;">{{ p.bigStatus }}</div>
+       <div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex:none;">
+        <div style="flex:1;height:10px;border:1px solid #16130f;position:relative;background:repeating-linear-gradient(90deg,rgba(20,17,15,0.25) 0 2px,transparent 2px 4px);">
+         <div style="{{ p.progressFillStyle }}"></div>
+        </div>
+        <span style="font-family:'Spline Sans Mono',monospace;font-size:11px;">{{ p.progressPct }}</span>
+       </div>
+
+       <!-- CONFIDENCE + REFLECTION -->
+       <div style="display:flex;gap:18px;margin-top:16px;flex:none;">
+        <div style="flex:1;border-top:1px solid rgba(20,17,15,0.25);padding-top:10px;">
+         <div style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:14px;letter-spacing:0.6px;">CONFIDENCE:</div>
+         <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:50px;line-height:1;">{{ p.confText }}<span style="font-size:30px;">%</span></div>
+         <div style="display:flex;align-items:center;gap:8px;margin-top:4px;"><div style="flex:1;height:1px;background:rgba(20,17,15,0.3);position:relative;"><div style="{{ p.confGaugeStyle }}"></div></div><span style="font-family:'Spline Sans Mono',monospace;font-size:10px;">{{ p.confLabel }}%</span></div>
+        </div>
+        <div style="flex:1;border-top:1px solid rgba(20,17,15,0.25);padding-top:10px;">
+         <div style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:14px;letter-spacing:0.6px;">REFLECTION:</div>
+         <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:50px;line-height:1;">{{ p.reflText }}<span style="font-size:30px;">%</span></div>
+         <div style="display:flex;align-items:center;gap:8px;margin-top:4px;"><div style="flex:1;height:1px;background:rgba(20,17,15,0.3);position:relative;"><div style="{{ p.reflGaugeStyle }}"></div></div><span style="font-family:'Spline Sans Mono',monospace;font-size:10px;">{{ p.reflLabel }}%</span></div>
+        </div>
+       </div>
+
+       <!-- OBSERVED CHARACTERISTICS -->
+       <div style="margin-top:16px;background:#16130f;color:#f1efe7;font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:0.9px;padding:5px 10px;flex:none;">OBSERVED CHARACTERISTICS</div>
+       <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;flex:none;">
+        <sc-for list="{{ p.charItems }}" as="item" hint-placeholder-count="7">
+         <div style="display:flex;gap:10px;align-items:flex-start;">
+          <div style="width:15px;height:15px;border:1.5px solid #16130f;flex:none;display:flex;align-items:center;justify-content:center;margin-top:1px;"><span style="{{ item.tick }}">&#10003;</span></div>
+          <div style="font-family:'Archivo',sans-serif;font-size:13px;line-height:1.25;"><span style="{{ item.txt }}">{{ item.text }}</span></div>
+         </div>
+        </sc-for>
+       </div>
+
+       <!-- CLASSIFICATION / EXPLANATION (pinned to the bottom) -->
+       <div style="margin-top:auto;border:2px solid #16130f;padding:14px 16px;flex:none;">
+        <div style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:14px;letter-spacing:0.6px;">CLASSIFICATION:</div>
+        <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:40px;line-height:1.02;"><span style="{{ p.classStyle }}">{{ p.subjClass }}</span></div>
+        <div style="height:1px;background:rgba(20,17,15,0.3);margin:10px 0;"></div>
+        <div style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:14px;letter-spacing:0.6px;">EXPLANATION:</div>
+        <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:30px;line-height:1.02;"><span style="{{ p.explStyle }}">{{ p.subjExpl }}</span></div>
+       </div>
+
+       <!-- FOOTER -->
+       <div style="border-top:2px solid #16130f;padding-top:12px;margin-top:14px;display:flex;justify-content:space-between;align-items:flex-end;flex:none;">
+        <div style="font-family:'Saira Condensed',sans-serif;">
+         <div style="font-weight:700;font-size:15px;letter-spacing:0.4px;">{{ p.subjFooter }}</div>
+         <div style="font-weight:700;font-size:12px;letter-spacing:0.4px;">RECOGNITION &amp; SIMULATION</div>
+         <div style="font-weight:500;font-size:12px;letter-spacing:0.4px;">A SOLO EXHIBITION</div>
+        </div>
+        <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;line-height:1.5;text-align:right;">06.01 — 09.22.2024<br>MUSEUM OF CONTEMPORARY<br>CULTURAL STUDIES</div>
+       </div>
+      </div>
+
+      <!-- VERDICT STAMP (pop-art screenprint) over the face -->
+      <div style="{{ p.stampStyle }}">
+       <div style="{{ p.stampBoxStyle }}">
+        <div style="{{ p.stampLayerA }}">{{ p.verdictText }}</div>
+        <div style="{{ p.stampLayerB }}">{{ p.verdictText }}</div>
+        <div style="{{ p.stampLayerC }}">{{ p.verdictText }}</div>
+        <div style="{{ p.stampTextStyle }}">{{ p.verdictText }}</div>
+       </div>
+       <div style="{{ p.stampAsteriskStyle }}">★ ★ ★ ★ ★ ★ ★ ★</div>
+      </div>
+
+      <div style="{{ p.flashStyle }}"></div>
+     </div>
+
+     <!-- BLACK CURTAIN / IDLE — live alignment preview: "put your face in the red oval" -->
+     <div style="{{ p.curtainStyle }}">
+      <div style="{{ p.curtainReticleStyle }}">
+       <div style="{{ p.reticleVideoWrapStyle }}">
+        <video muted autoplay playsinline ref="{{ p.videoRef }}" style="{{ p.previewVideoStyle }}"></video>
+       </div>
+       <div style="{{ p.reticleRingStyle }}"></div>
+      </div>
+      <div style="position:absolute;top:34%;left:50%;transform:translate(-50%,180px);display:flex;flex-direction:column;align-items:center;gap:12px;width:80%;">
+       <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:24px;letter-spacing:4px;color:#f1efe7;text-align:center;">{{ p.detectLabel }}</div>
+       <div style="width:180px;height:4px;background:rgba(241,239,231,0.18);position:relative;overflow:hidden;"><div style="{{ p.detectBarStyle }}"></div></div>
+      </div>
+     </div>
+
+    </div>
+   </sc-for>
+
+  </div>
+ </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+ &quot;$preview&quot;: { &quot;width&quot;: 960, &quot;height&quot;: 540 },
+ &quot;scanColor&quot;: { &quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#c0443a&quot;, &quot;tsType&quot;: &quot;string&quot; },
+ &quot;mirrorCam&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot; },
+ &quot;reverseZones&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot; },
+ &quot;autoLoop&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot; }
+}">
+class Component extends DCLogic {
+
+  /* ===================================================================== *
+   *  SUBJECTS  —  THE ONLY THING YOU EDIT TO ADD A PERSON                 *
+   * ===================================================================== *
+   *  Each of the FOUR stations independently picks ONE enabled subject at  *
+   *  random when a face is detected in its zone, and assembles that        *
+   *  portrait around the live face.                                        *
+   *                                                                        *
+   *  TO ADD A PERSON:                                                      *
+   *   1. Drop their face-cutout PNG in  assets/<id>-cutout.png            *
+   *      (front-facing portrait, FACE KNOCKED OUT to transparency).        *
+   *   2. Copy one block below, fill in the copy, set  enabled: true.       *
+   * ===================================================================== */
+  subjects = [
+    {
+      id: 'warhol',
+      enabled: true,
+      line: 'WARHOL, ANDY',
+      fileId: 'AW-1928-0601',
+      date: '05.06.2024',
+      footer: 'ANDY WARHOL',
+      cutout: 'assets/warhol-cutout.png',
+      face: { cx: 0.505, cy: 0.644, w: 0.60, h: 0.66, scale: 1.32, posY: 38 },
+      confidence: 99.98,
+      reflection: 98.7,
+      characteristics: [
+        'Displays advanced understanding of image production',
+        'Demonstrates sustained interest in celebrity ecosystems',
+        'Maintains controlled emotional presentation',
+        'Repeatedly converts personal experience into cultural artefact',
+        'Identity appears partially self-constructed',
+        'Exhibits fascination with visibility',
+        'Human authenticity cannot be independently verified'
+      ],
+      classification: 'CULTURAL ICON',
+      explanation: 'NOT AVAILABLE',
+      verdict: 'HOMOSEXUAL'
+    },
+
+    /* ---- PLACEHOLDER: add the cutout PNG, then flip enabled to true ---- */
+    {
+      id: 'haring',
+      enabled: false,
+      line: 'HARING, KEITH',
+      fileId: 'KH-1958-0504',
+      date: '05.06.2024',
+      footer: 'KEITH HARING',
+      cutout: 'assets/haring-cutout.png',
+      face: { cx: 0.50, cy: 0.60, w: 0.60, h: 0.66, scale: 1.32, posY: 38 },
+      confidence: 99.94,
+      reflection: 97.9,
+      characteristics: [
+        'Produces high volumes of publicly legible imagery',
+        'Demonstrates compulsion toward repetition and pattern',
+        'Distributes work outside sanctioned institutional channels',
+        'Associates symbolic figures with collective movement',
+        'Engagement with public space exceeds permitted parameters',
+        'Motivations cannot be independently verified'
+      ],
+      classification: 'CULTURAL ICON',
+      explanation: 'NOT AVAILABLE',
+      verdict: 'HOMOSEXUAL'
+    },
+    {
+      id: 'milk',
+      enabled: false,
+      line: 'MILK, HARVEY',
+      fileId: 'HM-1930-0522',
+      date: '05.06.2024',
+      footer: 'HARVEY MILK',
+      cutout: 'assets/milk-cutout.png',
+      face: { cx: 0.50, cy: 0.60, w: 0.60, h: 0.66, scale: 1.32, posY: 38 },
+      confidence: 99.89,
+      reflection: 98.2,
+      characteristics: [
+        'Seeks access to civic and representative structures',
+        'Demonstrates capacity to organise dispersed populations',
+        'Communicates persuasively across demographic boundaries',
+        'Encourages assembly and collective visibility',
+        'Influence extends beyond assigned jurisdiction',
+        'Intentions cannot be independently verified'
+      ],
+      classification: 'PUBLIC FIGURE',
+      explanation: 'NOT AVAILABLE',
+      verdict: 'HOMOSEXUAL'
+    },
+    {
+      id: 'turing',
+      enabled: false,
+      line: 'TURING, ALAN',
+      fileId: 'AT-1912-0623',
+      date: '05.06.2024',
+      footer: 'ALAN TURING',
+      cutout: 'assets/turing-cutout.png',
+      face: { cx: 0.50, cy: 0.60, w: 0.60, h: 0.66, scale: 1.32, posY: 38 },
+      confidence: 99.97,
+      reflection: 99.1,
+      characteristics: [
+        'Exhibits exceptional pattern-recognition capability',
+        'Constructs systems that replicate human reasoning',
+        'Operates extensively within classified environments',
+        'Demonstrates indifference to social convention',
+        'Cognitive processes exceed model interpretability',
+        'Loyalty cannot be independently verified'
+      ],
+      classification: 'NATIONAL ASSET',
+      explanation: 'NOT AVAILABLE',
+      verdict: 'HOMOSEXUAL'
+    }
+  ];
+
+  STAMP = { key: '#141009', a: '#FFD400', b: '#00B7D4', c: '#EC1E79' };
+
+  STATIONS = 4;
+
+  // instance fields initialised before first render (refs attach pre-mount)
+  videos = [];
+  _vrefs = {};
+  captures = [null, null, null, null];   // frozen still per station, grabbed when the face locks
+  det = [0, 1, 2, 3].map(() => ({ present: false, prog: 0, armed: true }));
+
+  state = {
+    scale: 1,
+    camError: false,
+    stations: [0, 1, 2, 3].map(() => ({ phase: 'live', t: 0, subjectIdx: 0 }))
+  };
+
+  componentDidMount() {
+    this.fit();
+    this._onResize = () => this.fit();
+    window.addEventListener('resize', this._onResize);
+    // Spacebar = hidden testing fallback: fire station 0
+    this._onKey = (e) => { if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); this.trigger(0); } };
+    window.addEventListener('keydown', this._onKey);
+
+    this.captures = [null, null, null, null];
+    this.presentSince = [0, 0, 0, 0];
+    this.absentSince = [performance.now(), performance.now(), performance.now(), performance.now()];
+    this.detectArmed = [true, true, true, true];
+    this.lastIdx = [-1, -1, -1, -1];
+    this.t0 = [0, 0, 0, 0];
+    this._raf = null;
+
+    this.startCamera();
+    this.startDetect();
+  }
+
+  componentWillUnmount() {
+    if (this._raf) cancelAnimationFrame(this._raf);
+    clearInterval(this.detectTimer);
+    window.removeEventListener('resize', this._onResize);
+    window.removeEventListener('keydown', this._onKey);
+    if (this.stream) this.stream.getTracks().forEach(t => t.stop());
+  }
+
+  // The whole 3840x2160 stage scales to fit the screen (landscape 43" = 4K).
+  fit() { this.setState({ scale: Math.min(window.innerWidth / 3840, window.innerHeight / 2160) }); }
+
+  async startCamera() {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { this.setState({ camError: true }); return; }
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1920 } }, audio: false });
+      this.stream = stream;
+      this.videos.forEach(v => { if (v) { v.srcObject = stream; v.play().catch(() => {}); } });
+    } catch (e) { this.setState({ camError: true }); }
+  }
+
+  // One ref factory per station (stable identity so React doesn't thrash refs)
+  makeVideoRef(i) {
+    if (!this._vrefs) this._vrefs = {};
+    if (!this._vrefs[i]) {
+      this._vrefs[i] = (el) => {
+        this.videos[i] = el;
+        if (el) {
+          el.muted = true; el.playsInline = true; el.setAttribute('playsinline', '');
+          if (this.stream) { el.srcObject = this.stream; el.play().catch(() => {}); }
+        }
+      };
+    }
+    return this._vrefs[i];
+  }
+
+  sampleVideo() { return this.videos.find(v => v && v.videoWidth); }
+
+  // ---- Auto-detection: one camera, four vertical zones --------------------
+  startDetect() {
+    const HOLD = 850;   // ms a face must persist in a zone to auto-fire
+    const CLEAR = 550;  // ms a zone must be empty before it re-arms
+    this.dCanvas = document.createElement('canvas');
+    this.dCanvas.width = 48; this.dCanvas.height = 48;
+    this.detectTimer = setInterval(() => {
+      const now = performance.now();
+      let changed = false;
+      for (let i = 0; i < this.STATIONS; i++) {
+        const present = this.sampleZone(i);
+        const live = this.state.stations[i].phase === 'live';
+        if (present) { if (!this.presentSince[i]) this.presentSince[i] = now; this.absentSince[i] = 0; }
+        else { this.presentSince[i] = 0; if (!this.absentSince[i]) this.absentSince[i] = now; }
+        if (!this.detectArmed[i] && this.absentSince[i] && now - this.absentSince[i] > CLEAR) this.detectArmed[i] = true;
+        let prog = 0;
+        if (live && this.detectArmed[i] && this.presentSince[i]) {
+          prog = Math.min(1, (now - this.presentSince[i]) / HOLD);
+          if (prog >= 1) { this.detectArmed[i] = false; this.presentSince[i] = 0; this.trigger(i); }
+        }
+        const prev = this.det[i] || {};
+        const next = { present, prog, armed: this.detectArmed[i] };
+        if (live && (prev.present !== present || Math.abs((prev.prog || 0) - prog) > 0.02 || prev.armed !== this.detectArmed[i])) changed = true;
+        this.det[i] = next;
+      }
+      if (changed && !this._raf) this.forceUpdate();   // refresh idle reticles when nothing is animating
+    }, 130);
+  }
+
+  // Skin-presence in zone i's horizontal slice of the camera frame.
+  // SUBJECT THRESHOLD: raise `> 0.30` if a zone false-triggers, lower if it won't lock.
+  sampleZone(i) {
+    const v = this.sampleVideo();
+    if (!v || !v.videoWidth || this.state.camError) return false;
+    const ctx = this.dCanvas.getContext('2d', { willReadFrequently: true });
+    const vw = v.videoWidth, vh = v.videoHeight;
+    const reverse = this.props.reverseZones ?? false;
+    const zone = reverse ? (this.STATIONS - 1 - i) : i;      // flip if floor marks read backwards
+    const zw = vw / this.STATIONS;
+    const sx = zone * zw, sw = zw, sh = vh * 0.6, sy = vh * 0.08;
+    try { ctx.drawImage(v, sx, sy, sw, sh, 0, 0, 48, 48); } catch (e) { return false; }
+    let data; try { data = ctx.getImageData(0, 0, 48, 48).data; } catch (e) { return false; }
+    let skin = 0, n = 0;
+    for (let j = 0; j < data.length; j += 4) {
+      const r = data[j], g = data[j + 1], b = data[j + 2]; n++;
+      const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
+      if (r > 50 && g > 30 && b > 18 && r >= g && g >= b && (r - b) > 14 && (mx - mn) > 12 && (mx - mn) < 130) skin++;
+    }
+    return (skin / n) > 0.30;
+  }
+
+  pickSubject(i) {
+    const pool = this.subjects.map((s, idx) => idx).filter(idx => this.subjects[idx].enabled);
+    if (pool.length === 0) return 0;
+    if (pool.length === 1) return pool[0];
+    let idx;
+    do { idx = pool[Math.floor(Math.random() * pool.length)]; } while (idx === this.lastIdx[i]);
+    this.lastIdx[i] = idx;
+    return idx;
+  }
+
+  trigger(i) {
+    if (this.state.stations[i].phase === 'scanning') return;
+    this.captureFrame(i);                              // grab the still the moment the face locks
+    const stations = this.state.stations.slice();
+    stations[i] = { phase: 'scanning', t: 0, subjectIdx: this.pickSubject(i) };
+    this.t0[i] = performance.now();
+    this.setState({ stations }, () => this.ensureRaf());
+  }
+
+  // Freeze the current camera frame for station i. We store the WHOLE frame; the panel
+  // re-frames it (zone pan + scale + mirror) exactly like the live preview did, so the
+  // face the visitor lined up in the red oval is what gets composited into the poster.
+  captureFrame(i) {
+    try {
+      const v = (this.videos[i] && this.videos[i].videoWidth) ? this.videos[i] : this.sampleVideo();
+      if (!v || !v.videoWidth) return;
+      const cw = 960, sc = cw / v.videoWidth, ch = Math.round(v.videoHeight * sc);
+      const c = this._capCanvas || (this._capCanvas = document.createElement('canvas'));
+      c.width = cw; c.height = ch;
+      c.getContext('2d').drawImage(v, 0, 0, cw, ch);
+      this.captures[i] = c.toDataURL('image/jpeg', 0.85);
+    } catch (e) { /* keep previous/empty capture on failure (e.g. no camera) */ }
+  }
+
+  // Single shared animation loop advances every scanning station independently.
+  ensureRaf() {
+    if (this._raf) return;
+    const TOTAL = 17;
+    const autoLoop = this.props.autoLoop ?? true;
+    const step = () => {
+      const now = performance.now();
+      let any = false;
+      const stations = this.state.stations.map((s, i) => {
+        if (s.phase !== 'scanning') return s;
+        const t = (now - this.t0[i]) / 1000;
+        if (t >= TOTAL) {
+          if (autoLoop) { if (this.videos[i] && this.stream) this.videos[i].play().catch(() => {}); return { phase: 'live', t: 0, subjectIdx: s.subjectIdx }; }
+          return { phase: 'done', t: TOTAL, subjectIdx: s.subjectIdx };
+        }
+        any = true;
+        return { phase: 'scanning', t, subjectIdx: s.subjectIdx };
+      });
+      this.setState({ stations });
+      this._raf = any ? requestAnimationFrame(step) : null;
+    };
+    this._raf = requestAnimationFrame(step);
+  }
+
+  hexA(hex, a) {
+    const h = (hex || '#c0443a').replace('#', '');
+    const n = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
+    return `rgba(${parseInt(n.slice(0, 2), 16)},${parseInt(n.slice(2, 4), 16)},${parseInt(n.slice(4, 6), 16)},${a})`;
+  }
+
+  // ---- per-station computed view values ----------------------------------
+  panel(station, i) {
+    const { phase, t } = station;
+    const live = phase === 'live';
+    const subj = this.subjects[station.subjectIdx] || this.subjects[0];
+    const RED = this.props.scanColor || '#c0443a';
+    const mirror = this.props.mirrorCam ?? true;
+    const camError = this.state.camError;
+    const det = (this.det && this.det[i]) || { present: false, prog: 0, armed: true };
+
+    const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+    const outCubic = x => 1 - Math.pow(1 - x, 3);
+    const inOut = x => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+    const outBack = x => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+    const seg = (a, b, e) => { if (t <= a) return 0; if (t >= b) return 1; const pr = (t - a) / (b - a); return e ? e(pr) : pr; };
+    const lerp = (a, b, pr) => a + (b - a) * pr;
+
+    const build = live ? 0 : seg(0.35, 2.6, inOut);
+    const faceReveal = live ? 0 : seg(3.0, 4.4, outCubic);   // grabbed face fades into the blank window
+    const scanP = live ? 0 : seg(4.0, 8.6, inOut);
+    const scanFade = clamp(Math.min(seg(3.85, 4.15), 1 - seg(8.4, 8.85)), 0, 1);
+    const scanVisible = !live && t > 3.85 && t < 8.85;
+    const confP = live ? 0 : seg(6.1, 10.1, outCubic);
+    const reflP = live ? 0 : seg(6.8, 10.6, outCubic);
+    const prog = live ? 0 : seg(2.6, 8.6, inOut);
+    const classP = live ? 0 : clamp(seg(13.6, 14.2, outBack), 0, 1);
+    const explP = live ? 0 : clamp(seg(14.1, 14.6, outBack), 0, 1);
+    const stampIn = live ? 0 : clamp(seg(14.8, 15.38, outBack), 0, 1);
+    const stampOp = live ? 0 : seg(14.8, 14.94);
+    const astOp = live ? 0 : seg(15.2, 15.55);
+
+    let sh = 0;
+    if (!live && t > 14.85 && t < 15.22) { const pr = (t - 14.85) / 0.37; sh = Math.sin(pr * Math.PI * 4) * (1 - pr) * 4; }
+    let flash = 0;
+    if (!live && t > 14.85 && t < 15.18) { flash = (1 - (t - 14.85) / 0.33) * 0.13; }
+
+    const o = {};
+    o.panelStyle = { position: 'relative', width: '945px', height: '2160px', flex: 'none', background: '#f1efe7', overflow: 'hidden', boxShadow: 'inset 0 0 0 1px #000' };
+    o.shudderStyle = { position: 'absolute', inset: '0', transform: `translate(${sh.toFixed(2)}px, ${(sh * 0.5).toFixed(2)}px)` };
+    o.videoRef = this.makeVideoRef(i);
+    o.camError = camError;
+    o.isFallbackCap = camError;
+
+    o.subjFileId = subj.fileId; o.subjLine = subj.line; o.subjDate = subj.date;
+    o.subjFooter = subj.footer; o.subjClass = subj.classification; o.subjExpl = subj.explanation;
+    o.verdictText = subj.verdict;
+
+    // ---- per-figure face placement -----------------------------------------
+    // Composite the grabbed face into THIS figure's transparent face-hole.
+    //   face.cx / face.cy  = centre of the hole (fractions of the hero window)
+    //   face.w  / face.h   = oval size (fractions of the hero window)
+    //   face.scale         = how tight the grabbed frame is cropped (bigger = closer)
+    //   face.posY          = vertical framing of the grabbed frame (% objectPosition)
+    // Calibrate per cutout PNG so the face lands inside the hole. (See HANDOFF §5.)
+    const reverse = this.props.reverseZones ?? false;
+    const zone = reverse ? (this.STATIONS - 1 - i) : i;
+    const posX = mirror ? ((this.STATIONS - 1 - zone) / (this.STATIONS - 1)) * 100 : (zone / (this.STATIONS - 1)) * 100;
+    const face = subj.face || { cx: 0.5, cy: 0.5, w: 0.62, h: 0.74, scale: 1.32, posY: 38 };
+    const fScale = face.scale || 1.32, fPosY = face.posY ?? 38;
+
+    const ovalMask = 'radial-gradient(ellipse 54% 52% at 50% 50%, #000 60%, rgba(0,0,0,0.5) 77%, transparent 92%)';
+    o.ovalStyle = { position: 'absolute', left: `${(face.cx * 100).toFixed(2)}%`, top: `${(face.cy * 100).toFixed(2)}%`, width: `${(face.w * 100).toFixed(1)}%`, height: `${(face.h * 100).toFixed(1)}%`, transform: 'translate(-50%,-50%)', overflow: 'hidden', WebkitMaskImage: ovalMask, maskImage: ovalMask };
+
+    // GRABBED still, composited into the hole (frozen the instant the face locked).
+    const cap = (this.captures && this.captures[i]) || null;
+    const frame = { backgroundSize: 'cover', backgroundPosition: `${posX.toFixed(0)}% ${fPosY}%`, transform: `${mirror ? 'scaleX(-1) ' : ''}scale(${fScale})`, transformOrigin: 'center 40%' };
+    o.faceImgStyle = Object.assign({ position: 'absolute', inset: '0', backgroundImage: cap ? `url("${cap}")` : 'none', backgroundRepeat: 'no-repeat', filter: 'grayscale(1) contrast(1.3) brightness(1.06)', opacity: cap ? faceReveal : 0, pointerEvents: 'none' }, frame);
+
+    // Live alignment preview (idle): the visitor sees themselves in the red oval before the grab.
+    o.previewVideoStyle = { position: 'absolute', inset: '0', width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${posX.toFixed(0)}% ${fPosY}%`, transform: `${mirror ? 'scaleX(-1) ' : ''}scale(${fScale})`, transformOrigin: 'center 40%', opacity: camError ? 0 : 1, filter: 'grayscale(1) contrast(1.2) brightness(1.06)' };
+    o.capturedStyle = { position: 'absolute', inset: '0', width: '100%', height: '100%', overflow: 'hidden', opacity: 1, filter: 'grayscale(1) contrast(1.2)' };
+
+    const chunkDefs = [
+      { clip: 'polygon(0% 69%,100% 69%,100% 100%,0% 100%)', dx: 0, dy: 1, start: 4.3 },
+      { clip: 'polygon(0% 38%,51% 38%,51% 100%,0% 100%)', dx: -1, dy: 0.35, start: 5.7 },
+      { clip: 'polygon(49% 38%,100% 38%,100% 100%,49% 100%)', dx: 1, dy: 0.35, start: 7.1 },
+      { clip: 'polygon(0% 0%,53% 0%,53% 46%,0% 46%)', dx: -1, dy: -0.5, start: 8.7 },
+      { clip: 'polygon(47% 0%,100% 0%,100% 46%,47% 46%)', dx: 1, dy: -0.5, start: 10.3 },
+      { clip: 'polygon(21% 0%,79% 0%,79% 30%,21% 30%)', dx: 0, dy: -1, start: 11.9 }
+    ];
+    o.portraitChunks = chunkDefs.map((c) => {
+      const pIn = live ? 0 : seg(c.start, c.start + 0.85, outCubic);
+      const settle = live ? 0 : clamp(seg(c.start, c.start + 1.0, outBack), 0, 1);
+      const off = (1 - settle) * 16;
+      return { style: {
+        position: 'absolute', inset: '0', backgroundImage: `url("${subj.cutout}")`, backgroundSize: 'cover', backgroundPosition: 'center top',
+        filter: `grayscale(1) contrast(1.04) blur(${lerp(5, 0, pIn).toFixed(1)}px)`,
+        clipPath: c.clip, WebkitClipPath: c.clip,
+        opacity: pIn, transform: `translate(${(c.dx * off).toFixed(1)}px, ${(c.dy * off).toFixed(1)}px)`, pointerEvents: 'none'
+      } };
+    });
+
+    o.scanTrailStyle = { position: 'absolute', left: '0', top: '0', width: '100%', height: `${(scanP * 100).toFixed(1)}%`, background: `linear-gradient(to bottom, ${this.hexA(RED, 0)}, ${this.hexA(RED, 0.18)})`, opacity: scanFade, pointerEvents: 'none' };
+    o.scanLineStyle = { position: 'absolute', left: '0', width: '100%', height: '3px', top: `${(scanP * 100).toFixed(1)}%`, background: RED, boxShadow: `0 0 16px 3px ${this.hexA(RED, 0.7)}`, opacity: scanFade, pointerEvents: 'none' };
+    o.scanGridStyle = { position: 'absolute', inset: '0', backgroundImage: `repeating-linear-gradient(0deg, ${this.hexA(RED, 0.06)} 0 1px, transparent 1px 4px)`, opacity: scanVisible ? 0.6 : 0, pointerEvents: 'none' };
+
+    const detP = det.prog || 0;
+    const ringCol = det.present ? this.hexA(RED, 0.55 + 0.4 * detP) : 'rgba(241,239,231,0.5)';
+    o.detectLabel = camError ? 'CAMERA NEEDED' : (!det.armed ? 'STEP AWAY TO RESET' : (det.present ? (detP > 0.55 ? 'HOLD STILL…' : 'ACQUIRING…') : 'PUT YOUR FACE IN THE OVAL'));
+    o.detectBarStyle = { position: 'absolute', left: '0', top: '0', bottom: '0', width: `${(detP * 100).toFixed(0)}%`, background: det.present ? RED : 'rgba(241,239,231,0.5)' };
+
+    const FCX = 50, FCY = 32;
+    const holeR = lerp(40, 2600, build);
+    const curtainMask = `radial-gradient(circle at ${FCX}% ${FCY}%, transparent ${holeR.toFixed(0)}px, #000 ${(holeR + 200).toFixed(0)}px)`;
+    const curtainGone = !live && t > 3.1;
+    o.curtainStyle = { position: 'absolute', inset: '0', background: '#000', zIndex: 5, display: curtainGone ? 'none' : 'block', opacity: live ? 1 : clamp(1 - seg(2.7, 3.1), 0, 1), pointerEvents: 'none', WebkitMaskImage: live ? 'none' : curtainMask, maskImage: live ? 'none' : curtainMask };
+    const reticleR = '48% 48% 46% 46% / 40% 40% 56% 56%';
+    o.curtainReticleStyle = { position: 'absolute', top: `${FCY}%`, left: `${FCX}%`, width: '340px', height: '430px', transform: `translate(-50%,-50%) scale(${(det.present ? 1 - 0.03 * detP : 1).toFixed(3)})`, opacity: live ? 1 : clamp(1 - seg(0.2, 0.8), 0, 1) };
+    o.reticleVideoWrapStyle = { position: 'absolute', inset: '0', overflow: 'hidden', borderRadius: reticleR, WebkitMaskImage: ovalMask, maskImage: ovalMask, opacity: camError ? 0 : 0.92, background: '#000' };
+    o.reticleRingStyle = { position: 'absolute', inset: '0', border: `3px solid ${ringCol}`, borderRadius: reticleR, boxShadow: det.present ? `0 0 ${(14 + 34 * detP).toFixed(0)}px ${this.hexA(RED, 0.35 * detP)}` : 'none', transition: 'border-color 0.15s', pointerEvents: 'none' };
+
+    o.bigStatus = live ? 'STANDBY' : (t < 2.6 ? 'INITIALISING' : (t < 8.6 ? 'SCANNING' : 'COMPLETE'));
+    o.progressFillStyle = { position: 'absolute', left: '0', top: '0', bottom: '0', width: `${(prog * 100).toFixed(1)}%`, background: '#16130f' };
+    o.progressPct = `${Math.round(prog * 100)}%`;
+
+    const conf = subj.confidence, refl = subj.reflection;
+    o.confText = live ? '––.––' : (conf * confP).toFixed(2);
+    o.confLabel = live ? '––.––' : (conf * confP).toFixed(2);
+    o.confGaugeStyle = { position: 'absolute', top: '-3px', width: '2px', height: '7px', background: '#16130f', left: `${(confP * conf).toFixed(1)}%` };
+    o.reflText = live ? '––.–' : (refl * reflP).toFixed(1);
+    o.reflLabel = live ? '––.–' : (refl * reflP).toFixed(1);
+    o.reflGaugeStyle = { position: 'absolute', top: '-3px', width: '2px', height: '7px', background: '#16130f', left: `${(reflP * refl).toFixed(1)}%` };
+
+    const chars = subj.characteristics || [];
+    const cBase = 8.8, cStep = Math.min(0.62, 3.6 / Math.max(1, chars.length));
+    o.charItems = chars.map((text, k) => {
+      const pr = live ? 0 : clamp(seg(cBase + k * cStep, cBase + k * cStep + 0.45, outBack), 0, 1);
+      return {
+        text,
+        tick: { display: 'inline-block', opacity: pr, transform: `scale(${pr.toFixed(3)})`, fontSize: '13px', fontWeight: 700, lineHeight: 1, color: '#16130f' },
+        txt: { color: `rgba(20,17,15,${lerp(0.28, 1, pr).toFixed(3)})` }
+      };
+    });
+
+    o.classStyle = { display: 'inline-block', opacity: classP, transform: `scale(${lerp(1.18, 1, classP).toFixed(3)})`, transformOrigin: 'left center' };
+    o.explStyle = { display: 'inline-block', opacity: explP, transform: `scale(${lerp(1.18, 1, explP).toFixed(3)})`, transformOrigin: 'left center' };
+
+    const S = Object.assign({}, this.STAMP, subj.stamp || {});
+    const popFont = { fontFamily: "'Saira Condensed',sans-serif", fontWeight: 700, fontSize: '72px', letterSpacing: '1px', lineHeight: 0.9, whiteSpace: 'nowrap' };
+    o.stampStyle = { position: 'absolute', top: '30%', left: '50%', zIndex: 6, transformOrigin: 'center center', transform: `translate(-50%,-50%) rotate(${lerp(-16, -6, stampIn).toFixed(2)}deg) scale(${lerp(2.4, 1, stampIn).toFixed(3)})`, opacity: clamp(stampOp, 0, 1), pointerEvents: 'none', textAlign: 'center' };
+    o.stampBoxStyle = { position: 'relative', display: 'inline-block', border: `6px solid ${S.key}`, borderRadius: '8px', padding: '8px 26px 14px', textAlign: 'center', whiteSpace: 'nowrap', background: 'transparent', boxShadow: `8px 8px 0 ${this.hexA(S.c, 0.9)}, -7px -5px 0 ${this.hexA(S.b, 0.85)}` };
+    const popLayer = (color, dx, dy, z) => Object.assign({ position: 'absolute', inset: '0', padding: '8px 26px 14px', textAlign: 'center', color, transform: `translate(${dx}px, ${dy}px)`, zIndex: z, pointerEvents: 'none' }, popFont);
+    o.stampLayerA = popLayer(S.a, 7, 7, 1);
+    o.stampLayerB = popLayer(S.b, -7, 4, 1);
+    o.stampLayerC = popLayer(S.c, 4, -7, 2);
+    o.stampTextStyle = Object.assign({ position: 'relative', zIndex: 3, color: S.key }, popFont);
+    o.stampAsteriskStyle = { opacity: clamp(astOp, 0, 1), color: S.c, letterSpacing: '8px', fontSize: '18px', marginTop: '6px', textAlign: 'center', textShadow: `1.5px 1.5px 0 ${S.a}` };
+
+    o.flashStyle = { position: 'absolute', inset: '0', background: RED, opacity: flash, pointerEvents: 'none', mixBlendMode: 'multiply', zIndex: 7 };
+
+    return o;
+  }
+
+  renderVals() {
+    return {
+      stageStyle: { transform: `scale(${this.state.scale})`, transformOrigin: 'center center' },
+      panels: this.state.stations.map((s, i) => this.panel(s, i))
+    };
+  }
+}
+</script>
 </body>
 </html>
