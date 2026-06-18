@@ -18,6 +18,14 @@
   pointer-events: auto;
 }
 
+/* When the overlay is an iframe (poster/ engine in kiosk mode), make it fill
+   the viewport with no chrome. */
+iframe.alarm-overlay {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
 .alarm-overlay .poster-img {
   width: 100%;
   height: 100%;

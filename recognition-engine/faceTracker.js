@@ -21,9 +21,8 @@ const MATCH_DIST_MULT = 1.8;  // gating radius for a match = face size * this
 class Subject {
   constructor(id, face) {
     this.id  = id;
-    // Which gallery portrait this subject gets stamped onto on ALARM.
-    this.subjectKey    = random(['warhol', 'haring']);
-    this.determination = null;   // set by _generateAlarmData() on ALARM entry
+    // Which icon's poster this subject gets classified as on ALARM.
+    this.subjectKey = random(['warhol', 'haring']);
 
     // ── Spatial filters ──────────────────────────────────────────────────────
     this.kx = new Kalman1D(face.x);
@@ -141,10 +140,8 @@ class Subject {
       this.alarmNext        = getRandomPhrase('alarmNext');
       this.alarmSubTimer    = millis();
       this.targetConfidence = 99;
-      // ALARM visuals are owned by the on-canvas gallery reveal (colourful
-      // museum cards + face-swap + stamp). The white flash bridges into it.
-      this.determination = _generateAlarmData();
-      galleryReveal.trigger(this);
+      // The ALARM poster (B&W report, poster/ engine) is shown as an iframe
+      // overlay from the draw loop; here we just punch the transition flash.
       triggerFlash();
     }
 

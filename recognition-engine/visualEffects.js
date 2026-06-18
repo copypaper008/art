@@ -1,6 +1,6 @@
 // Visual effects — constructivist/brutalist aesthetic
-// Machine state: deep red on near-black. ALARM is desaturated so the colour of
-// the gallery-reveal cards + stamp (galleryReveal.js) is the only colour on screen.
+// Machine state: deep red on near-black. ALARM desaturates the camera so the
+// only colour left is the stamp on the B&W poster overlay (poster/ engine).
 
 const GHOST_FRAMES = 8;
 const ghostTrails  = [];

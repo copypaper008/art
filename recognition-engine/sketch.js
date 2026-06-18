@@ -24,31 +24,8 @@ let uiScale = 1;
 let cam;
 let detectionGraphics;
 let bgImage;
-let _portraitImages = {};
 
 let hudSessionId = "";
-
-
-const _CHARACTERISTICS = [
-  "Demonstrates systematic cultural legibility",
-  "Displays advanced understanding of image production",
-  "Output suggests preoccupation with surface and depth",
-  "Occupies multiple cultural registers simultaneously",
-  "Engages with commodity structures reflexively",
-  "Identity appears partially self-constructed",
-  "Sustains public identity through repetition and variation",
-  "Aesthetic sensibility reads as culturally inflected",
-  "Subjectivity exceeds dominant symbolic parameters",
-  "Behavioural signatures indicate non-normative alignment",
-];
-
-function _generateAlarmData() {
-  const shuffled = [..._CHARACTERISTICS].sort(() => Math.random() - 0.5);
-  return {
-    characteristics: shuffled.slice(0, 6),
-    confidence: Math.floor(94 + Math.random() * 5),
-  };
-}
 
 let idlePhrase      = "";
 let idlePhraseTimer = 0;
@@ -56,8 +33,6 @@ const IDLE_PHRASE_INTERVAL = 4000;
 
 function preload() {
   bgImage = loadImage('./bg.png');
-  _portraitImages.warhol = loadImage('./poster/portraits/warhol.jpg');
-  _portraitImages.haring = loadImage('./poster/portraits/haring.jpg');
 }
 
 function setup() {
@@ -109,8 +84,11 @@ function draw() {
   drawDistortedMirror(cam, visualState);
   drawGrid();
 
-  // Gallery of cards reveals when a subject is classified ALARM
-  galleryReveal.draw();
+  // ALARM → drop the B&W poster overlay (poster/ engine, kiosk iframe) growing
+  // out of the subject's face; clear it once everyone is back below threshold.
+  const alarmSubject = faceTracker.subjects.find(s => s.state === 'ALARM');
+  if (alarmSubject && !alarmOverlayActive) showAlarmScreen(alarmSubject);
+  if (!anyAlarm && alarmOverlayActive)     hideAlarmScreen();
 
   if (faceTracker.subjects.length > 0) {
     drawAllSubjectOverlays();
@@ -127,7 +105,7 @@ function draw() {
 // Per-face overlay: reticle + state text + confidence readout
 
 function drawSubjectOverlay(s) {
-  // ALARM state is rendered by galleryReveal — suppress per-face overlay
+  // ALARM is rendered by the poster overlay — suppress the per-face overlay
   if (s.state === 'ALARM') return;
 
   const tlx  = s.x - s.w * 0.55;
@@ -343,7 +321,7 @@ function drawSubjectOverlay(s) {
     textStyle(NORMAL);
     textFont("monospace");
   }
-  // ALARM is rendered by galleryReveal (early-returned at the top of this fn).
+  // ALARM is rendered by the poster overlay (early-returned at the top of this fn).
 }
 
 function drawAllSubjectOverlays() {
@@ -389,10 +367,7 @@ function drawGlobalHUD() {
   textStyle(BOLD);
   _hFill(210);
   textSize(sm);
-  const _subjectCount = galleryReveal.isActive()
-    ? galleryReveal.cards.length
-    : faceTracker.subjects.length;
-  text("SUBJECTS: " + String(_subjectCount).padStart(2, '0'), width - pad, pad * 0.7);
+  text("SUBJECTS: " + String(faceTracker.subjects.length).padStart(2, '0'), width - pad, pad * 0.7);
   textStyle(NORMAL);
 
   if (anyAlarm) {

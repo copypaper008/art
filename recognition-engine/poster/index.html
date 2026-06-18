@@ -169,6 +169,9 @@ if (new URLSearchParams(location.search).has('kiosk')) {
     const config  = SUBJECTS[activeSubject];
     const det     = generateDetermination();
 
+    // Cancel any in-flight reveal so repeated ALARMs don't stack rAF loops.
+    if (posterCanvas._cancelReveal) posterCanvas._cancelReveal();
+
     try {
       await runReveal(posterCanvas, config, det, msg.capturedFaceDataUrl || null);
     } catch (e) {
