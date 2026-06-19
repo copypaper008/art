@@ -73,7 +73,6 @@ fa.prepare(ctx_id=0, det_size=(640, 640))
 
 print("Loading inswapper_128...")
 swapper = insightface.model_zoo.get_model(MODEL_PATH)
-swapper.prepare(ctx_id=0)
 
 print("Pre-loading portraits...")
 portraits = {}
