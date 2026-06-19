@@ -67,11 +67,19 @@
           <div style="position:absolute;left:-3px;top:50%;font-family:'Spline Sans Mono';font-size:13px;transform:translateY(-50%);">+</div>
           <div style="position:absolute;right:-3px;top:38%;font-family:'Spline Sans Mono';font-size:13px;">+</div>
 
-          <!-- Face window: video + multiply-blend portrait overlay -->
+          <!-- Face window: always visible; idle = live video; scanning = developing portrait -->
           <div style="{{ p.faceWinStyle }}">
            <video muted autoplay playsinline ref="{{ p.videoRef }}" style="{{ p.videoStyle }}"></video>
            {{ p.captureEl }}
            <img src="{{ p.portraitSrc }}" alt="" style="{{ p.portraitBlendStyle }}" />
+           <!-- detect feedback: label + bar at bottom, only during idle -->
+           <div style="{{ p.detectOverlayStyle }}">
+            <div style="position:absolute;bottom:0;left:0;right:0;height:3px;overflow:hidden;">
+             <div style="{{ p.detectBarStyle }}"></div>
+            </div>
+            <div style="position:absolute;bottom:10px;left:0;right:0;text-align:center;font-family:'Spline Sans Mono';font-size:8px;letter-spacing:1.5px;color:rgba(241,239,231,0.55);">{{ p.detectLabel }}</div>
+            <div style="{{ p.detectRingStyle }}"></div>
+           </div>
            <sc-if value="{{ p.camError }}" hint-placeholder-val="{{ false }}">
             <div style="position:absolute;bottom:12px;left:0;right:0;text-align:center;font-family:'Spline Sans Mono';font-size:8px;color:#9a948a;letter-spacing:1px;">SUBJECT FEED // NO SIGNAL — MANUAL TRIGGER</div>
            </sc-if>
@@ -188,21 +196,6 @@
 
       <!-- VERDICT STAMP (absolute, over everything) -->
       <div style="{{ p.stampStyle }}">{{ p.stampEl }}</div>
-
-      <!-- DARK CURTAIN (shown while awaiting; fades out when scan starts) -->
-      <div style="{{ p.curtainStyle }}">
-       <!-- detect progress bar at very bottom of curtain -->
-       <div style="position:absolute;bottom:0;left:0;right:0;height:3px;overflow:hidden;">
-        <div style="{{ p.detectBarStyle }}"></div>
-       </div>
-       <!-- detect label -->
-       <div style="position:absolute;bottom:10px;left:0;right:0;text-align:center;font-family:'Spline Sans Mono';font-size:10px;letter-spacing:1.5px;color:rgba(241,239,231,0.6);">{{ p.detectLabel }}</div>
-       <!-- live preview: centered oval in curtain -->
-       <div style="{{ p.curtainOvalStyle }}">
-        <video muted autoplay playsinline ref="{{ p.previewRef }}" style="{{ p.previewVideoStyle }}"></video>
-        <div style="{{ p.curtainRingStyle }}"></div>
-       </div>
-      </div>
 
       <!-- colour flash on verdict slam -->
       <div style="{{ p.flashStyle }}"></div>
@@ -399,9 +392,7 @@ class Component extends DCLogic {
   STATIONS = 1;
 
   videos = [];
-  previewVideos = [];
   _vrefs = {};
-  _pvrefs = {};
   captures = [null, null, null, null];
 
   state = {
@@ -450,7 +441,7 @@ class Component extends DCLogic {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { this.setState({ camError: true }); return; }
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 } }, audio: false });
       this.stream = stream;
-      [...this.videos, ...this.previewVideos].forEach(v => { if (v) { v.srcObject = stream; v.play().catch(() => {}); } });
+      this.videos.forEach(v => { if (v) { v.srcObject = stream; v.play().catch(() => {}); } });
     } catch (e) { this.setState({ camError: true }); }
   }
 
@@ -460,14 +451,6 @@ class Component extends DCLogic {
       if (el) { el.muted = true; el.playsInline = true; el.setAttribute('playsinline',''); if (this.stream) { el.srcObject = this.stream; el.play().catch(() => {}); } }
     };
     return this._vrefs[i];
-  }
-
-  makePreviewRef(i) {
-    if (!this._pvrefs[i]) this._pvrefs[i] = (el) => {
-      this.previewVideos[i] = el;
-      if (el) { el.muted = true; el.playsInline = true; el.setAttribute('playsinline',''); if (this.stream) { el.srcObject = this.stream; el.play().catch(() => {}); } }
-    };
-    return this._pvrefs[i];
   }
 
   sampleVideo() { return this.videos.find(v => v && v.videoWidth); }
@@ -645,7 +628,7 @@ class Component extends DCLogic {
     const o = {};
     o.shudderStyle = { transform:`translate(${sh.toFixed(2)}px,${(sh*0.5).toFixed(2)}px)` };
 
-    // ---- OPTION A: face window — live video under multiply-blend portrait ----
+    // ---- OPTION A: face window — idle shows clean live video only ----
     // Background transitions from dark to warm paper as portrait develops (Option D reveal)
     const bgFade = live ? 0 : clamp(seg(6.5, 9.5, outCubic), 0, 1);
     const bgR = Math.round(lerp(14, 232, bgFade));
@@ -653,7 +636,7 @@ class Component extends DCLogic {
     const bgB = Math.round(lerp(12, 218, bgFade));
     o.faceWinStyle = { position:'relative', width:'100%', height:'560px', background:`rgb(${bgR},${bgG},${bgB})`, overflow:'hidden' };
 
-    // Live video: fills area behind the multiply-blend portrait
+    // Live video: visible only during idle (opacity → 0 when scan fires)
     o.videoRef = this.makeVideoRef(i);
     o.videoStyle = {
       position:'absolute', inset:'0', width:'100%', height:'100%',
@@ -664,8 +647,6 @@ class Component extends DCLogic {
     };
 
     // ---- OPTION D: captured still with progressive filter intensification ----
-    // Visitor looks increasingly like an archival photograph, then fades out
-    // as background lightens and the portrait is revealed
     const stillIn = live ? 0 : clamp(seg(0, 0.55), 0, 1);
     const filterP = live ? 0 : clamp(seg(2.5, 7.0, inOut), 0, 1);
     const stillOut = live ? 0 : clamp(seg(6.5, 9.5), 0, 1);
@@ -683,16 +664,32 @@ class Component extends DCLogic {
     };
     o.captureEl = showCap ? React.createElement('img', { src:cap.src, alt:'', style:capStyle }) : null;
 
-    // Portrait overlay: multiply-blend over video or still.
-    // Over dark background (live) = atmospheric ghost. Over light background (reveal) = natural portrait.
+    // Portrait: only appears once scan fires, fades in with multiply blend, then
+    // becomes natural as background lightens (darkroom developing effect)
+    const portraitAppear = live ? 0 : clamp(seg(0, 1.5, outCubic), 0, 1);
     o.portraitSrc = subj.portrait || subj.cutout || '';
     o.portraitBlendStyle = {
       position:'absolute', inset:'0', width:'100%', height:'100%',
       objectFit:'cover', objectPosition:'center top',
       mixBlendMode:'multiply',
-      opacity: 0.95,
+      opacity: 0.95 * portraitAppear,
       display: o.portraitSrc ? 'block' : 'none',
       pointerEvents:'none'
+    };
+
+    // ---- Detection overlay: shown during idle, hidden once scanning starts ----
+    const detP = det.prog || 0;
+    const ringCol = det.present ? this.hexA(RED, 0.5 + 0.45*detP) : 'rgba(241,239,231,0.35)';
+    const ringSize = lerp(42, 46, detP);
+    o.detectOverlayStyle = { position:'absolute', inset:'0', pointerEvents:'none', opacity: live ? 1 : 0 };
+    o.detectRingStyle = {
+      position:'absolute', left:'50%', top:'38%',
+      width:`${ringSize}%`, height:`${(ringSize*1.35).toFixed(1)}%`,
+      transform:'translate(-50%,-50%)',
+      border:`2px solid ${ringCol}`,
+      borderRadius:'48% 48% 46% 46% / 40% 40% 56% 56%',
+      boxShadow: det.present ? `0 0 ${(12+28*detP).toFixed(0)}px ${this.hexA(RED, 0.3*detP)}` : 'none',
+      transition:'border-color 0.15s'
     };
 
     // Scan overlay effects
@@ -701,7 +698,9 @@ class Component extends DCLogic {
     o.scanGridStyle = { position:'absolute', inset:'0', backgroundImage:`repeating-linear-gradient(0deg,${this.hexA(RED,0.06)} 0 1px,transparent 1px 4px)`, opacity:scanVisible?0.6:0, pointerEvents:'none' };
 
     // ---- Text values ----
-    o.subjFileId = subj.fileId; o.subjLine = subj.line; o.subjDate = subj.date;
+    o.subjFileId = live ? '——————' : subj.fileId;
+    o.subjLine   = live ? 'UNIDENTIFIED' : subj.line;
+    o.subjDate   = live ? '——.——.——' : subj.date;
     o.subjClass = subj.classification; o.subjExpl = subj.explanation;
     let verdictText = subj.verdict;
     if (searching) { const ci = Math.floor((t-searchStart)/0.07) % this.CANDIDATES.length; verdictText = this.CANDIDATES[ci]; }
@@ -741,19 +740,6 @@ class Component extends DCLogic {
     // ---- Stamp ----
     o.stampStyle = { position:'absolute', inset:'0', pointerEvents:'none', zIndex:8 };
     o.stampEl = locked ? this.buildStamp(subj, stampIn, stampOp) : null;
-
-    // ---- Curtain (dark overlay during idle + detect) ----
-    const curtainGone = !live && t > 0.75;
-    o.curtainStyle = { position:'absolute', inset:'0', background:'#08080a', zIndex:5, display:curtainGone?'none':'block', opacity:live?1:clamp(1-seg(0.0,0.6),0,1), pointerEvents:live?'auto':'none' };
-
-    // Curtain preview: centered oval so visitor can frame themselves
-    const curtainMask = 'radial-gradient(ellipse 52% 54% at 50% 47%, #000 56%, rgba(0,0,0,0.85) 78%, transparent 100%)';
-    const detP = det.prog || 0;
-    const ringCol = det.present ? this.hexA(RED, 0.55+0.4*detP) : 'rgba(241,239,231,0.5)';
-    o.curtainOvalStyle = { position:'absolute', left:'50%', top:'42%', width:'82%', height:'68%', transform:'translate(-50%,-50%)', overflow:'hidden', WebkitMaskImage:curtainMask, maskImage:curtainMask };
-    o.previewRef = this.makePreviewRef(i);
-    o.previewVideoStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', transform:mirror?'scaleX(-1)':'none', opacity:camError?0:1, filter:'grayscale(1) contrast(1.15) brightness(1.05)' };
-    o.curtainRingStyle = { position:'absolute', inset:'0', border:`3px solid ${ringCol}`, borderRadius:'48% 48% 46% 46% / 40% 40% 56% 56%', boxShadow:det.present?`0 0 ${(14+34*detP).toFixed(0)}px ${this.hexA(RED,0.35*detP)}`:'none', transition:'border-color 0.15s', pointerEvents:'none' };
 
     o.detectLabel = camError ? 'MANUAL MODE' : (!det.armed ? 'STEP AWAY TO RESET' : (det.present ? (detP>0.55?'FACE LOCKED':'ACQUIRING…') : 'STEP INTO FRAME'));
     o.detectBarStyle = { position:'absolute', left:'0', top:'0', bottom:'0', width:`${(detP*100).toFixed(0)}%`, background:det.present?RED:'rgba(241,239,231,0.5)' };
