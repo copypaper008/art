@@ -697,13 +697,7 @@ class Component extends DCLogic {
     const o = {};
     o.shudderStyle = { transform:`translate(${sh.toFixed(2)}px,${(sh*0.5).toFixed(2)}px)` };
 
-    // ---- OPTION A: face window — idle shows clean live video only ----
-    // Background transitions from dark to warm paper as portrait develops (Option D reveal)
-    const bgFade = live ? 0 : clamp(seg(6.5, 9.5, outCubic), 0, 1);
-    const bgR = Math.round(lerp(14, 232, bgFade));
-    const bgG = Math.round(lerp(13, 228, bgFade));
-    const bgB = Math.round(lerp(12, 218, bgFade));
-    o.faceWinStyle = { position:'relative', width:'100%', height:'560px', background:`rgb(${bgR},${bgG},${bgB})`, overflow:'hidden' };
+    o.faceWinStyle = { position:'relative', width:'100%', height:'560px', background:'#0e0d0c', overflow:'hidden' };
 
     // Live video: visible only during idle (opacity → 0 when scan fires)
     o.videoRef = this.makeVideoRef(i);
@@ -715,36 +709,30 @@ class Component extends DCLogic {
       opacity: live ? 1 : 0
     };
 
-    // ---- OPTION D: captured still with progressive filter intensification ----
-    const stillIn = live ? 0 : clamp(seg(0, 0.55), 0, 1);
-    const filterP = live ? 0 : clamp(seg(2.5, 7.0, inOut), 0, 1);
-    const stillOut = live ? 0 : clamp(seg(6.5, 9.5), 0, 1);
-    const capContrast = lerp(1.2, 2.4, filterP).toFixed(2);
-    const capBrightness = lerp(1.05, 0.70, filterP).toFixed(2);
-    const capBlur = lerp(0, 0.6, filterP).toFixed(1);
     const cap = this.captures[i];
-    o.captureEl = null; // face window goes straight from dark to portrait reveal
+    o.captureEl = null;
 
-    // Portrait: only appears once scan fires, fades in with multiply blend, then
-    // becomes natural as background lightens (darkroom developing effect)
-    const portraitAppear = live ? 0 : clamp(seg(0, 1.5, outCubic), 0, 1);
+    // Portrait reveals from BOTTOM to TOP as scan sweeps upward — body first, face last.
+    // clip grows to show bottom portion first; face (objectPosition top) revealed last.
+    const clipPct = ((1 - scanP) * 100).toFixed(1);
+    const clipReveal = live ? 'inset(100% 0 0 0)' : `inset(${clipPct}% 0 0 0)`;
     const hasSwap = !live && cap && cap.swappedSrc;
     o.portraitSrc = subj.portrait || subj.cutout || '';
     o.portraitBlendStyle = {
       position:'absolute', inset:'0', width:'100%', height:'100%',
       objectFit:'cover', objectPosition:'center top',
-      mixBlendMode:'multiply',
-      opacity: hasSwap ? 0 : 0.95 * portraitAppear,
+      clipPath: clipReveal,
+      opacity: hasSwap ? 0 : (live ? 0 : 0.95),
       display: o.portraitSrc ? 'block' : 'none',
       pointerEvents:'none'
     };
 
-    // Swap result from local Python server — replaces portrait blend once available
+    // Swap result from local Python server — same clip reveal, no blend mode needed
     o.swapEl = hasSwap ? React.createElement('img', { src: cap.swappedSrc, alt:'', style: {
       position:'absolute', inset:'0', width:'100%', height:'100%',
       objectFit:'cover', objectPosition:'center top',
-      mixBlendMode:'multiply',
-      opacity: 0.95 * portraitAppear,
+      clipPath: clipReveal,
+      opacity: 0.95,
       pointerEvents:'none'
     } }) : null;
 
@@ -801,9 +789,9 @@ class Component extends DCLogic {
       color:`rgba(241,239,231,${det.present ? 0.9 : 0.5})`,
     };
 
-    // Scan overlay effects
-    o.scanTrailStyle = { position:'absolute', left:'0', top:'0', width:'100%', height:`${(scanP*100).toFixed(1)}%`, background:`linear-gradient(to bottom,${this.hexA(RED,0)},${this.hexA(RED,0.18)})`, opacity:scanFade, pointerEvents:'none' };
-    o.scanLineStyle = { position:'absolute', left:'0', width:'100%', height:'2px', top:`${(scanP*100).toFixed(1)}%`, background:RED, boxShadow:`0 0 12px 2px ${this.hexA(RED,0.7)}`, opacity:scanFade, pointerEvents:'none' };
+    // Scan overlay — sweeps from BOTTOM to TOP, revealing portrait as it rises
+    o.scanTrailStyle = { position:'absolute', left:'0', bottom:'0', width:'100%', height:`${(scanP*100).toFixed(1)}%`, background:`linear-gradient(to bottom,${this.hexA(RED,0.18)},${this.hexA(RED,0)})`, opacity:scanFade, pointerEvents:'none' };
+    o.scanLineStyle = { position:'absolute', left:'0', width:'100%', height:'2px', top:`${((1-scanP)*100).toFixed(1)}%`, background:RED, boxShadow:`0 0 12px 2px ${this.hexA(RED,0.7)}`, opacity:scanFade, pointerEvents:'none' };
     o.scanGridStyle = { position:'absolute', inset:'0', backgroundImage:`repeating-linear-gradient(0deg,${this.hexA(RED,0.06)} 0 1px,transparent 1px 4px)`, opacity:scanVisible?0.6:0, pointerEvents:'none' };
 
     // ---- Text values ----
