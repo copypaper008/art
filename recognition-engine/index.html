@@ -280,6 +280,7 @@
          <video muted autoplay playsinline ref="{{ p.overlayThumbRef }}" style="{{ p.overlayThumbVideoStyle }}"></video>
          <img src="{{ p.overlayThumbPortraitSrc }}" alt="" style="{{ p.overlayThumbPortraitStyle }}" />
          <div style="{{ p.overlayThumbRollStyle }}"></div>
+         <div style="{{ p.overlayThumbRollStyle2 }}"></div>
          <canvas ref="{{ p.overlayThumbNoiseRef }}" width="72" height="95" style="{{ p.overlayThumbNoiseStyle }}"></canvas>
          <div style="{{ p.overlayThumbScanStyle }}"></div>
         </div>
@@ -1042,38 +1043,42 @@ class Component extends DCLogic {
     // Camera thumbnail — lower right, with bouncing scan bar
     o.overlayThumbRef = this.makeThumbVideoRef(i);
     const thumbScanPos = (Math.sin(t * 3.5) * 0.5 + 0.5) * 100;
-    // Glitch cycle: brief flash of subject portrait over live feed — gone too fast to fully register
-    const GPERIOD = 4.0;
+    // Glitch cycle: brief corrupted flash — something was there but it's gone before you're sure
+    const GPERIOD = 3.0;
     const gPhase = (!live && t > 3.5) ? (t % GPERIOD) / GPERIOD : 1;
-    const gTransIn  = gPhase < 0.06;
-    const gPortrait = gPhase >= 0.06 && gPhase < 0.23;
-    const gTransOut = gPhase >= 0.17 && gPhase < 0.23;
-    // Noise ramps up during transitions; barely-there whisper during overlap
-    const gNoise = gTransIn ? gPhase/0.06 : (gTransOut ? 1-(gPhase-0.17)/0.06 : (gPortrait ? 0.05 : 0));
-    // Portrait at low opacity — more suggestion of a face than a clear image
-    const gPortraitMax = 0.35;
-    const gPortraitOp = gTransIn ? (gPhase/0.06)*gPortraitMax : ((gPortrait && !gTransOut) ? gPortraitMax : (gTransOut ? gPortraitMax*(1-(gPhase-0.17)/0.06) : 0));
+    const gTransIn  = gPhase < 0.04;
+    const gPortrait = gPhase >= 0.04 && gPhase < 0.13;
+    const gTransOut = gPhase >= 0.09 && gPhase < 0.13;
+    // Heavy noise during transitions; residual noise during portrait so signal never fully clears
+    const gNoise = gTransIn ? gPhase/0.04 : (gTransOut ? 1-(gPhase-0.09)/0.04 : (gPortrait ? 0.22 : 0));
+    // Extremely low opacity — barely there, like a half-remembered image
+    const gPortraitMax = 0.16;
+    const gPortraitOp = gTransIn ? (gPhase/0.04)*gPortraitMax : ((gPortrait && !gTransOut) ? gPortraitMax : (gTransOut ? gPortraitMax*(1-(gPhase-0.09)/0.04) : 0));
     const gOverlap = gPortrait && !gTransOut;
-    // Video: slight colour shift while portrait bleeds through, static contrast spike during transitions
+    // Harsh static pushes contrast during transitions; colour shift during overlap
     const vFilter = gOverlap
-      ? 'grayscale(0.6) contrast(1.15) brightness(0.88)'
-      : `grayscale(1) contrast(${(1 + gNoise * 3.5).toFixed(2)}) brightness(${(1 + gNoise * 2).toFixed(2)})`;
-    // Multi-frequency wave on portrait — two signals phasing through each other
-    const wX = (Math.sin(t * 4.3) * 3.5 + Math.sin(t * 11.1) * 1.8).toFixed(2);
-    const wY = (Math.sin(t * 7.7) * 2.1 + Math.sin(t * 19.3) * 0.9).toFixed(2);
-    const gDrift = (Math.sin(t * 6.1) * 2.5 + Math.sin(t * 13.7) * 1.2).toFixed(1);
+      ? 'grayscale(0.5) contrast(1.3) brightness(0.82)'
+      : `grayscale(1) contrast(${(1 + gNoise * 4.5).toFixed(2)}) brightness(${(1 + gNoise * 2.5).toFixed(2)})`;
+    // Extreme multi-frequency 3D warp — face falls apart across all axes
+    const wX = (Math.sin(t * 4.3) * 14 + Math.sin(t * 11.1) * 7 + Math.sin(t * 29.3) * 3).toFixed(2);
+    const wY = (Math.sin(t * 7.7) * 10 + Math.sin(t * 19.3) * 5 + Math.sin(t * 43.7) * 2).toFixed(2);
+    const skX = (Math.sin(t * 8.5) * 9 + Math.sin(t * 22.1) * 4).toFixed(2);
+    const gDrift = (Math.sin(t * 6.1) * 12 + Math.sin(t * 13.7) * 7 + Math.sin(t * 31.1) * 3).toFixed(1);
     const portraitTransform = gPortrait
-      ? `scaleX(-1) perspective(500px) rotateX(${wX}deg) rotateY(${wY}deg) translateX(${gDrift}px)`
+      ? `scaleX(-1) perspective(350px) rotateX(${wX}deg) rotateY(${wY}deg) skewX(${skX}deg) translateX(${gDrift}px)`
       : 'scaleX(-1)';
-    // VHS roll band: dark stripe sliding down through frame during transitions
-    const rollPos = (t * 65) % 190;
-    const rollOp = gTransIn ? (gPhase/0.06)*0.7 : (gTransOut ? (1-(gPhase-0.17)/0.06)*0.7 : 0);
+    // Multiple roll bands cycling at different speeds during transitions
+    const rollPos  = (t * 90) % 190;
+    const rollPos2 = (t * 55 + 80) % 190;
+    const rollOp = gTransIn ? (gPhase/0.04)*0.85 : (gTransOut ? (1-(gPhase-0.09)/0.04)*0.85 : (gPortrait ? 0.35 : 0));
     o.overlayThumbWrapStyle = { position:'absolute', bottom:'9%', right:'4%', width:'145px', height:'190px', border:`1px solid ${this.hexA(RED, 0.65)}`, overflow:'hidden', pointerEvents:'none', boxShadow:`0 0 20px ${this.hexA(RED, 0.25)}` };
     o.overlayThumbVideoStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', transform:'scaleX(-1)', filter:vFilter, opacity:'1' };
     o.overlayThumbPortraitSrc = subj.portrait || '';
-    // Portrait screen-blended as a ghost: warped, low opacity, gone fast
-    o.overlayThumbPortraitStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', filter:'grayscale(1) contrast(2.2) brightness(1.4)', mixBlendMode:'screen', transform:portraitTransform, opacity:gPortraitOp.toFixed(3), display: o.overlayThumbPortraitSrc ? 'block' : 'none' };
-    o.overlayThumbRollStyle = { position:'absolute', left:'0', right:'0', height:'3px', top:`${rollPos.toFixed(0)}px`, background:'rgba(0,0,0,0.8)', opacity: rollOp, pointerEvents:'none' };
+    // Portrait blown out and warped — washed-out ghost that can't quite be identified
+    o.overlayThumbPortraitStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', filter:'grayscale(1) contrast(3.5) brightness(2.2) blur(0.5px)', mixBlendMode:'screen', transform:portraitTransform, opacity:gPortraitOp.toFixed(3), display: o.overlayThumbPortraitSrc ? 'block' : 'none' };
+    o.overlayThumbRollStyle = { position:'absolute', left:'0', right:'0', height:'4px', top:`${rollPos.toFixed(0)}px`, background:`linear-gradient(to right,rgba(0,0,0,0.9),rgba(255,255,255,0.15),rgba(0,0,0,0.9))`, opacity: rollOp, pointerEvents:'none', boxShadow:`0 0 3px rgba(255,255,255,${(rollOp*0.4).toFixed(2)})` };
+    // Second roll band for dense VHS feel
+    o.overlayThumbRollStyle2 = { position:'absolute', left:'0', right:'0', height:'2px', top:`${rollPos2.toFixed(0)}px`, background:'rgba(0,0,0,0.6)', opacity: rollOp * 0.6, pointerEvents:'none' };
     // Canvas-drawn pixel static — real random greyscale noise drawn each frame
     o.overlayThumbNoiseRef = this.makeNoiseCanvasRef(i);
     o.overlayThumbNoiseStyle = { position:'absolute', inset:'0', width:'145px', height:'190px', display:'block', imageRendering:'pixelated', pointerEvents:'none' };
