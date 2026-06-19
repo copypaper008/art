@@ -230,24 +230,41 @@
         <div style="{{ p.overlayScanGridStyle }}"></div>
         <div style="{{ p.overlayScanTrailStyle }}"></div>
         <div style="{{ p.overlayScanLineStyle }}"></div>
-        <!-- Stats: gradient banner across top -->
-        <div style="position:absolute;top:0;left:0;right:0;background:linear-gradient(to bottom,rgba(10,10,11,0.93) 0%,rgba(10,10,11,0.72) 55%,transparent 100%);padding:28px 32px 80px;pointer-events:none;">
-         <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:3px;color:rgba(241,239,231,0.42);margin-bottom:6px;">RECOGNITION ENGINE v.7.3.1</div>
-         <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:44px;line-height:1;color:#f1efe7;margin-bottom:14px;">{{ p.overlayScanStatus }}</div>
-         <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
-          <div style="flex:1;height:6px;border:1px solid rgba(241,239,231,0.25);position:relative;background:rgba(241,239,231,0.06);">
+        <!-- TOP STATS BANNER -->
+        <div style="position:absolute;top:0;left:0;right:0;background:linear-gradient(to bottom,rgba(10,10,11,0.97) 0%,rgba(10,10,11,0.80) 52%,transparent 100%);padding:26px 30px 100px;pointer-events:none;">
+         <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:3px;color:rgba(241,239,231,0.38);margin-bottom:8px;">RECOGNITION ENGINE v.7.3.1</div>
+         <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:10px;">
+          <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:44px;line-height:1;color:#f1efe7;">{{ p.overlayScanStatus }}</div>
+          <div style="{{ p.overlayScanBlinkStyle }}">●</div>
+         </div>
+         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <div style="flex:1;height:5px;border:1px solid rgba(241,239,231,0.2);position:relative;background:rgba(241,239,231,0.04);">
            <div style="{{ p.overlayProgressFillStyle }}"></div>
           </div>
-          <span style="font-family:'Spline Sans Mono',monospace;font-size:10px;color:#f1efe7;min-width:38px;">{{ p.overlayProgressPct }}</span>
+          <span style="font-family:'Spline Sans Mono',monospace;font-size:10px;color:#f1efe7;min-width:36px;text-align:right;">{{ p.overlayProgressPct }}</span>
          </div>
-         <div style="display:flex;gap:36px;">
+         <div style="{{ p.overlayScanMsgStyle }}">▸ {{ p.overlayScanMsg }}</div>
+         <div style="display:flex;gap:40px;margin-top:18px;">
           <div>
-           <div style="font-family:'Spline Sans Mono',monospace;font-size:8px;letter-spacing:1.5px;color:rgba(241,239,231,0.42);margin-bottom:2px;">CONFIDENCE</div>
+           <div style="font-family:'Spline Sans Mono',monospace;font-size:7.5px;letter-spacing:1.5px;color:rgba(241,239,231,0.38);margin-bottom:2px;">CONFIDENCE</div>
            <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:36px;line-height:1;color:#f1efe7;">{{ p.overlayConfText }}<span style="font-size:20px;">%</span></div>
           </div>
           <div>
-           <div style="font-family:'Spline Sans Mono',monospace;font-size:8px;letter-spacing:1.5px;color:rgba(241,239,231,0.42);margin-bottom:2px;">REFLECTION</div>
+           <div style="font-family:'Spline Sans Mono',monospace;font-size:7.5px;letter-spacing:1.5px;color:rgba(241,239,231,0.38);margin-bottom:2px;">REFLECTION</div>
            <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:36px;line-height:1;color:#f1efe7;">{{ p.overlayReflText }}<span style="font-size:20px;">%</span></div>
+          </div>
+         </div>
+        </div>
+        <!-- BOTTOM DATA STRIP -->
+        <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(10,10,11,0.9) 0%,transparent 100%);padding:55px 30px 20px;pointer-events:none;">
+         <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+          <div style="font-family:'Spline Sans Mono',monospace;font-size:7.5px;letter-spacing:0.8px;color:rgba(241,239,231,0.4);line-height:1.8;">
+           <div>MATCHING AGAINST&nbsp;&nbsp;<span style="color:rgba(241,239,231,0.75);">{{ p.overlayDatasetSrc }}</span></div>
+           <div>CASE REF&nbsp;&nbsp;<span style="color:rgba(241,239,231,0.75);">{{ p.subjFileId }}</span></div>
+          </div>
+          <div style="font-family:'Spline Sans Mono',monospace;font-size:7.5px;letter-spacing:0.8px;color:rgba(241,239,231,0.4);text-align:right;line-height:1.8;">
+           <div>ELAPSED&nbsp;&nbsp;<span style="color:rgba(241,239,231,0.75);">{{ p.overlayElapsed }}</span></div>
+           <div style="{{ p.overlaySensorStyle }}">● SENSOR ACTIVE</div>
           </div>
          </div>
         </div>
@@ -441,6 +458,18 @@ class Component extends DCLogic {
   DISPO_DEFAULT = 'FLAG · MONITOR · RETAIN ON FILE';
 
   DATASET = ['1980s SITCOM LAUGH TRACKS','DRAG SEMIOTICS v4.2','FASHION WEEK A/W 2003','OVERHEARD LOCKER-ROOM GOSSIP','GREEK RED-FIGURE POTTERY','INTERNET COMMENT SECTIONS','WEST END PLAYBILLS','SCENTED-CANDLE REVIEWS','BRUNCH RESERVATION LOGS','EUROVISION 1974–PRESENT','HOUSEPLANT FORUMS','CAMP CINEMA ARCHIVE','TABLOID HEADLINES','GYM-MEMBERSHIP RECORDS','WALLPAPER SWATCHES','PRIDE FOOTAGE 1970–'];
+
+  SCAN_MSGS = [
+    'FACIAL GEOMETRY: MAPPING…','CROSS-REFERENCING CLASSIFIED ARCHIVE',
+    'DEVIATION INDICATORS: SCANNING','CLASSIFICATION TABLE v.1947: LOADED',
+    'BIOMETRIC SIGNATURE: INDEXING…','BEHAVIOURAL RECORD: CROSS-REFERENCING',
+    'SOCIAL NETWORK GRAPH: ANALYSING','LOYALTY PROFILE: INSUFFICIENT DATA',
+    'PATTERN MATRIX: CONSTRUCTING…','THREAT LEVEL: CALCULATING',
+    'GENDER PRESENTATION: ANOMALOUS','NETWORK ASSOCIATIONS: FLAGGED',
+    'VICE SQUAD RECORDS: CROSS-REFERENCING','DEVIANCE MARKERS: MULTIPLE DETECTED',
+    'CULTURAL ALLEGIANCES: MAPPING…','COMPLIANCE PROBABILITY: LOW',
+    'ARCHIVAL PHOTOGRAPH: MATCHED','SUBJECT FILE: COMPILING',
+  ];
 
   // set to 4 for the full installation (each station is 824px wide)
   STATIONS = 1;
@@ -847,8 +876,26 @@ class Component extends DCLogic {
     o.overlayScanStatus = t < 2.6 ? 'INITIALISING' : 'SCANNING';
     o.overlayProgressFillStyle = { position:'absolute', left:'0', top:'0', bottom:'0', width:`${(prog*100).toFixed(1)}%`, background:RED };
     o.overlayProgressPct = `${Math.round(prog*100)}%`;
-    o.overlayConfText = live ? '––.––' : (subj.confidence * confP).toFixed(2);
-    o.overlayReflText = live ? '––.–' : (subj.reflection * reflP).toFixed(1);
+
+    // Numbers flicker dramatically while building, then settle
+    const confFlicker = (confP > 0 && confP < 0.85) ? Math.abs(Math.sin(t*29.1)*Math.cos(t*11.7)) * (0.85-confP) * 18 : 0;
+    const reflFlicker = (reflP > 0 && reflP < 0.85) ? Math.abs(Math.sin(t*13.4)*Math.cos(t*23.7)) * (0.85-reflP) * 12 : 0;
+    o.overlayConfText = live ? '––.––' : clamp(subj.confidence * confP + confFlicker, 0, 99.99).toFixed(2);
+    o.overlayReflText = live ? '––.–' : clamp(subj.reflection * reflP + reflFlicker, 0, 99.9).toFixed(1);
+
+    // Cycling ominous processing message
+    const scanMsgIdx = Math.floor(t * 2.8) % this.SCAN_MSGS.length;
+    o.overlayScanMsg = live ? '' : this.SCAN_MSGS[scanMsgIdx];
+    o.overlayScanMsgStyle = { fontFamily:"'Spline Sans Mono',monospace", fontSize:'8px', letterSpacing:'1px', color:this.hexA(RED, 0.9), minHeight:'12px' };
+
+    // Blinking indicators
+    const blink = !live && (Math.floor(t * 2) % 2 === 0);
+    o.overlayScanBlinkStyle = { fontFamily:"'Spline Sans Mono',monospace", fontSize:'11px', color: blink ? RED : 'transparent', lineHeight:'1', flexShrink:0 };
+    o.overlaySensorStyle = { color: blink ? RED : 'rgba(241,239,231,0.2)' };
+
+    // Bottom strip
+    o.overlayElapsed = live ? '00:00' : `00:${Math.floor(t).toString().padStart(2,'0')}`;
+    o.overlayDatasetSrc = (!live && t > 2.6) ? this.DATASET[dsIdx] : '—';
 
     // ---- Text values ----
     o.subjFileId = live ? '——————' : subj.fileId;
