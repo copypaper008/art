@@ -1019,7 +1019,21 @@ class Component extends DCLogic {
       pointerEvents:'none'
     };
 
-    o.swapEl = null;
+    // Swap result: render face-swapped portrait on top when the server responds
+    const swapSrc = cap && cap.swappedSrc;
+    if (!live && swapSrc) {
+      const h = React.createElement;
+      o.swapEl = h('img', {
+        src: swapSrc, alt: '',
+        style: {
+          position:'absolute', inset:'0', width:'100%', height:'100%',
+          objectFit:'cover', objectPosition:'center top',
+          opacity:1, pointerEvents:'none'
+        }
+      });
+    } else {
+      o.swapEl = null;
+    }
 
     // ---- Detection overlay: shown during idle, hidden once scanning starts ----
     const detP = det.prog || 0;
