@@ -54,13 +54,22 @@ fi
 # ── Python dependencies (one-time) ───────────────────────────────────────────
 if [ ! -f ".deps_ok" ]; then
     echo "  [2/3]  Installing Python dependencies (first-time, ~5 min)..."
-    if $PIP install -r liveportrait/requirements.txt websockets 2>&1 | tail -5; then
+    # Use the macOS-specific requirements when available — it installs the
+    # correct (CPU/MPS) PyTorch build instead of a CUDA-only one.
+    if [ -f "liveportrait/requirements_macOS.txt" ]; then
+        REQS="liveportrait/requirements_macOS.txt"
+    else
+        REQS="liveportrait/requirements.txt"
+    fi
+    echo "         Using $REQS"
+    # Use python -m pip so packages land in the same env that runs the server
+    if $PY -m pip install -r "$REQS" websockets 2>&1 | tail -5; then
         touch .deps_ok
         echo "         Done."
     else
         echo ""
         echo "  ✗  pip install failed. Try running manually:"
-        echo "     $PIP install -r liveportrait/requirements.txt websockets"
+        echo "     $PY -m pip install -r $REQS websockets"
         read -p "Press Enter to exit..."
         exit 1
     fi
