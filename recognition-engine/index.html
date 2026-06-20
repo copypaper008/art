@@ -940,7 +940,11 @@ class Component extends DCLogic {
     if (!v || !v.videoWidth || this.state.camError) return null;
     const c = document.createElement('canvas');
     c.width = v.videoWidth; c.height = v.videoHeight;
-    try { c.getContext('2d').drawImage(v, 0, 0); } catch (e) { return null; }
+    try {
+      const ctx = c.getContext('2d');
+      if (this.props.mirrorCam ?? true) { ctx.translate(c.width, 0); ctx.scale(-1, 1); }
+      ctx.drawImage(v, 0, 0);
+    } catch (e) { return null; }
     let src; try { src = c.toDataURL('image/jpeg', 0.88); } catch (e) { return null; }
     return { src, vw: v.videoWidth, vh: v.videoHeight };
   }
