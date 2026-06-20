@@ -676,6 +676,7 @@ class Component extends DCLogic {
     window.addEventListener('resize', this._onResize);
     this._onKey = (e) => { if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); this.trigger(0); } };
     window.addEventListener('keydown', this._onKey);
+    window.__trigger = (i) => this.trigger(i);
     this._onClick = () => {
       for (let i = 0; i < this.STATIONS; i++) {
         if (this.state.stations[i].phase === 'live' && this.det?.[i]?.armed) { this.trigger(i); break; }
