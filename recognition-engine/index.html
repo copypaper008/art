@@ -184,7 +184,7 @@
             <div style="display:grid;grid-template-columns:1fr 52px 150px;align-items:center;padding:11px 16px;border-bottom:1px solid #DDD8CF;"><span style="font-size:13px;">Behavioural Signals</span><span style="font-family:'Space Mono',monospace;font-size:11px;text-align:right;">11.6%</span><div style="height:10px;background:#D6D3C9;margin-left:12px;"><div style="width:44%;height:100%;background:#14130F;"></div></div></div>
             <div style="display:grid;grid-template-columns:1fr 52px 150px;align-items:center;padding:11px 16px;background:#E8E4DA;"><span style="font-size:13px;">Unknown Factors</span><span style="font-family:'Space Mono',monospace;font-size:11px;text-align:right;">9.4%</span><div style="height:10px;background:#D6D3C9;margin-left:12px;"><div style="width:34%;height:100%;background:#14130F;"></div></div></div>
            </div>
-           <div style="display:flex;justify-content:space-between;padding:11px 16px;border-top:1px solid #14130F;"><span style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;">TOTAL</span><span style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;">100%</span></div>
+           <div style="display:grid;grid-template-columns:1fr 52px 150px;padding:11px 16px;border-top:1px solid #14130F;"><span style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;">TOTAL</span><span style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;text-align:right;">100%</span><span></span></div>
           </div>
 
           <!-- CONFIDENCE SOURCE ANALYSIS -->
@@ -202,7 +202,7 @@
             <div style="display:grid;grid-template-columns:1fr 52px 150px;align-items:center;padding:11px 16px;border-bottom:1px solid #DDD8CF;background:#E8E4DA;"><span style="font-size:13px;">⌘ Community Data</span><span style="font-family:'Space Mono',monospace;font-size:11px;text-align:right;">9%</span><div style="height:10px;background:#D6D3C9;margin-left:12px;"><div style="width:22%;height:100%;background:#14130F;"></div></div></div>
             <div style="display:grid;grid-template-columns:1fr 52px 150px;align-items:center;padding:11px 16px;"><span style="font-size:13px;">? Unknown</span><span style="font-family:'Space Mono',monospace;font-size:11px;text-align:right;">4%</span><div style="height:10px;background:#D6D3C9;margin-left:12px;"><div style="width:11%;height:100%;background:#14130F;"></div></div></div>
            </div>
-           <div style="display:flex;justify-content:space-between;padding:11px 16px;border-top:1px solid #14130F;"><span style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;">TOTAL</span><span style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;">100%</span></div>
+           <div style="display:grid;grid-template-columns:1fr 52px 150px;padding:11px 16px;border-top:1px solid #14130F;"><span style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;">TOTAL</span><span style="font-family:'Space Mono',monospace;font-size:11px;font-weight:700;text-align:right;">100%</span><span></span></div>
           </div>
 
          </div>
@@ -1159,7 +1159,7 @@ class Component extends DCLogic {
     const o = {};
     o.shudderStyle = { transform:`translate(${sh.toFixed(2)}px,${(sh*0.5).toFixed(2)}px)` };
 
-    o.faceWinStyle = { position:'relative', width:'100%', height:'380px', background:'#0e0d0c', overflow:'hidden' };
+    o.faceWinStyle = { position:'relative', width:'100%', height:'450px', background:'#0e0d0c', overflow:'hidden' };
 
     // Live video: visible only during idle (opacity → 0 when scan fires)
     o.videoRef = this.makeVideoRef(i);
@@ -1352,11 +1352,11 @@ class Component extends DCLogic {
     const rawName = live ? '' : subj.footer;
     const nL = rawName.replace(/ /g, '').length;
     const nS = (rawName.match(/ /g) || []).length;
-    const nameFontSize = rawName ? Math.min(100, Math.max(38, Math.round(80000 / (76 * nL + 38 * nS)))) : 100;
+    const nameFontSize = rawName ? Math.min(72, Math.max(34, Math.round(80000 / (76 * nL + 38 * nS)))) : 72;
     o.identityRevealStyle = {
       fontWeight:900, fontSize:`${nameFontSize}px`, lineHeight:0.88, letterSpacing:'-0.02em',
       display:'block', transform:'scaleX(0.9)', transformOrigin:'left',
-      whiteSpace:'normal', wordBreak:'break-word', opacity: live ? 0 : interpP
+      whiteSpace:'normal', wordBreak:'normal', opacity: live ? 0 : interpP
     };
     o.metaLine1 = live ? '——————' : subj.classification;
     o.metaLine2 = live ? '——————' : `FILE NO. ${subj.fileId}`;
