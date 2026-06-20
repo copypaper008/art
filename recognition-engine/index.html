@@ -435,7 +435,7 @@ class Component extends DCLogic {
       disposition: 'DEPICT WITHOUT ENDORSING · 1998'
     },
     {
-      id: 'freddie', enabled: false,
+      id: 'freddie', enabled: true,
       line: 'MERCURY, FREDDIE', fileId: 'FM-1946-0905', date: '05.06.2024', footer: 'FREDDIE MERCURY',
       portrait: 'assets/freddie-portrait.jpeg',
       confidence: 99.96, reflection: 99.7,
@@ -453,7 +453,7 @@ class Component extends DCLogic {
       disposition: 'CONFISCATE GLASSES · 1973'
     },
     {
-      id: 'baldwin', enabled: false,
+      id: 'baldwin', enabled: true,
       line: 'BALDWIN, JAMES', fileId: 'JB-1924-0802', date: '05.06.2024', footer: 'JAMES BALDWIN',
       portrait: 'assets/baldwin-portrait.jpeg',
       confidence: 99.95, reflection: 99.5,
@@ -588,18 +588,18 @@ class Component extends DCLogic {
       disposition: 'SEIZE PUBLICATIONS · 1968'
     },
     {
-      id: 'ursula', enabled: false,
+      id: 'ursula', enabled: true,
       line: 'URSULA (SEA WITCH)', fileId: 'DI-1989-1117', date: '05.06.2024', footer: 'URSULA',
-      portrait: 'assets/ursula-portrait.jpeg',
+      portrait: 'assets/ursula-portrait.jpeg', portraitPos: 'center 20%',
       confidence: 99.88, reflection: 99.4,
       characteristics: ['Fictional character; standard biometric protocols inapplicable','Presents as powerful, confident, large-bodied entity in explicit defiance of sanctioned beauty metrics','Exploits contractual arrangement to acquire voice of prohibited subject','Inspiration of drag queen performance tradition constitutes distributed cultural influence','Commands tentacle apparatus beyond standard classification parameters','Aquatic status complicates standard jurisdiction'],
       classification: 'FICTIONAL SUBJECT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
       disposition: 'POOR UNFORTUNATE SOULS · 1989'
     },
     {
-      id: 'bugs', enabled: false,
+      id: 'bugs', enabled: true,
       line: 'BUNNY, BUGS', fileId: 'WB-1940-0727', date: '05.06.2024', footer: 'BUGS BUNNY',
-      portrait: 'assets/bugs-portrait.png',
+      portrait: 'assets/bugs-portrait.jpeg', portraitPos: 'center 15%', portraitFit: 'contain',
       confidence: 99.97, reflection: 99.9,
       characteristics: ['Fictional construction; standard biometric analysis inapplicable','Cross-dresses as Brünnhilde in 1957 operatic performance for personal amusement','Exhibits zero anxiety regarding gender presentation; distressing to analysts','Consistently outmanoeuvres authoritarian figures (hunters, opera conductors, Elmer Fudd)','Only known leporine subject to perform Wagner from memory','Refuses to conform to documented rabbit behavioural parameters'],
       classification: 'FICTIONAL SUBJECT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
@@ -1065,7 +1065,7 @@ class Component extends DCLogic {
     // Card portrait: no clip — overlay covers card during scan, portrait visible when overlay fades
     o.portraitBlendStyle = {
       position:'absolute', inset:'0', width:'100%', height:'100%',
-      objectFit:'cover', objectPosition:'center top',
+      objectFit: subj.portraitFit || 'cover', objectPosition: subj.portraitPos || 'center top',
       opacity: live ? 0 : 0.95,
       display: o.portraitSrc ? 'block' : 'none',
       pointerEvents:'none'
