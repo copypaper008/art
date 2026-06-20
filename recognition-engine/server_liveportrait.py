@@ -255,9 +255,11 @@ async def handle(ws):
 
             driving_crop_256 = cv2.resize(ret_d['frame_crop_lst'][0], (256, 256))
 
-            # Motion keypoints for this frame — pass the array directly,
-            # prepare_videos adds the batch dim internally
+            # prepare_videos on a single HWC array returns (3,H,W) without a
+            # batch dim; the warping network needs (1,3,H,W), so unsqueeze.
             I_d_i = wrapper.prepare_videos(driving_crop_256)
+            if I_d_i.dim() == 3:
+                I_d_i = I_d_i.unsqueeze(0)
             x_d_i_info = wrapper.get_kp_info(I_d_i)
 
             # First frame sets the neutral reference pose for this station
