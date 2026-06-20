@@ -113,7 +113,7 @@ try:
     from src.config.inference_config import InferenceConfig
     from src.config.crop_config import CropConfig
     from src.live_portrait_pipeline import LivePortraitPipeline
-    from src.utils.crop import paste_back
+    from src.utils.crop import paste_back, prepare_paste_back
 except ImportError as e:
     print(f"\n  ERROR importing LivePortrait modules: {e}")
     print("  Make sure you ran:  pip install -r liveportrait/requirements.txt\n")
@@ -186,6 +186,18 @@ for subj_id, filename in PORTRAIT_FILES:
         f_s = wrapper.extract_feature_3d(I_s)
         x_s = wrapper.transform_keypoint(x_s_info)
 
+        # Pre-compute the paste-back mask for this portrait (fixed per portrait)
+        h_ori, w_ori = img_rgb.shape[:2]
+        mask_crop = getattr(inference_cfg, 'mask_crop', None)
+        if mask_crop is None:
+            # Fallback: load from assets or use a plain white mask
+            mask_path = os.path.join(LP_ROOT, 'assets', 'mask_template.png')
+            if os.path.exists(mask_path):
+                mask_crop = cv2.imread(mask_path, cv2.IMREAD_COLOR)
+            else:
+                mask_crop = np.ones((512, 512, 3), dtype=np.uint8) * 255
+        mask_ori = prepare_paste_back(mask_crop, M_c2o, dsize=(w_ori, h_ori))
+
         portraits[subj_id] = {
             'img_rgb': img_rgb,
             'img_bgr': img_bgr,
@@ -194,6 +206,7 @@ for subj_id, filename in PORTRAIT_FILES:
             'x_s_info': x_s_info,
             'f_s': f_s,
             'x_s': x_s,
+            'mask_ori': mask_ori,
         }
         print(f"  ok    {subj_id}")
 
@@ -233,21 +246,17 @@ async def handle(ws):
 
             p = portraits[subj_id]
 
-            # Crop the driving frame's face, aligned to the source landmark so
-            # the crop region is stable across frames
-            driving_crops = cropper.crop_driving_video_frames(
-                [driving_rgb],
-                source_lmk=p['lmk_source'],
-                output_size=256,
-            )
-            if not driving_crops:
+            # Crop the face from the driving (webcam) frame.
+            # crop_driving_video returns 512px crops; resize to 256 for the model.
+            ret_d = cropper.crop_driving_video([driving_rgb])
+            if not ret_d or not ret_d.get('frame_crop_lst'):
                 await ws.send(json.dumps({'error': 'No face in driving frame', 'station': station}))
                 continue
 
-            driving_crop_256 = driving_crops[0]
+            driving_crop_256 = cv2.resize(ret_d['frame_crop_lst'][0], (256, 256))
 
             # Motion keypoints for this frame
-            I_d_i = wrapper.prepare_driving_videos(driving_crop_256)
+            I_d_i = wrapper.prepare_videos([driving_crop_256])
             x_d_i_info = wrapper.get_kp_info(I_d_i)
 
             # First frame sets the neutral reference pose for this station
@@ -263,19 +272,16 @@ async def handle(ws):
                 p['x_s_info']['exp']
                 + (x_d_i_info['exp'] - x_d_0_info['exp'])
             )
-            x_d_i_new['t'] += x_d_i_info['t'] - x_d_0_info['t']
-            # Keep portrait's own scale rather than tracking the visitor's
-            # scale to avoid the portrait appearing to grow/shrink unexpectedly
+            x_d_i_new['t'] = p['x_s_info']['t'] + (x_d_i_info['t'] - x_d_0_info['t'])
 
             x_d_i_new = wrapper.transform_keypoint(x_d_i_new)
 
             # Warp the portrait face and decode to RGB image
             out_dict = wrapper.warp_decode(p['f_s'], p['x_s'], x_d_i_new)
-            out_rgb = wrapper.parse_output(out_dict['out'])[0]  # 256×256 RGB
+            out_rgb = wrapper.parse_output(out_dict['out'])[0]  # 256×256 uint8 RGB
 
-            # Paste animated face crop back onto the full portrait image
-            h_ori, w_ori = p['img_rgb'].shape[:2]
-            result_rgb = paste_back(out_rgb, p['M_c2o'], p['img_rgb'], dsize=(w_ori, h_ori))
+            # Paste animated face back onto the full portrait image with blending
+            result_rgb = paste_back(out_rgb, p['M_c2o'], p['img_rgb'], p['mask_ori'])
             result_bgr = cv2.cvtColor(result_rgb, cv2.COLOR_RGB2BGR)
 
             _, buf = cv2.imencode('.jpg', result_bgr, [cv2.IMWRITE_JPEG_QUALITY, 88])
