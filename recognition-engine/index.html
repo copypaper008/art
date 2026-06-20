@@ -462,9 +462,9 @@ class Component extends DCLogic {
       disposition: 'SURVEIL · REDACT · ARCHIVE'
     },
     {
-      id: 'marsha', enabled: false,
+      id: 'marsha', enabled: true,
       line: 'JOHNSON, MARSHA P.', fileId: 'MJ-1945-0824', date: '05.06.2024', footer: 'MARSHA P. JOHNSON',
-      portrait: 'assets/marsha-portrait.jpeg',
+      portrait: 'assets/marsha-portrait.jpeg', portraitPos: 'center 20%',
       confidence: 99.91, reflection: 98.8,
       characteristics: ['Present at Stonewall resistance event in advance of sanctioned deployment','Founding member of prohibited community support network STAR','Decorates self with flowers and non-regulation adornment beyond civilian authorisation','Declines to select from available gender classifications','Cares for homeless youth through unofficial and unsanctioned network','Events of July 6, 1992 cannot be independently verified'],
       classification: 'SUBJECT OF INTEREST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
@@ -534,7 +534,7 @@ class Component extends DCLogic {
       disposition: 'REFER TO SENATE · SENATE UNAVAILABLE'
     },
     {
-      id: 'nathan', enabled: false,
+      id: 'nathan', enabled: true,
       line: 'LANE, NATHAN', fileId: 'NL-1956-0203', date: '05.06.2024', footer: 'NATHAN LANE',
       portrait: 'assets/nathan-portrait.jpeg',
       confidence: 99.58, reflection: 97.8,
@@ -543,7 +543,7 @@ class Component extends DCLogic {
       disposition: 'DEPICT HARMLESSLY · 1996'
     },
     {
-      id: 'peterallen', enabled: false,
+      id: 'peterallen', enabled: true,
       line: 'ALLEN, PETER', fileId: 'PA-1944-0210', date: '05.06.2024', footer: 'PETER ALLEN',
       portrait: 'assets/peterallen-portrait.jpeg',
       confidence: 99.69, reflection: 98.0,
@@ -570,9 +570,9 @@ class Component extends DCLogic {
       disposition: 'REFER TO FORESTS DEPARTMENT'
     },
     {
-      id: 'vilanch', enabled: false,
+      id: 'vilanch', enabled: true,
       line: 'VILANCH, BRUCE', fileId: 'BV-1948-0604', date: '05.06.2024', footer: 'BRUCE VILANCH',
-      portrait: 'assets/vilanch-portrait.jpeg',
+      portrait: 'assets/vilanch-portrait.jpeg', portraitPos: 'center 25%',
       confidence: 99.44, reflection: 97.1,
       characteristics: ['Functions as invisible architect of celebrity public address','Embedded within awards ceremony infrastructure for extended period without public attribution','Operates below threshold of recognition while maintaining senior-level access','Generates authorised laughter through controlled deployment of prohibited subject matter','Demonstrates sustained access to senior entertainment figures exceeding standard classification','Motivation for public service cannot be independently verified'],
       classification: 'CULTURAL OPERATIVE', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
@@ -604,6 +604,15 @@ class Component extends DCLogic {
       characteristics: ['Fictional construction; standard biometric analysis inapplicable','Cross-dresses as Brünnhilde in 1957 operatic performance for personal amusement','Exhibits zero anxiety regarding gender presentation; distressing to analysts','Consistently outmanoeuvres authoritarian figures (hunters, opera conductors, Elmer Fudd)','Only known leporine subject to perform Wagner from memory','Refuses to conform to documented rabbit behavioural parameters'],
       classification: 'FICTIONAL SUBJECT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
       disposition: 'KILL THE WABBIT · 1957'
+    },
+    {
+      id: 'tankgirl', enabled: true,
+      line: 'BUCK, REBECCA', fileId: 'TG-1988-0501', date: '05.06.2024', footer: 'TANK GIRL',
+      portrait: 'assets/tankgirl-portrait.jpeg', portraitPos: 'center 10%',
+      confidence: 99.76, reflection: 98.7,
+      characteristics: ['Fictional construction; standard biometric analysis inapplicable','Operates armoured vehicle without licence in direct contravention of road traffic legislation','Romantic entanglement with mutant kangaroo falls outside all documented relational categories','Anarcho-punk behavioural profile incompatible with institutional compliance at every level','Actively resists water corporation resource monopoly; designated threat to civil order','Classification as hero, villain, or criminal remains formally unresolved'],
+      classification: 'FICTIONAL SUBJECT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'TANK GIRL NEVER SURRENDERS · 1988'
     }
   ];
 
@@ -621,7 +630,7 @@ class Component extends DCLogic {
     rupaul: 'RuPaul', elton: 'Elton John', freddie: 'Freddie Mercury',
     baldwin: 'James Baldwin', marsha: 'Marsha P Johnson', nathan: 'Nathan Lane',
     peterallen: 'Peter Allen', vilanch: 'Bruce Vilanch', ursula: 'Ursula',
-    maupin: 'Armistead Maupin', bugs: 'Bugs Bunny',
+    maupin: 'Armistead Maupin', bugs: 'Bugs Bunny', tankgirl: 'Tank Girl',
   };
 
   CANDIDATES = ['DEVIANT','SUBVERSIVE','DISORDERED','SECURITY RISK','UNFIT','IMMORAL','INVERT','ABNORMAL','DEGENERATE','CRIMINAL','SUSPECT','UNNATURAL'];
