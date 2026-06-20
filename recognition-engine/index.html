@@ -10,7 +10,7 @@
 <helmet>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Archivo:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Archivo:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&family=Special+Elite&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:#08080a;}
@@ -265,7 +265,7 @@
           <div style="{{ item.style }}">
            <div style="display:flex;gap:14px;align-items:baseline;margin-bottom:16px;">
             <span style="{{ item.tickStyle }}">✓</span>
-            <span style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:36px;line-height:1.2;color:#f1efe7;text-shadow:0 2px 8px rgba(0,0,0,1),0 0 20px rgba(0,0,0,0.95);">{{ item.text }}</span>
+            <span style="font-family:'Special Elite',serif;font-size:30px;line-height:1.35;color:#f1efe7;text-shadow:0 2px 8px rgba(0,0,0,1),0 0 20px rgba(0,0,0,0.95);">{{ item.text }}</span>
            </div>
           </div>
          </sc-for>
@@ -988,10 +988,12 @@ class Component extends DCLogic {
     const chars = subj.characteristics || [];
 
     // Overlay: characteristics typed out one by one with natural pacing
-    const oCBase = 3.2, oCStep = 1.8, typeDuration = 2.2;
+    const typeDuration = 1.6; // each line types for this long
+    const typeGap = 0.22;    // pause after each line finishes before next starts
+    const oCBase = 3.2;
     const cursor = live ? '' : (Math.floor(t * 2.5) % 2 === 0 ? '▌' : '');
     o.overlayCharItems = chars.map((text, k) => {
-      const startT = oCBase + k * oCStep;
+      const startT = oCBase + k * (typeDuration + typeGap);
       const pr = live ? 0 : clamp(seg(startT, startT + typeDuration), 0, 1);
       const done = pr >= 1;
       let nChars = 0;
@@ -1023,13 +1025,22 @@ class Component extends DCLogic {
     const gTransIn  = gPhase < 0.07;
     const gPortrait = gPhase >= 0.07 && gPhase < 0.38;
     const gTransOut = gPhase >= 0.31 && gPhase < 0.38;
-    const gNoise = gTransIn ? gPhase/0.07 : (gTransOut ? 1 - (gPhase-0.31)/0.07 : (gPortrait ? 0.1 : 0));
-    const gVideoOp = gTransIn ? 1 - gPhase/0.07 : (gPortrait ? (gTransOut ? (gPhase-0.31)/0.07 : 0) : 1);
-    const gPortraitOp = (gPortrait && !gTransOut) ? 1 : (gTransOut ? 1 - (gPhase-0.31)/0.07 : 0);
+    // Noise ramps up during transitions; residual whisper while overlapping
+    const gNoise = gTransIn ? gPhase/0.07 : (gTransOut ? 1-(gPhase-0.31)/0.07 : (gPortrait ? 0.08 : 0));
+    // Portrait materialises through static, holds as screen-blended ghost, dissolves back through static
+    const gPortraitOp = gTransIn ? (gPhase/0.07)*0.78 : ((gPortrait && !gTransOut) ? 0.78 : (gTransOut ? 0.78*(1-(gPhase-0.31)/0.07) : 0));
+    const gOverlap = gPortrait && !gTransIn && !gTransOut;
+    // Video always visible; desaturate slightly while portrait ghost is present
+    const vFilter = gOverlap
+      ? 'grayscale(0.6) contrast(1.15) brightness(0.88)'
+      : `grayscale(1) contrast(${(1 + gNoise * 3.5).toFixed(2)}) brightness(${(1 + gNoise * 2).toFixed(2)})`;
+    // Subtle horizontal drift on the portrait during overlap — registration error feel
+    const gDrift = gOverlap ? (Math.sin(t * 6.1) * 2.5 + Math.sin(t * 13.7) * 1.2).toFixed(1) : '0';
     o.overlayThumbWrapStyle = { position:'absolute', bottom:'9%', right:'4%', width:'145px', height:'190px', border:`1px solid ${this.hexA(RED, 0.65)}`, overflow:'hidden', pointerEvents:'none', boxShadow:`0 0 20px ${this.hexA(RED, 0.25)}` };
-    o.overlayThumbVideoStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', transform:'scaleX(-1)', filter:`grayscale(1) contrast(${(1 + gNoise * 3.5).toFixed(2)}) brightness(${(1 + gNoise * 2).toFixed(2)})`, opacity:gVideoOp.toFixed(3) };
+    o.overlayThumbVideoStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', transform:'scaleX(-1)', filter:vFilter, opacity:'1' };
     o.overlayThumbPortraitSrc = subj.portrait || '';
-    o.overlayThumbPortraitStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', filter:'grayscale(0.4) contrast(1.15) brightness(0.9) sepia(0.2) hue-rotate(330deg)', opacity:gPortraitOp.toFixed(3), display: o.overlayThumbPortraitSrc ? 'block' : 'none' };
+    // Portrait mirrored to match camera, screen blend so it ghosts onto the live face
+    o.overlayThumbPortraitStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', filter:'grayscale(1) contrast(2.2) brightness(1.4)', mixBlendMode:'screen', transform:`scaleX(-1) translateX(${gDrift}px)`, opacity:gPortraitOp.toFixed(3), display: o.overlayThumbPortraitSrc ? 'block' : 'none' };
     // Canvas-drawn pixel static — real random greyscale noise drawn each frame
     o.overlayThumbNoiseRef = this.makeNoiseCanvasRef(i);
     o.overlayThumbNoiseStyle = { position:'absolute', inset:'0', width:'145px', height:'190px', display:'block', imageRendering:'pixelated', pointerEvents:'none' };
