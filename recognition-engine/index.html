@@ -225,8 +225,6 @@
        </div>
        <!-- SCAN CONTENT: portrait reveal + scan FX + stats, fades in when scan fires -->
        <div style="{{ p.overlayScanContentStyle }}">
-        <img src="{{ p.portraitSrc }}" alt="" style="{{ p.overlayScanPortraitStyle }}" />
-        {{ p.overlayScanSwapEl }}
         <div style="{{ p.overlayScanGridStyle }}"></div>
         <div style="{{ p.overlayScanTrailStyle }}"></div>
         <div style="{{ p.overlayScanLineStyle }}"></div>
@@ -262,19 +260,21 @@
         </div>
         <!-- CHARACTERISTICS ticking in during scan -->
         <div style="{{ p.overlayCharsWrapStyle }}">
-         <div style="font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:2px;color:rgba(241,239,231,0.3);margin-bottom:10px;">OBSERVED CHARACTERISTICS</div>
+         <div style="font-family:'Spline Sans Mono',monospace;font-size:14px;letter-spacing:2px;color:rgba(241,239,231,0.3);margin-bottom:14px;">OBSERVED CHARACTERISTICS</div>
          <sc-for list="{{ p.overlayCharItems }}" as="item">
           <div style="{{ item.style }}">
-           <div style="display:flex;gap:12px;align-items:baseline;margin-bottom:10px;">
-            <span style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:22px;color:#c0443a;flex:none;line-height:1;">✓</span>
-            <span style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:26px;line-height:1.2;color:#f1efe7;text-shadow:0 2px 8px rgba(0,0,0,1),0 0 20px rgba(0,0,0,0.95);">{{ item.text }}</span>
+           <div style="display:flex;gap:14px;align-items:baseline;margin-bottom:16px;">
+            <span style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:30px;color:#c0443a;flex:none;line-height:1;">✓</span>
+            <span style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:36px;line-height:1.2;color:#f1efe7;text-shadow:0 2px 8px rgba(0,0,0,1),0 0 20px rgba(0,0,0,0.95);">{{ item.text }}</span>
            </div>
           </div>
          </sc-for>
         </div>
         <!-- CAMERA THUMBNAIL — lower right with bouncing scan bar -->
         <div style="{{ p.overlayThumbWrapStyle }}">
-         <video muted autoplay playsinline ref="{{ p.overlayThumbRef }}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;transform:scaleX(-1);filter:grayscale(1) contrast(1.25) brightness(0.9);"></video>
+         <video muted autoplay playsinline ref="{{ p.overlayThumbRef }}" style="{{ p.overlayThumbVideoStyle }}"></video>
+         <img src="{{ p.overlayThumbPortraitSrc }}" alt="" style="{{ p.overlayThumbPortraitStyle }}" />
+         <div style="{{ p.overlayThumbNoiseStyle }}"></div>
          <div style="{{ p.overlayThumbScanStyle }}"></div>
         </div>
         <!-- BOTTOM DATA STRIP -->
@@ -703,7 +703,7 @@ class Component extends DCLogic {
 
   ensureRaf(i) {
     if (this._rafs[i]) return;
-    const TOTAL = 24.5;
+    const TOTAL = 28.0;
     const autoLoop = this.props.autoLoop ?? true;
     const step = (now) => {
       const t = (now - this.t0[i]) / 1000;
@@ -776,21 +776,21 @@ class Component extends DCLogic {
     const confP = live ? 0 : seg(6.1, 13.1, outCubic);
     const reflP = live ? 0 : seg(6.8, 13.6, outCubic);
     const prog = live ? 0 : seg(2.6, 11.5, inOut);
-    const interpP = live ? 0 : seg(18.6, 19.4, outCubic);
-    const classP = live ? 0 : clamp(seg(19.3, 19.9, outBack), 0, 1);
-    const explP = live ? 0 : clamp(seg(19.8, 20.3, outBack), 0, 1);
-    const searchStart = 19.4, lockT = 20.55;
+    const interpP = live ? 0 : seg(22.6, 23.4, outCubic);
+    const classP = live ? 0 : clamp(seg(23.3, 23.9, outBack), 0, 1);
+    const explP = live ? 0 : clamp(seg(23.8, 24.3, outBack), 0, 1);
+    const searchStart = 23.4, lockT = 24.55;
     const searching = !live && t >= searchStart && t < lockT;
     const locked = !live && t >= lockT;
     const stampIn = locked ? clamp(seg(lockT, lockT+0.55, outBack), 0, 1) : 0;
     const stampOp = live ? 0 : seg(lockT, lockT+0.14);
-    const dispoIn = live ? 0 : clamp(seg(21.05, 21.55, outBack), 0, 1);
-    const dispoOp = live ? 0 : seg(21.05, 21.2);
+    const dispoIn = live ? 0 : clamp(seg(25.05, 25.55, outBack), 0, 1);
+    const dispoOp = live ? 0 : seg(25.05, 25.2);
 
     let sh = 0;
-    if (!live && t > 20.55 && t < 20.92) { const pr=(t-20.55)/0.37; sh=Math.sin(pr*Math.PI*4)*(1-pr)*4; }
+    if (!live && t > 24.55 && t < 24.92) { const pr=(t-24.55)/0.37; sh=Math.sin(pr*Math.PI*4)*(1-pr)*4; }
     let flash = 0;
-    if (!live && t > 20.55 && t < 20.88) { flash=(1-(t-20.55)/0.33)*0.13; }
+    if (!live && t > 24.55 && t < 24.88) { flash=(1-(t-24.55)/0.33)*0.13; }
 
     const o = {};
     o.shudderStyle = { transform:`translate(${sh.toFixed(2)}px,${(sh*0.5).toFixed(2)}px)` };
@@ -810,27 +810,17 @@ class Component extends DCLogic {
     const cap = this.captures[i];
     o.captureEl = null;
 
-    // clipReveal is used by the OVERLAY portrait during scan; card portrait is always fully visible.
-    const clipPct = ((1 - scanP) * 100).toFixed(1);
-    const clipReveal = live ? 'inset(100% 0 0 0)' : `inset(${clipPct}% 0 0 0)`;
-    const hasSwap = !live && cap && cap.swappedSrc;
     o.portraitSrc = subj.portrait || subj.cutout || '';
     // Card portrait: no clip — overlay covers card during scan, portrait visible when overlay fades
     o.portraitBlendStyle = {
       position:'absolute', inset:'0', width:'100%', height:'100%',
       objectFit:'cover', objectPosition:'center top',
-      opacity: hasSwap ? 0 : (live ? 0 : 0.95),
+      opacity: live ? 0 : 0.95,
       display: o.portraitSrc ? 'block' : 'none',
       pointerEvents:'none'
     };
 
-    // Swap result from local Python server — on card, always fully visible when shown
-    o.swapEl = hasSwap ? React.createElement('img', { src: cap.swappedSrc, alt:'', style: {
-      position:'absolute', inset:'0', width:'100%', height:'100%',
-      objectFit:'cover', objectPosition:'center top',
-      opacity: 0.95,
-      pointerEvents:'none'
-    } }) : null;
+    o.swapEl = null;
 
     // ---- Detection overlay: shown during idle, hidden once scanning starts ----
     const detP = det.prog || 0;
@@ -848,11 +838,11 @@ class Component extends DCLogic {
     };
 
     // Full-card live overlay: stays up through scan, fades after portrait is revealed
-    const overlayFade = live ? 1 : clamp(1 - seg(12.0, 13.5, outCubic), 0, 1);
+    const overlayFade = live ? 1 : clamp(1 - seg(16.0, 17.5, outCubic), 0, 1);
     o.liveOverlayStyle = {
       position:'absolute', inset:'0', zIndex:9,
       background:'#0a0a0b', opacity:overlayFade,
-      pointerEvents: (live || (!live && t < 13.5)) ? 'auto' : 'none'
+      pointerEvents: (live || (!live && t < 17.5)) ? 'auto' : 'none'
     };
     o.overlayVideoRef = this.makeOverlayVideoRef(i);
     o.liveVideoFillStyle = {
@@ -898,18 +888,6 @@ class Component extends DCLogic {
     // Overlay scan content: portrait reveal + scan FX + stats, fades in when scan fires
     const overlayScanOp = live ? 0 : clamp(seg(0.2, 0.7, outCubic), 0, 1);
     o.overlayScanContentStyle = { position:'absolute', inset:'0', opacity: overlayScanOp, pointerEvents:'none' };
-    o.overlayScanPortraitStyle = {
-      position:'absolute', inset:'0', width:'100%', height:'100%',
-      objectFit:'cover', objectPosition:'center top',
-      clipPath: clipReveal,
-      opacity: hasSwap ? 0 : 0.8,
-      display: o.portraitSrc ? 'block' : 'none'
-    };
-    o.overlayScanSwapEl = hasSwap ? React.createElement('img', { src: cap.swappedSrc, alt:'', style: {
-      position:'absolute', inset:'0', width:'100%', height:'100%',
-      objectFit:'cover', objectPosition:'center top',
-      clipPath: clipReveal, opacity:0.8
-    }}) : null;
     o.overlayScanLineStyle = Object.assign({}, o.scanLineStyle);
     o.overlayScanTrailStyle = Object.assign({}, o.scanTrailStyle);
     o.overlayScanGridStyle = Object.assign({}, o.scanGridStyle);
@@ -969,7 +947,7 @@ class Component extends DCLogic {
     o.progressPct = `${Math.round(prog*100)}%`;
 
     const dsIdx = Math.floor(t * 0.8) % this.DATASET.length;
-    const dsVisible = !live && t > 2.6 && t < 13.5;
+    const dsVisible = !live && t > 2.6 && t < 17.5;
     o.datasetRowStyle = { display:'flex', alignItems:'center', gap:'8px', marginTop:'8px', overflow:'hidden', opacity: dsVisible ? 1 : 0 };
     o.datasetSrcStyle = { fontFamily:"'Spline Sans Mono',monospace", fontSize:'8px', letterSpacing:'0.6px', color:'#16130f', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' };
     o.datasetSrc = dsVisible ? this.DATASET[dsIdx] : '';
@@ -985,10 +963,10 @@ class Component extends DCLogic {
     const chars = subj.characteristics || [];
 
     // Overlay: characteristics tick in one by one during scanning
-    const oCBase = 3.2, oCStep = Math.min(1.3, 7.5/Math.max(1, chars.length));
+    const oCBase = 3.2, oCStep = 1.8;
     o.overlayCharItems = chars.map((text, k) => {
-      const pr = live ? 0 : clamp(seg(oCBase + k*oCStep, oCBase + k*oCStep + 0.45, outCubic), 0, 1);
-      const isLatest = !live && pr > 0 && (k === chars.length-1 || (live ? 0 : clamp(seg(oCBase+(k+1)*oCStep, oCBase+(k+1)*oCStep+0.45, outCubic), 0, 1)) < 0.5);
+      const pr = live ? 0 : clamp(seg(oCBase + k*oCStep, oCBase + k*oCStep + 0.65, outCubic), 0, 1);
+      const isLatest = !live && pr > 0 && (k === chars.length-1 || (live ? 0 : clamp(seg(oCBase+(k+1)*oCStep, oCBase+(k+1)*oCStep+0.65, outCubic), 0, 1)) < 0.5);
       return { text, style: { opacity: pr * (isLatest ? 1 : 0.55), transform:`translateY(${lerp(10,0,pr).toFixed(1)}px)` } };
     });
     o.overlayCharsWrapStyle = { position:'absolute', top:'20%', left:'5%', right:'5%', pointerEvents:'none' };
@@ -996,11 +974,26 @@ class Component extends DCLogic {
     // Camera thumbnail — lower right, with bouncing scan bar
     o.overlayThumbRef = this.makeThumbVideoRef(i);
     const thumbScanPos = (Math.sin(t * 3.5) * 0.5 + 0.5) * 100;
-    o.overlayThumbWrapStyle = { position:'absolute', bottom:'9%', right:'4%', width:'100px', height:'130px', border:`1px solid ${this.hexA(RED, 0.55)}`, overflow:'hidden', pointerEvents:'none', boxShadow:`0 0 16px ${this.hexA(RED, 0.2)}` };
-    o.overlayThumbScanStyle = { position:'absolute', left:'0', right:'0', height:'2px', top:`${thumbScanPos.toFixed(1)}%`, background:RED, boxShadow:`0 0 6px 1px ${this.hexA(RED, 0.65)}` };
+    // Glitch cycle: briefly cuts from live feed to subject portrait with static interference
+    const GPERIOD = 5.2;
+    const gPhase = (!live && t > 3.5) ? (t % GPERIOD) / GPERIOD : 1;
+    const gTransIn  = gPhase < 0.07;
+    const gPortrait = gPhase >= 0.07 && gPhase < 0.38;
+    const gTransOut = gPhase >= 0.31 && gPhase < 0.38;
+    const gNoise = gTransIn ? gPhase/0.07 : (gTransOut ? 1 - (gPhase-0.31)/0.07 : 0);
+    const gVideoOp = gTransIn ? 1 - gPhase/0.07 : (gPortrait ? (gTransOut ? (gPhase-0.31)/0.07 : 0) : 1);
+    const gPortraitOp = (gPortrait && !gTransOut) ? 1 : (gTransOut ? 1 - (gPhase-0.31)/0.07 : 0);
+    const fN = Math.floor(t * 60);
+    const sH = ((fN * 7 + 3) % 5) + 2;
+    o.overlayThumbWrapStyle = { position:'absolute', bottom:'9%', right:'4%', width:'145px', height:'190px', border:`1px solid ${this.hexA(RED, 0.65)}`, overflow:'hidden', pointerEvents:'none', boxShadow:`0 0 20px ${this.hexA(RED, 0.25)}` };
+    o.overlayThumbVideoStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', transform:'scaleX(-1)', filter:`grayscale(1) contrast(${(1 + gNoise * 3.5).toFixed(2)}) brightness(${(1 + gNoise * 2).toFixed(2)})`, opacity:gVideoOp.toFixed(3) };
+    o.overlayThumbPortraitSrc = subj.portrait || '';
+    o.overlayThumbPortraitStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', filter:'grayscale(0.4) contrast(1.15) brightness(0.9) sepia(0.2) hue-rotate(330deg)', opacity:gPortraitOp.toFixed(3), display: o.overlayThumbPortraitSrc ? 'block' : 'none' };
+    o.overlayThumbNoiseStyle = { position:'absolute', inset:'0', background: gNoise > 0.03 ? `repeating-linear-gradient(0deg, rgba(241,239,231,${(gNoise*0.38).toFixed(3)}) 0 ${sH}px, rgba(10,10,11,${(gNoise*0.28).toFixed(3)}) ${sH}px ${sH*2}px)` : 'none', mixBlendMode:'overlay', pointerEvents:'none' };
+    o.overlayThumbScanStyle = { position:'absolute', left:'0', right:'0', height:'2px', top:`${thumbScanPos.toFixed(1)}%`, background:RED, boxShadow:`0 0 6px 1px ${this.hexA(RED, 0.65)}`, opacity: (gPortrait && !gTransIn && !gTransOut) ? 0 : 1 };
 
     // Card: all characteristics snap in simultaneously when poster is revealed
-    const cSnapP = live ? 0 : clamp(seg(13.5, 13.95, outBack), 0, 1);
+    const cSnapP = live ? 0 : clamp(seg(17.5, 17.95, outBack), 0, 1);
     o.charItems = chars.map((text) => {
       return { text, tick:{ display:'inline-block', opacity:cSnapP, transform:`scale(${cSnapP.toFixed(3)})`, fontSize:'12px', fontWeight:700, lineHeight:1, color:'#16130f' }, txt:{ color:`rgba(20,17,15,${lerp(0.28,1,cSnapP).toFixed(3)})` } };
     });
