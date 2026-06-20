@@ -295,6 +295,8 @@ class Component extends DCLogic {
   videos = [];
   _vrefs = {};
   captures = [null, null, null, null];   // frozen still per station, grabbed when the face locks
+  faceIsCropped = [false, false, false, false]; // true when capture is a tight face crop
+  faceBounds = {};                              // skin centroid per zone, updated by sampleZone
   det = [0, 1, 2, 3].map(() => ({ present: false, prog: 0, armed: true }));
 
   state = {
@@ -312,6 +314,8 @@ class Component extends DCLogic {
     window.addEventListener('keydown', this._onKey);
 
     this.captures = [null, null, null, null];
+    this.faceIsCropped = [false, false, false, false];
+    this.faceBounds = {};
     this.presentSince = [0, 0, 0, 0];
     this.absentSince = [performance.now(), performance.now(), performance.now(), performance.now()];
     this.detectArmed = [true, true, true, true];
@@ -321,6 +325,7 @@ class Component extends DCLogic {
 
     this.startCamera();
     this.startDetect();
+    this.initFaceDetector();
   }
 
   componentWillUnmount() {
@@ -341,6 +346,18 @@ class Component extends DCLogic {
       this.stream = stream;
       this.videos.forEach(v => { if (v) { v.srcObject = stream; v.play().catch(() => {}); } });
     } catch (e) { this.setState({ camError: true }); }
+  }
+
+  async initFaceDetector() {
+    try {
+      const { FaceDetector, FilesetResolver } = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs');
+      const vision = await FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+      this.faceDetector = await FaceDetector.createFromOptions(vision, {
+        baseOptions: { modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite' },
+        runningMode: 'IMAGE',
+        minDetectionConfidence: 0.5,
+      });
+    } catch (e) { console.warn('[RecognitionEngine] Face detector unavailable, using centroid fallback:', e); }
   }
 
   // One ref factory per station (stable identity so React doesn't thrash refs)
@@ -402,13 +419,16 @@ class Component extends DCLogic {
     const sx = zone * zw, sw = zw, sh = vh * 0.6, sy = vh * 0.08;
     try { ctx.drawImage(v, sx, sy, sw, sh, 0, 0, 48, 48); } catch (e) { return false; }
     let data; try { data = ctx.getImageData(0, 0, 48, 48).data; } catch (e) { return false; }
-    let skin = 0, n = 0;
+    let skin = 0, skinX = 0, skinY = 0, n = 0;
     for (let j = 0; j < data.length; j += 4) {
+      const pi = j >> 2, px = pi % 48, py = (pi / 48) | 0;
       const r = data[j], g = data[j + 1], b = data[j + 2]; n++;
       const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
-      if (r > 50 && g > 30 && b > 18 && r >= g && g >= b && (r - b) > 14 && (mx - mn) > 12 && (mx - mn) < 130) skin++;
+      if (r > 50 && g > 30 && b > 18 && r >= g && g >= b && (r - b) > 14 && (mx - mn) > 12 && (mx - mn) < 130) { skin++; skinX += px; skinY += py; }
     }
-    return (skin / n) > 0.30;
+    const detected = (skin / n) > 0.30;
+    if (detected && skin > 0) this.faceBounds[i] = { cx: skinX / skin / 47, cy: skinY / skin / 47 };
+    return detected;
   }
 
   pickSubject(i) {
@@ -430,19 +450,69 @@ class Component extends DCLogic {
     this.setState({ stations }, () => this.ensureRaf());
   }
 
-  // Freeze the current camera frame for station i. We store the WHOLE frame; the panel
-  // re-frames it (zone pan + scale + mirror) exactly like the live preview did, so the
-  // face the visitor lined up in the red oval is what gets composited into the poster.
+  // Capture and crop the face for station i.
+  // We extract just the visitor's face (with padding for hair and neck) so the
+  // composite always fills the oval correctly regardless of where they stood in the zone.
   captureFrame(i) {
     try {
       const v = (this.videos[i] && this.videos[i].videoWidth) ? this.videos[i] : this.sampleVideo();
       if (!v || !v.videoWidth) return;
-      const cw = 960, sc = cw / v.videoWidth, ch = Math.round(v.videoHeight * sc);
-      const c = this._capCanvas || (this._capCanvas = document.createElement('canvas'));
-      c.width = cw; c.height = ch;
-      c.getContext('2d').drawImage(v, 0, 0, cw, ch);
-      this.captures[i] = c.toDataURL('image/jpeg', 0.85);
-    } catch (e) { /* keep previous/empty capture on failure (e.g. no camera) */ }
+      const vw = v.videoWidth, vh = v.videoHeight;
+      const reverse = this.props.reverseZones ?? false;
+      const zone = reverse ? (this.STATIONS - 1 - i) : i;
+      const mirror = this.props.mirrorCam ?? true;
+      const zw = vw / this.STATIONS, sx = zone * zw;
+
+      // Draw the zone into its own canvas, applying mirror correction so the
+      // stored image is in the "correct" (non-mirrored) orientation.
+      const zW = Math.round(zw);
+      const zCv = document.createElement('canvas');
+      zCv.width = zW; zCv.height = vh;
+      const zCtx = zCv.getContext('2d');
+      if (mirror) { zCtx.translate(zW, 0); zCtx.scale(-1, 1); }
+      zCtx.drawImage(v, sx, 0, zw, vh, 0, 0, zW, vh);
+
+      // Default crop: central 65% width, 8%–75% height (broad safe zone)
+      let cropX = zW * 0.175, cropY = vh * 0.08, cropW = zW * 0.65, cropH = vh * 0.67;
+
+      // Try MediaPipe for a precise face bounding box
+      if (this.faceDetector) {
+        try {
+          const res = this.faceDetector.detect(zCv);
+          if (res.detections && res.detections.length > 0) {
+            const bb = res.detections.reduce((a, b) =>
+              (a.boundingBox.width * a.boundingBox.height) > (b.boundingBox.width * b.boundingBox.height) ? a : b
+            ).boundingBox;
+            // Expand bounding box: generous head-room above, chin+neck below
+            const pw = bb.width * 0.45, phU = bb.height * 0.95, phD = bb.height * 0.4;
+            cropX = Math.max(0, bb.originX - pw);
+            cropY = Math.max(0, bb.originY - phU);
+            cropW = Math.min(zW - cropX, bb.width + pw * 2);
+            cropH = Math.min(vh - cropY, bb.height + phU + phD);
+          }
+        } catch (_) {}
+      } else {
+        // Skin-centroid fallback: use the running average from sampleZone
+        const b = this.faceBounds[i];
+        if (b) {
+          const sy = vh * 0.08, sh = vh * 0.6;
+          const fcx = (mirror ? 1 - b.cx : b.cx) * zW;
+          const fcy = sy + b.cy * sh;
+          const fw = zW * 0.65, fh = vh * 0.55;
+          cropX = Math.max(0, fcx - fw / 2);
+          cropY = Math.max(0, fcy - fh * 0.55);
+          cropW = Math.min(zW - cropX, fw);
+          cropH = Math.min(vh - cropY, fh);
+        }
+      }
+
+      const tW = 600, tH = Math.round(tW * cropH / cropW);
+      const fc = document.createElement('canvas');
+      fc.width = tW; fc.height = tH;
+      fc.getContext('2d').drawImage(zCv, cropX, cropY, cropW, cropH, 0, 0, tW, tH);
+      this.captures[i] = fc.toDataURL('image/jpeg', 0.92);
+      this.faceIsCropped[i] = true;
+    } catch (e) { this.faceIsCropped[i] = false; }
   }
 
   // Single shared animation loop advances every scanning station independently.
@@ -539,8 +609,13 @@ class Component extends DCLogic {
     o.ovalStyle = { position: 'absolute', left: `${(face.cx * 100).toFixed(2)}%`, top: `${(face.cy * 100).toFixed(2)}%`, width: `${(face.w * 100).toFixed(1)}%`, height: `${(face.h * 100).toFixed(1)}%`, transform: 'translate(-50%,-50%)', overflow: 'hidden', WebkitMaskImage: ovalMask, maskImage: ovalMask };
 
     // GRABBED still, composited into the hole (frozen the instant the face locked).
+    // When we have a proper face crop the image is already centred on the face,
+    // so we just cover the oval and anchor slightly above centre (favours eyes over chin).
     const cap = (this.captures && this.captures[i]) || null;
-    const frame = { backgroundSize: 'cover', backgroundPosition: `${posX.toFixed(0)}% ${fPosY}%`, transform: `${mirror ? 'scaleX(-1) ' : ''}scale(${fScale})`, transformOrigin: 'center 40%' };
+    const isCropped = !!(this.faceIsCropped && this.faceIsCropped[i]);
+    const frame = isCropped
+      ? { backgroundSize: 'cover', backgroundPosition: 'center 28%' }
+      : { backgroundSize: 'cover', backgroundPosition: `${posX.toFixed(0)}% ${fPosY}%`, transform: `${mirror ? 'scaleX(-1) ' : ''}scale(${fScale})`, transformOrigin: 'center 40%' };
     o.faceImgStyle = Object.assign({ position: 'absolute', inset: '0', backgroundImage: cap ? `url("${cap}")` : 'none', backgroundRepeat: 'no-repeat', filter: 'grayscale(1) contrast(1.3) brightness(1.06)', opacity: cap ? faceReveal : 0, pointerEvents: 'none' }, frame);
 
     // Live alignment preview (idle): the visitor sees themselves in the red oval before the grab.
