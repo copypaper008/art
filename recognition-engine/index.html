@@ -10,11 +10,12 @@
 <helmet>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Archivo:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&family=Special+Elite&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,800;1,900&family=Spline+Sans+Mono:wght@400;500&family=Special+Elite&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;background:#08080a;}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+  @keyframes rainbowShift{to{background-position:200% 0}}
 </style>
 </helmet>
 
@@ -23,176 +24,147 @@
   <div style="{{ stageInnerStyle }}">
 
    <sc-for list="{{ panels }}" as="p" hint-placeholder-count="1">
-    <!-- one 824×1240 card per station -->
+    <!-- one 1040×1560 card per station -->
     <div style="{{ p.shudderStyle }}">
-     <div style="position:relative;width:824px;height:1240px;background:#f1efe7;color:#16130f;box-shadow:0 30px 90px rgba(0,0,0,0.6);">
-      <div style="position:absolute;inset:18px;border:1.5px solid #16130f;"></div>
-      <div style="position:relative;padding:30px 30px 26px;height:100%;display:flex;flex-direction:column;">
+     <div style="position:relative;width:1040px;height:1560px;background:#ECEAE3;color:#14130F;box-shadow:0 30px 90px rgba(0,0,0,0.6);font-family:'Archivo',sans-serif;">
 
-       <!-- HEADER -->
-       <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #16130f;padding-bottom:11px;">
-        <div>
-         <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:35px;line-height:0.92;letter-spacing:0.3px;">SUBJECT ANALYSIS REPORT</div>
-         <div style="font-family:'Spline Sans Mono',monospace;font-size:9.5px;letter-spacing:0.3px;margin-top:9px;display:flex;gap:20px;">
-          <span>FILE ID: {{ p.subjFileId }}</span><span>SUBJECT: {{ p.subjLine }}</span><span>DATE: {{ p.subjDate }}</span>
+      <!-- double border: outer at card edge, inner 6px inset -->
+      <div style="position:absolute;inset:0;border:1px solid #14130F;padding:6px;">
+       <div style="width:100%;height:100%;border:1px solid #14130F;padding:30px 32px;display:flex;flex-direction:column;">
+
+        <!-- HEADER -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+         <div>
+          <div style="font-weight:900;font-size:44px;line-height:0.92;letter-spacing:-0.01em;display:inline-block;transform:scaleX(0.93);transform-origin:left;">SUBJECT&nbsp;ANALYSIS&nbsp;REPORT</div>
+          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.04em;margin-top:10px;color:#3a3833;">FILE ID: {{ p.subjFileId }}&nbsp;&nbsp;&nbsp;&nbsp;SUBJECT: {{ p.subjLine }}&nbsp;&nbsp;&nbsp;&nbsp;DATE: {{ p.subjDate }}</div>
+         </div>
+         <div style="text-align:right;">
+          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.04em;color:#3a3833;">RECOGNITION ENGINE v.7.3.1</div>
+          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.04em;color:#3a3833;margin-bottom:9px;">CULTURAL PATTERN RECOGNITION SYSTEM</div>
+          <div style="width:230px;height:34px;margin-left:auto;background:repeating-linear-gradient(90deg,#14130F 0 2px,transparent 2px 4px,#14130F 4px 5px,transparent 5px 9px,#14130F 9px 12px,transparent 12px 14px,#14130F 14px 15px,transparent 15px 18px);"></div>
          </div>
         </div>
-        <div style="text-align:right;">
-         <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:0.4px;">RECOGNITION ENGINE v.7.3.1</div>
-         <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:0.4px;color:#5a564e;">CULTURAL PATTERN RECOGNITION SYSTEM</div>
-         <div style="margin-top:9px;margin-left:auto;width:170px;height:30px;background:repeating-linear-gradient(90deg,#16130f 0 1.5px,transparent 1.5px 3px,#16130f 3px 5px,transparent 5px 8px,#16130f 8px 9px,transparent 9px 13px);"></div>
-        </div>
-       </div>
+        <div style="height:2px;background:#14130F;margin-top:18px;"></div>
 
-       <!-- BODY: left face column + right stats column -->
-       <div style="display:flex;gap:16px;margin-top:14px;align-items:flex-start;">
-
-        <!-- LEFT COLUMN -->
-        <div style="width:372px;flex:none;display:flex;gap:6px;">
-         <!-- rail -->
-         <div style="width:52px;flex:none;padding-top:4px;">
-          <div style="width:13px;height:100px;background:linear-gradient(#f1efe7,#16130f);border:1px solid #16130f;"></div>
-          <div style="font-family:'Spline Sans Mono',monospace;font-size:6.5px;line-height:1.3;margin-top:5px;letter-spacing:0.2px;">SCAN<br>DEPTH<br>97.2%</div>
-          <div style="margin-top:12px;width:11px;height:150px;background:repeating-linear-gradient(#16130f 0 1px,transparent 1px 9px);"></div>
-          <div style="font-family:'Spline Sans Mono',monospace;font-size:6.5px;line-height:1.35;margin-top:24px;letter-spacing:0.2px;">IMAGE<br>RESOLUTION<br>8192 x 10240</div>
-          <div style="font-family:'Spline Sans Mono',monospace;font-size:6.5px;line-height:1.35;margin-top:12px;">MODE<br>B&W</div>
-          <div style="font-family:'Spline Sans Mono',monospace;font-size:6.5px;line-height:1.35;margin-top:12px;">SOURCE<br>ARCHIVAL<br>RECORD</div>
+        <!-- IDENTITY BAND -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:26px;">
+         <div style="position:relative;min-height:110px;">
+          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.32em;color:#3a3833;">IDENTIFIED SUBJECT</div>
+          <div style="{{ p.identityRevealStyle }}">{{ p.subjectDisplay }}</div>
          </div>
-         <!-- face window -->
-         <div style="flex:1;position:relative;padding:11px;">
-          <div style="position:absolute;top:0;left:0;width:22px;height:22px;border-top:2px solid #16130f;border-left:2px solid #16130f;"></div>
-          <div style="position:absolute;top:0;right:0;width:22px;height:22px;border-top:2px solid #16130f;border-right:2px solid #16130f;"></div>
-          <div style="position:absolute;bottom:0;left:0;width:22px;height:22px;border-bottom:2px solid #16130f;border-left:2px solid #16130f;"></div>
-          <div style="position:absolute;bottom:0;right:0;width:22px;height:22px;border-bottom:2px solid #16130f;border-right:2px solid #16130f;"></div>
-          <div style="position:absolute;left:-3px;top:50%;font-family:'Spline Sans Mono';font-size:13px;transform:translateY(-50%);">+</div>
-          <div style="position:absolute;right:-3px;top:38%;font-family:'Spline Sans Mono';font-size:13px;">+</div>
+         <div style="text-align:right;font-family:'Space Mono',monospace;font-size:12.5px;line-height:1.85;letter-spacing:0.03em;color:#14130F;padding-bottom:6px;">
+          <div>{{ p.metaLine1 }}</div>
+          <div>{{ p.metaLine2 }}</div>
+          <div>{{ p.metaLine3 }}</div>
+         </div>
+        </div>
+        <div style="height:1px;background:#14130F;margin-top:20px;"></div>
 
-          <!-- Face window: always visible; idle = live video; scanning = developing portrait -->
-          <div style="{{ p.faceWinStyle }}">
-           <video muted autoplay playsinline ref="{{ p.videoRef }}" style="{{ p.videoStyle }}"></video>
-           {{ p.captureEl }}
-           <img src="{{ p.portraitSrc }}" alt="" style="{{ p.portraitBlendStyle }}" />
-           {{ p.swapEl }}
-           <!-- detect feedback: label + bar at bottom, only during idle -->
-           <div style="{{ p.detectOverlayStyle }}">
-            <div style="position:absolute;bottom:0;left:0;right:0;height:3px;overflow:hidden;">
-             <div style="{{ p.detectBarStyle }}"></div>
+        <!-- MAIN ROW: scan rail + photo + metrics -->
+        <div style="display:flex;gap:34px;margin-top:26px;">
+
+         <!-- scan rail -->
+         <div style="width:42px;display:flex;flex-direction:column;align-items:flex-start;">
+          <div style="width:18px;height:300px;background:linear-gradient(#14130F,#ECEAE3);border:1px solid #14130F;"></div>
+          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.04em;color:#3a3833;margin-top:12px;line-height:1.5;">SCAN<br>DEPTH<br>{{ p.scanDepthText }}%</div>
+         </div>
+
+         <!-- photo / face window -->
+         <div style="width:300px;flex:none;">
+          <div style="position:relative;padding:14px;">
+           <div style="position:absolute;top:0;left:0;width:26px;height:26px;border-top:2px solid #14130F;border-left:2px solid #14130F;"></div>
+           <div style="position:absolute;top:0;right:0;width:26px;height:26px;border-top:2px solid #14130F;border-right:2px solid #14130F;"></div>
+           <div style="position:absolute;bottom:0;left:0;width:26px;height:26px;border-bottom:2px solid #14130F;border-left:2px solid #14130F;"></div>
+           <div style="position:absolute;bottom:0;right:0;width:26px;height:26px;border-bottom:2px solid #14130F;border-right:2px solid #14130F;"></div>
+           <!-- Face window: idle = live video; scanning = developing portrait -->
+           <div style="{{ p.faceWinStyle }}">
+            <video muted autoplay playsinline ref="{{ p.videoRef }}" style="{{ p.videoStyle }}"></video>
+            {{ p.captureEl }}
+            <img src="{{ p.portraitSrc }}" alt="" style="{{ p.portraitBlendStyle }}" />
+            {{ p.swapEl }}
+            <div style="{{ p.detectOverlayStyle }}">
+             <div style="position:absolute;bottom:0;left:0;right:0;height:3px;overflow:hidden;"><div style="{{ p.detectBarStyle }}"></div></div>
+             <div style="position:absolute;bottom:10px;left:0;right:0;text-align:center;font-family:'Space Mono',monospace;font-size:8px;letter-spacing:1.5px;color:rgba(236,234,227,0.55);">{{ p.detectLabel }}</div>
+             <div style="{{ p.detectRingStyle }}"></div>
             </div>
-            <div style="position:absolute;bottom:10px;left:0;right:0;text-align:center;font-family:'Spline Sans Mono';font-size:8px;letter-spacing:1.5px;color:rgba(241,239,231,0.55);">{{ p.detectLabel }}</div>
-            <div style="{{ p.detectRingStyle }}"></div>
+            <sc-if value="{{ p.camError }}" hint-placeholder-val="{{ false }}">
+             <div style="position:absolute;bottom:12px;left:0;right:0;text-align:center;font-family:'Space Mono',monospace;font-size:8px;color:#9a948a;letter-spacing:1px;">SUBJECT FEED // NO SIGNAL — MANUAL TRIGGER</div>
+            </sc-if>
+            <div style="{{ p.scanGridStyle }}"></div>
+            <div style="{{ p.scanTrailStyle }}"></div>
+            <div style="{{ p.scanLineStyle }}"></div>
            </div>
-           <sc-if value="{{ p.camError }}" hint-placeholder-val="{{ false }}">
-            <div style="position:absolute;bottom:12px;left:0;right:0;text-align:center;font-family:'Spline Sans Mono';font-size:8px;color:#9a948a;letter-spacing:1px;">SUBJECT FEED // NO SIGNAL — MANUAL TRIGGER</div>
-           </sc-if>
-           <div style="{{ p.scanGridStyle }}"></div>
-           <div style="{{ p.scanTrailStyle }}"></div>
-           <div style="{{ p.scanLineStyle }}"></div>
           </div>
+          <div style="font-family:'Space Mono',monospace;font-size:10.5px;letter-spacing:0.04em;color:#3a3833;line-height:1.7;margin-top:10px;display:flex;justify-content:space-between;">
+           <span>IMG&nbsp;8192&nbsp;×&nbsp;10240</span><span>MODE&nbsp;B&amp;W</span><span>SRC&nbsp;ARCHIVE</span>
+          </div>
+         </div>
+
+         <!-- metrics -->
+         <div style="flex:1;display:flex;flex-direction:column;gap:30px;padding-top:4px;">
+          <div>
+           <div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;letter-spacing:0.16em;color:#14130F;">SCAN STATUS:</div>
+           <div style="font-weight:900;font-size:74px;line-height:0.95;letter-spacing:-0.01em;margin-top:4px;">{{ p.bigStatus }}</div>
+           <div style="display:flex;align-items:center;gap:14px;margin-top:14px;">
+            <div style="flex:1;height:11px;background:#D6D3C9;"><div style="{{ p.progressBarFillStyle }}"></div></div>
+            <div style="font-family:'Space Mono',monospace;font-size:13px;color:#3a3833;width:54px;text-align:right;">{{ p.progressPct }}</div>
+           </div>
+          </div>
+          <div style="height:1px;background:#C9C6BC;"></div>
+          <div>
+           <div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;letter-spacing:0.16em;color:#14130F;">CONFIDENCE:</div>
+           <div style="margin-top:2px;"><span style="font-weight:900;font-size:66px;letter-spacing:-0.01em;">{{ p.confText }}</span><span style="font-weight:800;font-size:30px;">%</span></div>
+           <div style="display:flex;align-items:center;gap:14px;margin-top:10px;">
+            <div style="flex:1;height:11px;background:#D6D3C9;"><div style="{{ p.confBarStyle }}"></div></div>
+            <div style="font-family:'Space Mono',monospace;font-size:13px;color:#3a3833;width:54px;text-align:right;">{{ p.confText }}</div>
+           </div>
+          </div>
+          <div style="height:1px;background:#C9C6BC;"></div>
+          <div>
+           <div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;letter-spacing:0.16em;color:#14130F;">REFLECTION SCORE:</div>
+           <div style="margin-top:2px;"><span style="font-weight:900;font-size:66px;letter-spacing:-0.01em;">{{ p.reflText }}</span><span style="font-weight:800;font-size:30px;">%</span></div>
+           <div style="display:flex;align-items:center;gap:14px;margin-top:10px;">
+            <div style="flex:1;height:11px;background:#D6D3C9;"><div style="{{ p.reflBarStyle }}"></div></div>
+            <div style="font-family:'Space Mono',monospace;font-size:13px;color:#3a3833;width:54px;text-align:right;">{{ p.reflText }}</div>
+           </div>
+          </div>
+          <div style="background:#14130F;color:#ECEAE3;font-family:'Space Mono',monospace;font-size:13px;font-weight:700;letter-spacing:0.1em;padding:9px 16px;margin-top:auto;">MACHINE INTERPRETATION: {{ p.interpretation }}</div>
+         </div>
+
+        </div>
+
+        <!-- RAINBOW PHRASE BAND -->
+        <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;margin-top:24px;border-top:1px solid #14130F;position:relative;">
+         <div style="{{ p.phraseCaptionStyle }}">{{ p.phraseCaption }}</div>
+         <div style="position:relative;width:100%;display:flex;align-items:center;justify-content:center;">
+          <div aria-hidden="true" style="{{ p.phraseBlur1Style }}">{{ p.phraseText }}</div>
+          <div aria-hidden="true" style="{{ p.phraseBlur2Style }}">{{ p.phraseText }}</div>
+          <div style="{{ p.phraseMainStyle }}">{{ p.phraseText }}</div>
          </div>
         </div>
 
-        <!-- RIGHT COLUMN -->
-        <div style="flex:1;min-width:0;">
-
-         <!-- STATUS -->
-         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-          <span style="font-family:'Saira Condensed';font-weight:700;font-size:13px;letter-spacing:0.6px;">SCAN STATUS:</span>
-          <div style="width:18px;height:18px;background:conic-gradient(#16130f 90deg,transparent 0 180deg,#16130f 0 270deg,transparent 0);background-size:6px 6px;"></div>
-         </div>
-         <div style="font-family:'Saira Condensed';font-weight:700;font-size:44px;line-height:1;margin-top:1px;">{{ p.bigStatus }}</div>
-         <div style="margin-top:9px;display:flex;align-items:center;gap:8px;">
-          <div style="flex:1;height:8px;border:1px solid #16130f;position:relative;background:repeating-linear-gradient(90deg,rgba(20,17,15,0.25) 0 2px,transparent 2px 4px);">
-           <div style="{{ p.progressFillStyle }}"></div>
-          </div>
-          <span style="font-family:'Spline Sans Mono';font-size:9px;">{{ p.progressPct }}</span>
-         </div>
-
-         <!-- DATASET TICKER -->
-         <div style="{{ p.datasetRowStyle }}">
-          <span style="font-family:'Spline Sans Mono';font-size:8px;letter-spacing:0.8px;color:#5a564e;flex:none;">MATCHING AGAINST</span>
-          <span style="{{ p.datasetSrcStyle }}">{{ p.datasetSrc }}</span>
-         </div>
-
-         <!-- CONFIDENCE -->
-         <div style="margin-top:30px;border-top:1px solid rgba(20,17,15,0.25);padding-top:11px;">
-          <div style="font-family:'Saira Condensed';font-weight:600;font-size:12.5px;letter-spacing:0.6px;">CONFIDENCE:</div>
-          <div style="font-family:'Saira Condensed';font-weight:700;font-size:46px;line-height:1;">{{ p.confText }}<span style="font-size:29px;">%</span></div>
-          <div style="display:flex;align-items:center;gap:8px;margin-top:3px;">
-           <div style="flex:1;height:1px;background:rgba(20,17,15,0.3);position:relative;"><div style="{{ p.confGaugeStyle }}"></div></div>
-           <span style="font-family:'Spline Sans Mono';font-size:9px;">{{ p.confLabel }}%</span>
+        <!-- FOOTER -->
+        <div style="display:flex;justify-content:space-between;align-items:center;border-top:2px solid #14130F;padding-top:16px;margin-top:10px;">
+         <div style="display:flex;align-items:center;gap:16px;">
+          <svg width="42" height="42" viewBox="0 0 42 42" fill="none" stroke="#14130F" stroke-width="1">
+           <circle cx="21" cy="21" r="19"></circle>
+           <ellipse cx="21" cy="21" rx="8" ry="19"></ellipse>
+           <line x1="2" y1="21" x2="40" y2="21"></line>
+           <line x1="6" y1="11" x2="36" y2="11"></line>
+           <line x1="6" y1="31" x2="36" y2="31"></line>
+          </svg>
+          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.04em;color:#3a3833;line-height:1.7;">
+           <div>CLASSIFICATION: {{ p.subjClass }}</div>
+           <div style="{{ p.dispoStyle }}">DISPOSITION: {{ p.dispositionText }}</div>
           </div>
          </div>
-
-         <!-- REFLECTION -->
-         <div style="margin-top:30px;border-top:1px solid rgba(20,17,15,0.25);padding-top:11px;">
-          <div style="font-family:'Saira Condensed';font-weight:600;font-size:12.5px;letter-spacing:0.6px;">REFLECTION SCORE:</div>
-          <div style="font-family:'Saira Condensed';font-weight:700;font-size:46px;line-height:1;">{{ p.reflText }}<span style="font-size:29px;">%</span></div>
-          <div style="display:flex;align-items:center;gap:8px;margin-top:3px;">
-           <div style="flex:1;height:1px;background:rgba(20,17,15,0.3);position:relative;"><div style="{{ p.reflGaugeStyle }}"></div></div>
-           <span style="font-family:'Spline Sans Mono';font-size:9px;">{{ p.reflLabel }}%</span>
-          </div>
-         </div>
-
-         <!-- MACHINE INTERPRETATION -->
-         <div style="margin-top:38px;background:#16130f;color:#f1efe7;font-family:'Saira Condensed';font-weight:700;font-size:11px;letter-spacing:0.9px;padding:4px 8px;">MACHINE INTERPRETATION</div>
-         <div style="margin-top:11px;">
-          <div style="{{ p.interpStyle }}">
-           <p style="margin:0 0 7px;font-family:'Archivo';font-size:11px;line-height:1.35;">Subject exhibits multiple indicators associated with a recognised cultural archetype.</p>
-           <p style="margin:0;font-family:'Archivo';font-size:11px;line-height:1.35;">Alternative explanations have not been considered.</p>
-          </div>
+         <div style="display:flex;align-items:center;gap:12px;">
+          <div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;letter-spacing:0.12em;">CASE CLOSED</div>
+          <div style="width:20px;height:20px;border-radius:50%;background:#14130F;"></div>
          </div>
         </div>
+
        </div>
-
-       <!-- OBSERVED CHARACTERISTICS -->
-       <div style="margin-top:16px;">
-        <div style="background:#16130f;color:#f1efe7;font-family:'Saira Condensed';font-weight:700;font-size:11px;letter-spacing:0.9px;padding:4px 8px;">OBSERVED CHARACTERISTICS</div>
-        <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;column-gap:30px;row-gap:11px;">
-         <sc-for list="{{ p.charItems }}" as="item" hint-placeholder-count="6">
-          <div style="display:flex;gap:11px;align-items:flex-start;">
-           <div style="width:17px;height:17px;border:1.5px solid #16130f;flex:none;display:flex;align-items:center;justify-content:center;margin-top:1px;"><span style="{{ item.tick }}">✓</span></div>
-           <div style="font-family:'Archivo';font-size:13.5px;line-height:1.3;"><span style="{{ item.txt }}">{{ item.text }}</span></div>
-          </div>
-         </sc-for>
-        </div>
-       </div>
-
-       <!-- SYSTEM NOTE -->
-       <div style="margin-top:13px;">
-        <div style="background:#16130f;color:#f1efe7;font-family:'Saira Condensed';font-weight:700;font-size:11px;letter-spacing:0.9px;padding:4px 8px;">SYSTEM NOTE:</div>
-        <div style="padding:10px 2px 0;">
-         <p style="margin:0 0 8px;font-family:'Archivo';font-size:11.5px;line-height:1.4;">The Recognition Engine has determined a result.</p>
-         <p style="margin:0;font-family:'Archivo';font-size:11.5px;line-height:1.4;">The Recognition Engine is unable to explain how this conclusion was reached.</p>
-        </div>
-       </div>
-
-       <!-- BOTTOM BAND -->
-       <div style="margin-top:14px;border:2px solid #16130f;display:flex;height:142px;">
-        <div style="width:142px;flex:none;background:#0e0d0c;position:relative;border-right:2px solid #16130f;overflow:hidden;">
-         <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(241,239,231,0.4);"></div>
-         <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(241,239,231,0.4);"></div>
-         <div style="position:absolute;top:50%;left:50%;width:92px;height:92px;border:1px solid rgba(241,239,231,0.7);border-radius:50%;transform:translate(-50%,-50%);"></div>
-         <div style="position:absolute;top:50%;left:50%;width:30px;height:92px;border:1px solid rgba(241,239,231,0.5);border-radius:50%;transform:translate(-50%,-50%);"></div>
-         <div style="position:absolute;top:50%;left:50%;width:92px;height:30px;border:1px solid rgba(241,239,231,0.5);border-radius:50%;transform:translate(-50%,-50%);"></div>
-        </div>
-        <div style="flex:1;padding:12px 14px;display:flex;flex-direction:column;justify-content:space-between;">
-         <div>
-          <div style="font-family:'Saira Condensed';font-weight:700;font-size:11px;letter-spacing:0.8px;color:#5a564e;">CLASSIFICATION:</div>
-          <div style="{{ p.classStyle }}"><span style="font-family:'Saira Condensed';font-weight:700;font-size:22px;letter-spacing:0.3px;">{{ p.subjClass }}</span></div>
-          <div style="margin-top:5px;font-family:'Saira Condensed';font-weight:700;font-size:11px;letter-spacing:0.8px;color:#5a564e;">EXPLANATION:</div>
-          <div style="{{ p.explStyle }}"><span style="font-family:'Saira Condensed';font-weight:700;font-size:13px;">{{ p.subjExpl }}</span></div>
-         </div>
-         <div>
-          <div style="font-family:'Saira Condensed';font-weight:700;font-size:11px;letter-spacing:0.8px;color:#5a564e;margin-bottom:3px;">DISPOSITION:</div>
-          <div style="{{ p.dispoStyle }}"><span style="font-family:'Saira Condensed';font-weight:700;font-size:13px;letter-spacing:0.3px;">{{ p.dispositionText }}</span></div>
-         </div>
-        </div>
-        <div style="flex:none;width:60px;border-left:2px solid #16130f;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;">
-         <div style="width:30px;height:30px;background:#16130f;border-radius:50%;"></div>
-         <div style="font-family:'Spline Sans Mono';font-size:6px;text-align:center;letter-spacing:0.3px;color:#5a564e;">CASE<br>CLOSED</div>
-        </div>
-       </div>
-
       </div>
 
       <!-- VERDICT STAMP (absolute, over everything) -->
@@ -678,7 +650,7 @@ class Component extends DCLogic {
     'ARCHIVAL PHOTOGRAPH: MATCHED','SUBJECT FILE: COMPILING',
   ];
 
-  // set to 4 for the full installation (each station is 824px wide)
+  // set to 4 for the full installation (each station is 1040px wide)
   STATIONS = 1;
 
   videos = [];
@@ -761,8 +733,8 @@ class Component extends DCLogic {
   }
 
   fit() {
-    const stageW = this.STATIONS * 824 + Math.max(0, this.STATIONS - 1) * 20;
-    this.setState({ scale: Math.min(window.innerWidth / stageW, window.innerHeight / 1240) * 0.97 });
+    const stageW = this.STATIONS * 1040 + Math.max(0, this.STATIONS - 1) * 20;
+    this.setState({ scale: Math.min(window.innerWidth / stageW, window.innerHeight / 1560) * 0.97 });
   }
 
   async startCamera() {
@@ -1077,7 +1049,7 @@ class Component extends DCLogic {
     const o = {};
     o.shudderStyle = { transform:`translate(${sh.toFixed(2)}px,${(sh*0.5).toFixed(2)}px)` };
 
-    o.faceWinStyle = { position:'relative', width:'100%', height:'560px', background:'#0e0d0c', overflow:'hidden' };
+    o.faceWinStyle = { position:'relative', width:'100%', height:'400px', background:'#0e0d0c', overflow:'hidden' };
 
     // Live video: visible only during idle (opacity → 0 when scan fires)
     o.videoRef = this.makeVideoRef(i);
@@ -1151,7 +1123,7 @@ class Component extends DCLogic {
       opacity: scanVidOp
     };
     const oRingW = lerp(22, 26, detP);
-    const oRingH = (oRingW * 1.35 * (824/1240)).toFixed(1);
+    const oRingH = (oRingW * 1.35 * (1040/1560)).toFixed(1);
     const oRingCol = det.present ? this.hexA(RED, 0.7 + 0.3*detP) : this.hexA(RED, 0.5);
     const oGlow = det.present
       ? `0 0 ${(20+40*detP).toFixed(0)}px ${this.hexA(RED, 0.4*detP)}, 0 0 ${(60+80*detP).toFixed(0)}px ${this.hexA(RED, 0.18*detP)}`
@@ -1257,7 +1229,45 @@ class Component extends DCLogic {
 
     o.bigStatus = live ? 'STANDBY' : (t < 2.6 ? 'INITIALISING' : (t < 11.5 ? 'SCANNING' : 'COMPLETE'));
     o.progressFillStyle = { position:'absolute', left:'0', top:'0', bottom:'0', width:`${(prog*100).toFixed(1)}%`, background:'#16130f' };
+    o.progressBarFillStyle = { width:`${(prog*100).toFixed(1)}%`, height:'100%', background:'#14130F' };
     o.progressPct = `${Math.round(prog*100)}%`;
+
+    // New bar styles (solid fill, 11px)
+    const conf = subj.confidence, refl = subj.reflection;
+    o.confBarStyle = { width:`${(confP*conf).toFixed(1)}%`, height:'100%', background:'#14130F' };
+    o.reflBarStyle = { width:`${(reflP*refl).toFixed(1)}%`, height:'100%', background:'#14130F' };
+
+    // Identity band
+    o.subjectDisplay = live ? '' : subj.footer;
+    o.identityRevealStyle = {
+      position:'absolute', top:'22px', left:0,
+      fontWeight:900, fontSize:'100px', lineHeight:0.85, letterSpacing:'-0.02em',
+      display:'inline-block', transform:'scaleX(0.9)', transformOrigin:'left',
+      whiteSpace:'nowrap', opacity: live ? 0 : interpP
+    };
+    o.metaLine1 = live ? '——————' : subj.classification;
+    o.metaLine2 = live ? '——————' : `FILE NO. ${subj.fileId}`;
+    o.metaLine3 = live ? '——————' : `DATE LOGGED · ${subj.date}`;
+    o.scanDepthText = '97.2';
+    o.interpretation = live ? '——' : (subj.explanation || 'NOT AVAILABLE');
+
+    // Rainbow phrase (appears after stamp at t=25.05s)
+    const phraseGrad = 'linear-gradient(90deg,#ff2d55,#ff8a00,#ffe000,#34d058,#22b8ff,#6b5bff,#ff2da6,#ff2d55)';
+    const phrBase = {
+      fontWeight:900, fontStyle:'italic', fontSize:'84px', lineHeight:1.02,
+      letterSpacing:'-0.01em',
+      backgroundImage:phraseGrad, backgroundSize:'200% 100%',
+      WebkitBackgroundClip:'text', backgroundClip:'text',
+      WebkitTextFillColor:'transparent', color:'transparent',
+      animation:'rainbowShift 7s linear infinite'
+    };
+    const phrOp = live ? 0 : dispoOp;
+    o.phraseText = live ? '' : subj.verdict;
+    o.phraseCaption = live ? '' : `${subj.footer} · CULTURAL RESIDUE — CLASSIFIED`;
+    o.phraseCaptionStyle = { fontFamily:"'Space Mono',monospace", fontSize:'13px', letterSpacing:'0.3em', color:'#3a3833', marginBottom:'26px', opacity:phrOp };
+    o.phraseMainStyle = Object.assign({}, phrBase, { position:'relative', opacity:phrOp });
+    o.phraseBlur1Style = Object.assign({}, phrBase, { position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', pointerEvents:'none', filter:'blur(26px)', opacity:0.85*phrOp });
+    o.phraseBlur2Style = Object.assign({}, phrBase, { position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', pointerEvents:'none', filter:'blur(58px)', opacity:0.55*phrOp });
 
     const dsIdx = Math.floor(t * 0.8) % this.DATASET.length;
     const dsVisible = !live && t > 2.6 && t < 17.5;
@@ -1265,7 +1275,6 @@ class Component extends DCLogic {
     o.datasetSrcStyle = { fontFamily:"'Spline Sans Mono',monospace", fontSize:'8px', letterSpacing:'0.6px', color:'#16130f', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' };
     o.datasetSrc = dsVisible ? this.DATASET[dsIdx] : '';
 
-    const conf = subj.confidence, refl = subj.reflection;
     o.confText = live ? '––.––' : (conf*confP).toFixed(2);
     o.confLabel = live ? '––.––' : (conf*confP).toFixed(2);
     o.confGaugeStyle = { position:'absolute', top:'-3px', width:'2px', height:'7px', background:'#16130f', left:`${(confP*conf).toFixed(1)}%` };
@@ -1390,7 +1399,7 @@ class Component extends DCLogic {
   }
 
   renderVals() {
-    const stageW = this.STATIONS * 824 + Math.max(0, this.STATIONS - 1) * 20;
+    const stageW = this.STATIONS * 1040 + Math.max(0, this.STATIONS - 1) * 20;
     return {
       stageStyle: { transform:`scale(${this.state.scale})`, transformOrigin:'center center' },
       stageInnerStyle: { display:'flex', gap:'20px', alignItems:'flex-start' },
