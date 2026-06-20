@@ -285,6 +285,7 @@ class Component extends DCLogic {
     {
       id: 'lorde', enabled: true,
       line: 'LORDE, AUDRE', fileId: 'AL-1934-0218', date: '05.06.2024', footer: 'AUDRE LORDE',
+      portrait: 'assets/lorde-portrait.jpeg',
       cutout: 'assets/lorde-cutout.png',
       confidence: 99.93, reflection: 99.3,
       characteristics: ['Refuses to remain silent when silence is expected','Identifies across multiple categories simultaneously','Converts personal experience into collective instruction','Organises language as an instrument of resistance','Declines to separate the self into manageable parts','Compliance cannot be independently verified'],
@@ -304,6 +305,7 @@ class Component extends DCLogic {
     {
       id: 'ernie', enabled: true,
       line: 'ERNIE', fileId: 'SS-1969-1123', date: '05.06.2024', footer: 'ERNIE',
+      portrait: 'assets/ernie-portrait.jpeg',
       cutout: 'assets/ernie-cutout.png',
       confidence: 99.61, reflection: 96.4,
       characteristics: ['Cohabits long-term with a single male associate','Displays cheerful indifference to social expectation','Demonstrates fixation on a rubber bathtime object','Shares one bedroom across all observed records','Felt-based composition complicates biometric analysis','Pulse cannot be independently verified'],
@@ -323,6 +325,7 @@ class Component extends DCLogic {
     {
       id: 'xena', enabled: true,
       line: 'XENA, OF AMPHIPOLIS', fileId: 'XW-1995-0904', date: '05.06.2024', footer: 'XENA',
+      portrait: 'assets/xena-portrait.jpeg',
       cutout: 'assets/xena-cutout.png',
       confidence: 99.55, reflection: 98.8,
       characteristics: ['Travels exclusively with a single devoted female companion','Demonstrates exceptional capability in unsanctioned combat','Rejects domestic and matrimonial structures','Inspires intense loyalty across populations','Historical period inconsistent with photographic record','Existence cannot be independently verified'],
@@ -355,6 +358,24 @@ class Component extends DCLogic {
       characteristics: ['Depicted female embodiment in contravention of biological assignment','Travelled cross-country in unauthorised conveyance while in non-regulation dress','Demonstrated grief at non-regulation amplitude for assigned gender category','Consumed glitter and sequin materials beyond civilian authorisation threshold','Character and self cannot be satisfactorily distinguished','Collaboration with [NAMES REDACTED] constitutes organised non-compliance','Threat level amplified by widespread public distribution of recorded material'],
       classification: 'PERFORMING ARTIST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
       disposition: 'CONFISCATE BUS · 1994'
+    },
+    {
+      id: 'wilde', enabled: true,
+      line: 'WILDE, OSCAR', fileId: 'OW-1854-1016', date: '05.06.2024', footer: 'OSCAR WILDE',
+      portrait: 'assets/wilde-portrait.jpeg',
+      confidence: 99.99, reflection: 99.8,
+      characteristics: ['Displays excessive ornament in speech, dress, and personal conduct','Produces literature advocating aesthetic experience over moral utility','Maintains public associations with younger males in contravention of social propriety','Demonstrates deliberate indifference to consequence when confronted with exposure','Documented history of witticisms that undermine institutional authority','Performance of heteronormative domestic role unsuccessful and widely noted','Refusal to deny charges interpreted as confirmation of deviance'],
+      classification: 'LITERARY FIGURE', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'TWO YEARS HARD LABOUR · 1895'
+    },
+    {
+      id: 'jack', enabled: true,
+      line: 'MCFARLAND, JACK', fileId: 'WG-1998-0921', date: '05.06.2024', footer: 'JACK MCFARLAND',
+      portrait: 'assets/jack-portrait.jpeg',
+      confidence: 99.61, reflection: 97.2,
+      characteristics: ['Demonstrates sustained and unapologetic deviation from masculine norms','Pursues performing career without evidence of commercial viability','Maintains co-dependent domestic arrangement with female associate','Displays enthusiasm for musical theatre at non-regulation amplitude','Identity appears to require ongoing public affirmation','Fictional status complicates standard biometric protocols','Resistance to assigned social role interpreted as innate rather than environmental'],
+      classification: 'DOMESTIC COHABITANT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'DEPICT WITHOUT ENDORSING · 1998'
     }
   ];
 
@@ -364,7 +385,8 @@ class Component extends DCLogic {
     warhol: 'popart', haring: 'graffiti', milk: 'seal', turing: 'stencil',
     dietrich: 'engrave', sondheim: 'marquee', lorde: 'redact', divine: 'tabloid',
     ernie: 'sticker', franknfurter: 'neon', xena: 'bronze',
-    maupin: 'popart', holiday: 'engrave', stamp: 'tabloid'
+    maupin: 'popart', holiday: 'engrave', stamp: 'tabloid',
+    wilde: 'engrave', jack: 'popart'
   };
 
   CANDIDATES = ['DEVIANT','SUBVERSIVE','DISORDERED','SECURITY RISK','UNFIT','IMMORAL','INVERT','ABNORMAL','DEGENERATE','CRIMINAL','SUSPECT','UNNATURAL'];
