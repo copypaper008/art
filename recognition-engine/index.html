@@ -10,292 +10,659 @@
 <helmet>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Archivo:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,800;1,900&family=Spline+Sans+Mono:wght@400;500&family=Special+Elite&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
   *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;background:#000;}
+  html,body{margin:0;padding:0;background:#08080a;}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+  @keyframes rainbowShift{to{background-position:200% 0}}
 </style>
 </helmet>
 
-<!-- ============================================================= -->
-<!-- 3840 x 2160 STAGE  —  FOUR INDEPENDENT 945-wide STATIONS       -->
-<!-- ============================================================= -->
-<div style="position:fixed;inset:0;background:#050506;display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:'Archivo',sans-serif;">
+<div style="position:fixed;inset:0;background:radial-gradient(circle at 50% 38%,#1c1c1e,#0a0a0b 72%);display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:'Archivo',sans-serif;">
  <div style="{{ stageStyle }}">
-  <div style="position:relative;width:3840px;height:2160px;display:flex;gap:20px;background:#0a0a0b;">
+  <div style="{{ stageInnerStyle }}">
 
-   <sc-for list="{{ panels }}" as="p" hint-placeholder-count="4">
-    <div style="{{ p.panelStyle }}">
+   <sc-for list="{{ panels }}" as="p" hint-placeholder-count="1">
+    <!-- one 1040×1560 card per station -->
+    <div style="{{ p.shudderStyle }}">
+     <div style="position:relative;width:1040px;height:1560px;background:#ECEAE3;color:#14130F;box-shadow:0 30px 90px rgba(0,0,0,0.6);font-family:'Archivo',sans-serif;">
 
-     <!-- shudder wrapper: report + stamp + flash all shake on the verdict -->
-     <div style="{{ p.shudderStyle }}">
+      <!-- double border: outer at card edge, inner 6px inset -->
+      <div style="position:absolute;inset:0;border:1px solid #14130F;padding:6px;">
+       <div style="width:100%;height:100%;border:1px solid #14130F;padding:30px 32px;display:flex;flex-direction:column;">
 
-      <!-- TALL REPORT (single column, fills 945 x 2160) -->
-      <div style="position:absolute;inset:0;padding:34px;display:flex;flex-direction:column;color:#16130f;">
-       <div style="position:absolute;inset:20px;border:1.5px solid #16130f;pointer-events:none;"></div>
-
-       <!-- HEADER -->
-       <div style="border-bottom:2px solid #16130f;padding-bottom:14px;flex:none;">
-        <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:44px;line-height:0.9;letter-spacing:0.3px;">SUBJECT<br>ANALYSIS REPORT</div>
-        <div style="display:flex;justify-content:space-between;margin-top:13px;font-family:'Spline Sans Mono',monospace;font-size:11px;line-height:1.5;letter-spacing:0.3px;">
-         <div>FILE ID: {{ p.subjFileId }}<br>SUBJECT: {{ p.subjLine }}<br>DATE: {{ p.subjDate }}</div>
-         <div style="text-align:right;">RECOGNITION ENGINE v.7.3.1<br><span style="color:#5a564e;">CULTURAL PATTERN<br>RECOGNITION SYSTEM</span></div>
-        </div>
-        <div style="margin-top:11px;height:26px;background:repeating-linear-gradient(90deg,#16130f 0 1.5px,transparent 1.5px 3px,#16130f 3px 5px,transparent 5px 8px,#16130f 8px 9px,transparent 9px 13px);"></div>
-       </div>
-
-       <!-- FACE WINDOW (hero) -->
-       <div style="position:relative;margin-top:16px;width:100%;height:1010px;background:#0e0d0c;overflow:hidden;flex:none;">
-        <div style="position:absolute;top:0;left:0;width:30px;height:30px;border-top:2px solid #2c2a27;border-left:2px solid #2c2a27;"></div>
-        <div style="position:absolute;top:0;right:0;width:30px;height:30px;border-top:2px solid #2c2a27;border-right:2px solid #2c2a27;"></div>
-        <div style="position:absolute;bottom:0;left:0;width:30px;height:30px;border-bottom:2px solid #2c2a27;border-left:2px solid #2c2a27;"></div>
-        <div style="position:absolute;bottom:0;right:0;width:30px;height:30px;border-bottom:2px solid #2c2a27;border-right:2px solid #2c2a27;"></div>
-
-        <!-- visitor's GRABBED face, composited into this figure's face-hole; portrait assembles around it -->
-        <div style="{{ p.ovalStyle }}">
-         <div style="{{ p.faceImgStyle }}"></div>
-         <sc-if value="{{ p.isFallbackCap }}" hint-placeholder-val="{{ false }}">
-          <div style="{{ p.capturedStyle }}">
-           <div style="position:absolute;inset:0;background:repeating-linear-gradient(135deg,#5a5a5a 0 8px,#6a6a6a 8px 16px);"></div>
-          </div>
-         </sc-if>
-        </div>
-
-        <sc-for list="{{ p.portraitChunks }}" as="chunk" hint-placeholder-count="6">
-         <div style="{{ chunk.style }}"></div>
-        </sc-for>
-
-        <sc-if value="{{ p.camError }}" hint-placeholder-val="{{ false }}">
-         <div style="position:absolute;bottom:14px;left:0;right:0;text-align:center;font-family:'Spline Sans Mono',monospace;font-size:11px;color:#9a948a;letter-spacing:1px;">SUBJECT FEED // NO SIGNAL — CHECK CAMERA</div>
-        </sc-if>
-
-        <div style="{{ p.scanGridStyle }}"></div>
-        <div style="{{ p.scanTrailStyle }}"></div>
-        <div style="{{ p.scanLineStyle }}"></div>
-       </div>
-
-       <!-- SCAN STATUS -->
-       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex:none;">
-        <span style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:16px;letter-spacing:0.6px;">SCAN STATUS:</span>
-        <div style="width:20px;height:20px;background:conic-gradient(#16130f 90deg,transparent 0 180deg,#16130f 0 270deg,transparent 0);background-size:7px 7px;"></div>
-       </div>
-       <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:54px;line-height:1;flex:none;">{{ p.bigStatus }}</div>
-       <div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex:none;">
-        <div style="flex:1;height:10px;border:1px solid #16130f;position:relative;background:repeating-linear-gradient(90deg,rgba(20,17,15,0.25) 0 2px,transparent 2px 4px);">
-         <div style="{{ p.progressFillStyle }}"></div>
-        </div>
-        <span style="font-family:'Spline Sans Mono',monospace;font-size:11px;">{{ p.progressPct }}</span>
-       </div>
-
-       <!-- CONFIDENCE + REFLECTION -->
-       <div style="display:flex;gap:18px;margin-top:16px;flex:none;">
-        <div style="flex:1;border-top:1px solid rgba(20,17,15,0.25);padding-top:10px;">
-         <div style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:14px;letter-spacing:0.6px;">CONFIDENCE:</div>
-         <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:50px;line-height:1;">{{ p.confText }}<span style="font-size:30px;">%</span></div>
-         <div style="display:flex;align-items:center;gap:8px;margin-top:4px;"><div style="flex:1;height:1px;background:rgba(20,17,15,0.3);position:relative;"><div style="{{ p.confGaugeStyle }}"></div></div><span style="font-family:'Spline Sans Mono',monospace;font-size:10px;">{{ p.confLabel }}%</span></div>
-        </div>
-        <div style="flex:1;border-top:1px solid rgba(20,17,15,0.25);padding-top:10px;">
-         <div style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:14px;letter-spacing:0.6px;">REFLECTION:</div>
-         <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:50px;line-height:1;">{{ p.reflText }}<span style="font-size:30px;">%</span></div>
-         <div style="display:flex;align-items:center;gap:8px;margin-top:4px;"><div style="flex:1;height:1px;background:rgba(20,17,15,0.3);position:relative;"><div style="{{ p.reflGaugeStyle }}"></div></div><span style="font-family:'Spline Sans Mono',monospace;font-size:10px;">{{ p.reflLabel }}%</span></div>
-        </div>
-       </div>
-
-       <!-- OBSERVED CHARACTERISTICS -->
-       <div style="margin-top:16px;background:#16130f;color:#f1efe7;font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:13px;letter-spacing:0.9px;padding:5px 10px;flex:none;">OBSERVED CHARACTERISTICS</div>
-       <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;flex:none;">
-        <sc-for list="{{ p.charItems }}" as="item" hint-placeholder-count="7">
-         <div style="display:flex;gap:10px;align-items:flex-start;">
-          <div style="width:15px;height:15px;border:1.5px solid #16130f;flex:none;display:flex;align-items:center;justify-content:center;margin-top:1px;"><span style="{{ item.tick }}">&#10003;</span></div>
-          <div style="font-family:'Archivo',sans-serif;font-size:13px;line-height:1.25;"><span style="{{ item.txt }}">{{ item.text }}</span></div>
+        <!-- HEADER -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+         <div>
+          <div style="font-weight:900;font-size:44px;line-height:0.92;letter-spacing:-0.01em;display:inline-block;transform:scaleX(0.93);transform-origin:left;">SUBJECT&nbsp;ANALYSIS&nbsp;REPORT</div>
+          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.04em;margin-top:10px;color:#3a3833;">FILE ID: {{ p.subjFileId }}&nbsp;&nbsp;&nbsp;&nbsp;SUBJECT: {{ p.subjLine }}&nbsp;&nbsp;&nbsp;&nbsp;DATE: {{ p.subjDate }}</div>
          </div>
-        </sc-for>
-       </div>
-
-       <!-- CLASSIFICATION / EXPLANATION (pinned to the bottom) -->
-       <div style="margin-top:auto;border:2px solid #16130f;padding:14px 16px;flex:none;">
-        <div style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:14px;letter-spacing:0.6px;">CLASSIFICATION:</div>
-        <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:40px;line-height:1.02;"><span style="{{ p.classStyle }}">{{ p.subjClass }}</span></div>
-        <div style="height:1px;background:rgba(20,17,15,0.3);margin:10px 0;"></div>
-        <div style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:14px;letter-spacing:0.6px;">EXPLANATION:</div>
-        <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:30px;line-height:1.02;"><span style="{{ p.explStyle }}">{{ p.subjExpl }}</span></div>
-       </div>
-
-       <!-- FOOTER -->
-       <div style="border-top:2px solid #16130f;padding-top:12px;margin-top:14px;display:flex;justify-content:space-between;align-items:flex-end;flex:none;">
-        <div style="font-family:'Saira Condensed',sans-serif;">
-         <div style="font-weight:700;font-size:15px;letter-spacing:0.4px;">{{ p.subjFooter }}</div>
-         <div style="font-weight:700;font-size:12px;letter-spacing:0.4px;">RECOGNITION &amp; SIMULATION</div>
-         <div style="font-weight:500;font-size:12px;letter-spacing:0.4px;">A SOLO EXHIBITION</div>
+         <div style="text-align:right;">
+          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.04em;color:#3a3833;">RECOGNITION ENGINE v.7.3.1</div>
+          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.04em;color:#3a3833;margin-bottom:9px;">CULTURAL PATTERN RECOGNITION SYSTEM</div>
+          <div style="width:230px;height:34px;margin-left:auto;background:repeating-linear-gradient(90deg,#14130F 0 2px,transparent 2px 4px,#14130F 4px 5px,transparent 5px 9px,#14130F 9px 12px,transparent 12px 14px,#14130F 14px 15px,transparent 15px 18px);"></div>
+         </div>
         </div>
-        <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;line-height:1.5;text-align:right;">06.01 — 09.22.2024<br>MUSEUM OF CONTEMPORARY<br>CULTURAL STUDIES</div>
+        <div style="height:2px;background:#14130F;margin-top:18px;"></div>
+
+        <!-- IDENTITY BAND -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:26px;">
+         <div style="position:relative;min-height:110px;">
+          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.32em;color:#3a3833;">IDENTIFIED SUBJECT</div>
+          <div style="{{ p.identityRevealStyle }}">{{ p.subjectDisplay }}</div>
+         </div>
+         <div style="text-align:right;font-family:'Space Mono',monospace;font-size:12.5px;line-height:1.85;letter-spacing:0.03em;color:#14130F;padding-bottom:6px;">
+          <div>{{ p.metaLine1 }}</div>
+          <div>{{ p.metaLine2 }}</div>
+          <div>{{ p.metaLine3 }}</div>
+         </div>
+        </div>
+        <div style="height:1px;background:#14130F;margin-top:20px;"></div>
+
+        <!-- MAIN ROW: scan rail + photo + metrics -->
+        <div style="display:flex;gap:34px;margin-top:26px;">
+
+         <!-- scan rail -->
+         <div style="width:42px;display:flex;flex-direction:column;align-items:flex-start;">
+          <div style="width:18px;height:300px;background:linear-gradient(#14130F,#ECEAE3);border:1px solid #14130F;"></div>
+          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.04em;color:#3a3833;margin-top:12px;line-height:1.5;">SCAN<br>DEPTH<br>{{ p.scanDepthText }}%</div>
+         </div>
+
+         <!-- photo / face window -->
+         <div style="width:300px;flex:none;">
+          <div style="position:relative;padding:14px;">
+           <div style="position:absolute;top:0;left:0;width:26px;height:26px;border-top:2px solid #14130F;border-left:2px solid #14130F;"></div>
+           <div style="position:absolute;top:0;right:0;width:26px;height:26px;border-top:2px solid #14130F;border-right:2px solid #14130F;"></div>
+           <div style="position:absolute;bottom:0;left:0;width:26px;height:26px;border-bottom:2px solid #14130F;border-left:2px solid #14130F;"></div>
+           <div style="position:absolute;bottom:0;right:0;width:26px;height:26px;border-bottom:2px solid #14130F;border-right:2px solid #14130F;"></div>
+           <!-- Face window: idle = live video; scanning = developing portrait -->
+           <div style="{{ p.faceWinStyle }}">
+            <video muted autoplay playsinline ref="{{ p.videoRef }}" style="{{ p.videoStyle }}"></video>
+            {{ p.captureEl }}
+            <img src="{{ p.portraitSrc }}" alt="" style="{{ p.portraitBlendStyle }}" />
+            {{ p.swapEl }}
+            <div style="{{ p.detectOverlayStyle }}">
+             <div style="position:absolute;bottom:0;left:0;right:0;height:3px;overflow:hidden;"><div style="{{ p.detectBarStyle }}"></div></div>
+             <div style="position:absolute;bottom:10px;left:0;right:0;text-align:center;font-family:'Space Mono',monospace;font-size:8px;letter-spacing:1.5px;color:rgba(236,234,227,0.55);">{{ p.detectLabel }}</div>
+             <div style="{{ p.detectRingStyle }}"></div>
+            </div>
+            <sc-if value="{{ p.camError }}" hint-placeholder-val="{{ false }}">
+             <div style="position:absolute;bottom:12px;left:0;right:0;text-align:center;font-family:'Space Mono',monospace;font-size:8px;color:#9a948a;letter-spacing:1px;">SUBJECT FEED // NO SIGNAL — MANUAL TRIGGER</div>
+            </sc-if>
+            <div style="{{ p.scanGridStyle }}"></div>
+            <div style="{{ p.scanTrailStyle }}"></div>
+            <div style="{{ p.scanLineStyle }}"></div>
+           </div>
+          </div>
+          <div style="font-family:'Space Mono',monospace;font-size:10.5px;letter-spacing:0.04em;color:#3a3833;line-height:1.7;margin-top:10px;display:flex;justify-content:space-between;">
+           <span>IMG&nbsp;8192&nbsp;×&nbsp;10240</span><span>MODE&nbsp;B&amp;W</span><span>SRC&nbsp;ARCHIVE</span>
+          </div>
+         </div>
+
+         <!-- metrics -->
+         <div style="flex:1;display:flex;flex-direction:column;gap:30px;padding-top:4px;">
+          <div>
+           <div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;letter-spacing:0.16em;color:#14130F;">SCAN STATUS:</div>
+           <div style="font-weight:900;font-size:74px;line-height:0.95;letter-spacing:-0.01em;margin-top:4px;">{{ p.bigStatus }}</div>
+           <div style="display:flex;align-items:center;gap:14px;margin-top:14px;">
+            <div style="flex:1;height:11px;background:#D6D3C9;"><div style="{{ p.progressBarFillStyle }}"></div></div>
+            <div style="font-family:'Space Mono',monospace;font-size:13px;color:#3a3833;width:54px;text-align:right;">{{ p.progressPct }}</div>
+           </div>
+          </div>
+          <div style="height:1px;background:#C9C6BC;"></div>
+          <div>
+           <div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;letter-spacing:0.16em;color:#14130F;">CONFIDENCE:</div>
+           <div style="margin-top:2px;"><span style="font-weight:900;font-size:66px;letter-spacing:-0.01em;">{{ p.confText }}</span><span style="font-weight:800;font-size:30px;">%</span></div>
+           <div style="display:flex;align-items:center;gap:14px;margin-top:10px;">
+            <div style="flex:1;height:11px;background:#D6D3C9;"><div style="{{ p.confBarStyle }}"></div></div>
+            <div style="font-family:'Space Mono',monospace;font-size:13px;color:#3a3833;width:54px;text-align:right;">{{ p.confText }}</div>
+           </div>
+          </div>
+          <div style="height:1px;background:#C9C6BC;"></div>
+          <div>
+           <div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;letter-spacing:0.16em;color:#14130F;">REFLECTION SCORE:</div>
+           <div style="margin-top:2px;"><span style="font-weight:900;font-size:66px;letter-spacing:-0.01em;">{{ p.reflText }}</span><span style="font-weight:800;font-size:30px;">%</span></div>
+           <div style="display:flex;align-items:center;gap:14px;margin-top:10px;">
+            <div style="flex:1;height:11px;background:#D6D3C9;"><div style="{{ p.reflBarStyle }}"></div></div>
+            <div style="font-family:'Space Mono',monospace;font-size:13px;color:#3a3833;width:54px;text-align:right;">{{ p.reflText }}</div>
+           </div>
+          </div>
+          <div style="background:#14130F;color:#ECEAE3;font-family:'Space Mono',monospace;font-size:13px;font-weight:700;letter-spacing:0.1em;padding:9px 16px;margin-top:auto;">MACHINE INTERPRETATION: {{ p.interpretation }}</div>
+         </div>
+
+        </div>
+
+        <!-- STAMP BAND -->
+        <div style="{{ p.stampBandStyle }}">{{ p.bandStampEl }}</div>
+
+        <!-- FOOTER -->
+        <div style="display:flex;justify-content:space-between;align-items:center;border-top:2px solid #14130F;padding-top:16px;margin-top:10px;">
+         <div style="display:flex;align-items:center;gap:16px;">
+          <svg width="42" height="42" viewBox="0 0 42 42" fill="none" stroke="#14130F" stroke-width="1">
+           <circle cx="21" cy="21" r="19"></circle>
+           <ellipse cx="21" cy="21" rx="8" ry="19"></ellipse>
+           <line x1="2" y1="21" x2="40" y2="21"></line>
+           <line x1="6" y1="11" x2="36" y2="11"></line>
+           <line x1="6" y1="31" x2="36" y2="31"></line>
+          </svg>
+          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.04em;color:#3a3833;line-height:1.7;">
+           <div>CLASSIFICATION: {{ p.subjClass }}</div>
+           <div style="{{ p.dispoStyle }}">DISPOSITION: {{ p.dispositionText }}</div>
+          </div>
+         </div>
+         <div style="display:flex;align-items:center;gap:12px;">
+          <div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;letter-spacing:0.12em;">CASE CLOSED</div>
+          <div style="width:20px;height:20px;border-radius:50%;background:#14130F;"></div>
+         </div>
+        </div>
+
        </div>
       </div>
 
-      <!-- VERDICT STAMP (pop-art screenprint) over the face -->
-      <div style="{{ p.stampStyle }}">
-       <div style="{{ p.stampBoxStyle }}">
-        <div style="{{ p.stampLayerA }}">{{ p.verdictText }}</div>
-        <div style="{{ p.stampLayerB }}">{{ p.verdictText }}</div>
-        <div style="{{ p.stampLayerC }}">{{ p.verdictText }}</div>
-        <div style="{{ p.stampTextStyle }}">{{ p.verdictText }}</div>
-       </div>
-       <div style="{{ p.stampAsteriskStyle }}">★ ★ ★ ★ ★ ★ ★ ★</div>
-      </div>
 
+      <!-- colour flash on verdict slam -->
       <div style="{{ p.flashStyle }}"></div>
-     </div>
 
-     <!-- BLACK CURTAIN / IDLE — live alignment preview: "put your face in the red oval" -->
-     <div style="{{ p.curtainStyle }}">
-      <div style="{{ p.curtainReticleStyle }}">
-       <div style="{{ p.reticleVideoWrapStyle }}">
-        <video muted autoplay playsinline ref="{{ p.videoRef }}" style="{{ p.previewVideoStyle }}"></video>
+      <!-- LIVE OVERLAY: stays up through scanning, fades when portrait fully revealed -->
+      <div style="{{ p.liveOverlayStyle }}">
+       <!-- Camera video: fades out when scan fires -->
+       <video muted autoplay playsinline ref="{{ p.overlayVideoRef }}" style="{{ p.liveVideoFillStyle }}"></video>
+       <!-- IDLE CONTENT: fades out when scan fires -->
+       <div style="{{ p.overlayIdleStyle }}">
+        <div style="position:absolute;top:6%;left:0;right:0;text-align:center;pointer-events:none;">
+         <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:3px;color:rgba(241,239,231,0.4);margin-bottom:14px;">RECOGNITION ENGINE v.7.3.1</div>
+         <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:60px;line-height:0.9;color:#f1efe7;">AWAITING<br>SUBJECT</div>
+        </div>
+        <div style="position:absolute;left:36%;top:26%;width:22px;height:22px;border-top:2px solid rgba(241,239,231,0.45);border-left:2px solid rgba(241,239,231,0.45);pointer-events:none;"></div>
+        <div style="position:absolute;right:36%;top:26%;width:22px;height:22px;border-top:2px solid rgba(241,239,231,0.45);border-right:2px solid rgba(241,239,231,0.45);pointer-events:none;"></div>
+        <div style="position:absolute;left:36%;top:49%;width:22px;height:22px;border-bottom:2px solid rgba(241,239,231,0.45);border-left:2px solid rgba(241,239,231,0.45);pointer-events:none;"></div>
+        <div style="position:absolute;right:36%;top:49%;width:22px;height:22px;border-bottom:2px solid rgba(241,239,231,0.45);border-right:2px solid rgba(241,239,231,0.45);pointer-events:none;"></div>
+        <div style="{{ p.liveRingStyle }}"></div>
+        <div style="position:absolute;top:56%;left:8%;right:8%;text-align:center;pointer-events:none;">
+         <p style="margin:0 0 8px;font-family:'Archivo',sans-serif;font-size:13px;line-height:1.5;color:#f1efe7;font-weight:600;">Step into the frame. The engine will record your face,<br>decide what you are, and file the verdict.</p>
+         <p style="margin:0 0 20px;font-family:'Archivo',sans-serif;font-size:11.5px;line-height:1.45;color:rgba(241,239,231,0.55);">You do not get to see the criteria.<br>You do not get to disagree.</p>
+         <div style="width:40%;margin:0 auto 18px;height:1px;background:rgba(241,239,231,0.18);"></div>
+         <div style="{{ p.liveMsgStyle }}">{{ p.liveMsg }}</div>
+        </div>
        </div>
-       <div style="{{ p.reticleRingStyle }}"></div>
-      </div>
-      <div style="position:absolute;top:34%;left:50%;transform:translate(-50%,180px);display:flex;flex-direction:column;align-items:center;gap:12px;width:80%;">
-       <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:24px;letter-spacing:4px;color:#f1efe7;text-align:center;">{{ p.detectLabel }}</div>
-       <div style="width:180px;height:4px;background:rgba(241,239,231,0.18);position:relative;overflow:hidden;"><div style="{{ p.detectBarStyle }}"></div></div>
+       <!-- SCAN CONTENT: portrait reveal + scan FX + stats, fades in when scan fires -->
+       <div style="{{ p.overlayScanContentStyle }}">
+        <!-- Face targeting brackets — contract as scan locks in -->
+        <div style="{{ p.faceBracketTL }}"></div>
+        <div style="{{ p.faceBracketTR }}"></div>
+        <div style="{{ p.faceBracketBL }}"></div>
+        <div style="{{ p.faceBracketBR }}"></div>
+        <div style="{{ p.overlayScanGridStyle }}"></div>
+        <div style="{{ p.overlayScanTrailStyle }}"></div>
+        <div style="{{ p.overlayScanLineStyle }}"></div>
+        <!-- HOLD STILL banner: appears briefly at scan start -->
+        <div style="{{ p.holdStillStyle }}">
+         <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:52px;line-height:1;color:#f1efe7;letter-spacing:2px;">HOLD STILL</div>
+         <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:3px;color:rgba(241,239,231,0.55);margin-top:10px;">DO NOT MOVE</div>
+        </div>
+        <!-- TOP STATS BANNER -->
+        <div style="position:absolute;top:0;left:0;right:0;background:linear-gradient(to bottom,rgba(10,10,11,0.97) 0%,rgba(10,10,11,0.80) 52%,transparent 100%);padding:26px 30px 100px;pointer-events:none;">
+         <div style="font-family:'Spline Sans Mono',monospace;font-size:12px;letter-spacing:3px;color:rgba(241,239,231,0.38);margin-bottom:8px;">RECOGNITION ENGINE v.7.3.1</div>
+         <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:10px;">
+          <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:52px;line-height:1;color:#f1efe7;">{{ p.overlayScanStatus }}</div>
+          <div style="{{ p.overlayScanBlinkStyle }}">●</div>
+         </div>
+         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <div style="flex:1;height:5px;border:1px solid rgba(241,239,231,0.2);position:relative;background:rgba(241,239,231,0.04);">
+           <div style="{{ p.overlayProgressFillStyle }}"></div>
+          </div>
+          <span style="font-family:'Spline Sans Mono',monospace;font-size:13px;color:#f1efe7;min-width:36px;text-align:right;">{{ p.overlayProgressPct }}</span>
+         </div>
+         <div style="{{ p.overlayScanMsgStyle }}">▸ {{ p.overlayScanMsg }}</div>
+         <div style="display:flex;gap:40px;margin-top:18px;">
+          <div>
+           <div style="font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:1.5px;color:rgba(241,239,231,0.38);margin-bottom:2px;">CONFIDENCE</div>
+           <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:36px;line-height:1;color:#f1efe7;">{{ p.overlayConfText }}<span style="font-size:20px;">%</span></div>
+          </div>
+          <div>
+           <div style="font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:1.5px;color:rgba(241,239,231,0.38);margin-bottom:2px;">REFLECTION</div>
+           <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:36px;line-height:1;color:#f1efe7;">{{ p.overlayReflText }}<span style="font-size:20px;">%</span></div>
+          </div>
+         </div>
+        </div>
+        <!-- CHARACTERISTICS ticking in during scan -->
+        <div style="{{ p.overlayCharsWrapStyle }}">
+         <div style="font-family:'Spline Sans Mono',monospace;font-size:14px;letter-spacing:2px;color:rgba(241,239,231,0.3);margin-bottom:14px;">OBSERVED CHARACTERISTICS</div>
+         <sc-for list="{{ p.overlayCharItems }}" as="item">
+          <div style="{{ item.style }}">
+           <div style="display:flex;gap:14px;align-items:baseline;margin-bottom:16px;">
+            <span style="{{ item.tickStyle }}">✓</span>
+            <span style="font-family:'Special Elite',serif;font-size:30px;line-height:1.35;color:#f1efe7;text-shadow:0 2px 8px rgba(0,0,0,1),0 0 20px rgba(0,0,0,0.95);">{{ item.text }}</span>
+           </div>
+          </div>
+         </sc-for>
+        </div>
+        <!-- CAMERA THUMBNAIL — lower right with bouncing scan bar -->
+        <div style="{{ p.overlayThumbWrapStyle }}">
+         <video muted autoplay playsinline ref="{{ p.overlayThumbRef }}" style="{{ p.overlayThumbVideoStyle }}"></video>
+         <img src="{{ p.overlayThumbPortraitSrc }}" alt="" style="{{ p.overlayThumbPortraitStyle }}" />
+         <div style="{{ p.overlayThumbRollStyle }}"></div>
+         <div style="{{ p.overlayThumbRollStyle2 }}"></div>
+         <canvas ref="{{ p.overlayThumbNoiseRef }}" width="72" height="95" style="{{ p.overlayThumbNoiseStyle }}"></canvas>
+         <div style="{{ p.overlayThumbScanStyle }}"></div>
+        </div>
+        <!-- BOTTOM DATA STRIP -->
+        <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(10,10,11,0.9) 0%,transparent 100%);padding:55px 30px 20px;pointer-events:none;">
+         <div style="display:flex;justify-content:space-between;align-items:flex-end;">
+          <div style="font-family:'Spline Sans Mono',monospace;font-size:13px;letter-spacing:0.8px;color:rgba(241,239,231,0.4);line-height:1.8;">
+           <div>MATCHING AGAINST&nbsp;&nbsp;<span style="color:rgba(241,239,231,0.75);">{{ p.overlayDatasetSrc }}</span></div>
+           <div>CASE REF&nbsp;&nbsp;<span style="color:rgba(241,239,231,0.75);">{{ p.subjFileId }}</span></div>
+          </div>
+          <div style="font-family:'Spline Sans Mono',monospace;font-size:13px;letter-spacing:0.8px;color:rgba(241,239,231,0.4);text-align:right;line-height:1.8;">
+           <div>ELAPSED&nbsp;&nbsp;<span style="color:rgba(241,239,231,0.75);">{{ p.overlayElapsed }}</span></div>
+           <div style="{{ p.overlaySensorStyle }}">● SENSOR ACTIVE</div>
+          </div>
+         </div>
+        </div>
+       </div>
       </div>
      </div>
-
     </div>
    </sc-for>
 
   </div>
  </div>
 </div>
-</x-dc>
-<script type="text/x-dc" data-dc-script data-props="{
- &quot;$preview&quot;: { &quot;width&quot;: 960, &quot;height&quot;: 540 },
- &quot;scanColor&quot;: { &quot;editor&quot;: &quot;color&quot;, &quot;default&quot;: &quot;#c0443a&quot;, &quot;tsType&quot;: &quot;string&quot; },
- &quot;mirrorCam&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot; },
- &quot;reverseZones&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot; },
- &quot;autoLoop&quot;: { &quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot; }
-}">
+
+<script data-dc-script>
 class Component extends DCLogic {
 
   /* ===================================================================== *
-   *  SUBJECTS  —  THE ONLY THING YOU EDIT TO ADD A PERSON                 *
-   * ===================================================================== *
-   *  Each of the FOUR stations independently picks ONE enabled subject at  *
-   *  random when a face is detected in its zone, and assembles that        *
-   *  portrait around the live face.                                        *
-   *                                                                        *
-   *  TO ADD A PERSON:                                                      *
-   *   1. Drop their face-cutout PNG in  assets/<id>-cutout.png            *
-   *      (front-facing portrait, FACE KNOCKED OUT to transparency).        *
-   *   2. Copy one block below, fill in the copy, set  enabled: true.       *
+   *  SUBJECTS                                                              *
+   *  portrait: full B&W photo (used for multiply-blend composite)         *
+   *  cutout: transparent-face PNG (fallback for subjects without portrait) *
    * ===================================================================== */
   subjects = [
     {
-      id: 'warhol',
-      enabled: true,
-      line: 'WARHOL, ANDY',
-      fileId: 'AW-1928-0601',
-      date: '05.06.2024',
-      footer: 'ANDY WARHOL',
+      id: 'warhol', enabled: true,
+      line: 'WARHOL, ANDY', fileId: 'AW-1928-0601', date: '05.06.2024', footer: 'ANDY WARHOL',
+      portrait: 'assets/warhol-portrait.jpeg',
       cutout: 'assets/warhol-cutout.png',
-      face: { cx: 0.505, cy: 0.644, w: 0.60, h: 0.66, scale: 1.32, posY: 38 },
-      confidence: 99.98,
-      reflection: 98.7,
-      characteristics: [
-        'Displays advanced understanding of image production',
-        'Demonstrates sustained interest in celebrity ecosystems',
-        'Maintains controlled emotional presentation',
-        'Repeatedly converts personal experience into cultural artefact',
-        'Identity appears partially self-constructed',
-        'Exhibits fascination with visibility',
-        'Human authenticity cannot be independently verified'
-      ],
-      classification: 'CULTURAL ICON',
-      explanation: 'NOT AVAILABLE',
-      verdict: 'HOMOSEXUAL'
+      confidence: 99.98, reflection: 98.7,
+      characteristics: ['Displays advanced understanding of image production','Demonstrates sustained interest in celebrity ecosystems','Maintains controlled emotional presentation','Repeatedly converts personal experience into cultural artefact','Identity appears partially self-constructed','Exhibits fascination with visibility','Human authenticity cannot be independently verified'],
+      classification: 'CULTURAL ICON', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'SURVEIL · CATALOGUE · DISMISS'
     },
-
-    /* ---- PLACEHOLDER: add the cutout PNG, then flip enabled to true ---- */
     {
-      id: 'haring',
-      enabled: false,
-      line: 'HARING, KEITH',
-      fileId: 'KH-1958-0504',
-      date: '05.06.2024',
-      footer: 'KEITH HARING',
+      id: 'haring', enabled: true,
+      line: 'HARING, KEITH', fileId: 'KH-1958-0504', date: '05.06.2024', footer: 'KEITH HARING',
+      portrait: 'assets/haring-portrait.jpeg',
       cutout: 'assets/haring-cutout.png',
-      face: { cx: 0.50, cy: 0.60, w: 0.60, h: 0.66, scale: 1.32, posY: 38 },
-      confidence: 99.94,
-      reflection: 97.9,
-      characteristics: [
-        'Produces high volumes of publicly legible imagery',
-        'Demonstrates compulsion toward repetition and pattern',
-        'Distributes work outside sanctioned institutional channels',
-        'Associates symbolic figures with collective movement',
-        'Engagement with public space exceeds permitted parameters',
-        'Motivations cannot be independently verified'
-      ],
-      classification: 'CULTURAL ICON',
-      explanation: 'NOT AVAILABLE',
-      verdict: 'HOMOSEXUAL'
+      confidence: 99.94, reflection: 97.9,
+      characteristics: ['Produces high volumes of publicly legible imagery','Demonstrates compulsion toward repetition and pattern','Distributes work outside sanctioned institutional channels','Associates symbolic figures with collective movement','Engagement with public space exceeds permitted parameters','Motivations cannot be independently verified'],
+      classification: 'CULTURAL ICON', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'CONTAIN · WITHHOLD CARE'
     },
     {
-      id: 'milk',
-      enabled: false,
-      line: 'MILK, HARVEY',
-      fileId: 'HM-1930-0522',
-      date: '05.06.2024',
-      footer: 'HARVEY MILK',
+      id: 'milk', enabled: true,
+      line: 'MILK, HARVEY', fileId: 'HM-1930-0522', date: '05.06.2024', footer: 'HARVEY MILK',
+      portrait: 'assets/milk-portrait.jpeg',
       cutout: 'assets/milk-cutout.png',
-      face: { cx: 0.50, cy: 0.60, w: 0.60, h: 0.66, scale: 1.32, posY: 38 },
-      confidence: 99.89,
-      reflection: 98.2,
-      characteristics: [
-        'Seeks access to civic and representative structures',
-        'Demonstrates capacity to organise dispersed populations',
-        'Communicates persuasively across demographic boundaries',
-        'Encourages assembly and collective visibility',
-        'Influence extends beyond assigned jurisdiction',
-        'Intentions cannot be independently verified'
-      ],
-      classification: 'PUBLIC FIGURE',
-      explanation: 'NOT AVAILABLE',
-      verdict: 'HOMOSEXUAL'
+      confidence: 99.89, reflection: 98.2,
+      characteristics: ['Seeks access to civic and representative structures','Demonstrates capacity to organise dispersed populations','Communicates persuasively across demographic boundaries','Encourages assembly and collective visibility','Influence extends beyond assigned jurisdiction','Intentions cannot be independently verified'],
+      classification: 'PUBLIC FIGURE', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'REMOVE FROM OFFICE'
     },
     {
-      id: 'turing',
-      enabled: false,
-      line: 'TURING, ALAN',
-      fileId: 'AT-1912-0623',
-      date: '05.06.2024',
-      footer: 'ALAN TURING',
+      id: 'turing', enabled: true,
+      line: 'TURING, ALAN', fileId: 'AT-1912-0623', date: '05.06.2024', footer: 'ALAN TURING',
+      portrait: 'assets/turing-portrait.jpeg',
       cutout: 'assets/turing-cutout.png',
-      face: { cx: 0.50, cy: 0.60, w: 0.60, h: 0.66, scale: 1.32, posY: 38 },
-      confidence: 99.97,
-      reflection: 99.1,
-      characteristics: [
-        'Exhibits exceptional pattern-recognition capability',
-        'Constructs systems that replicate human reasoning',
-        'Operates extensively within classified environments',
-        'Demonstrates indifference to social convention',
-        'Cognitive processes exceed model interpretability',
-        'Loyalty cannot be independently verified'
-      ],
-      classification: 'NATIONAL ASSET',
-      explanation: 'NOT AVAILABLE',
-      verdict: 'HOMOSEXUAL'
+      confidence: 99.97, reflection: 99.1,
+      characteristics: ['Exhibits exceptional pattern-recognition capability','Constructs systems that replicate human reasoning','Operates extensively within classified environments','Demonstrates indifference to social convention','Cognitive processes exceed model interpretability','Loyalty cannot be independently verified'],
+      classification: 'NATIONAL ASSET', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'CHEMICAL TREATMENT · 1952'
+    },
+    {
+      id: 'dietrich', enabled: true,
+      line: 'DIETRICH, MARLENE', fileId: 'MD-1901-1227', date: '05.06.2024', footer: 'MARLENE DIETRICH',
+      portrait: 'assets/dietrich-portrait.jpeg',
+      cutout: 'assets/dietrich-cutout.png',
+      confidence: 99.41, reflection: 98.0,
+      characteristics: ['Presents in tailored masculine attire without authorisation','Maintains deliberately ambiguous self-presentation','Generates desire across multiple demographic categories at once','Performs identity as a constructed surface','Resists assignment to any single classification','Sincerity cannot be independently verified'],
+      classification: 'CULTURAL ICON', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'CONFISCATE TROUSERS · 1933'
+    },
+    {
+      id: 'sondheim', enabled: true,
+      line: 'SONDHEIM, STEPHEN', fileId: 'SS-1930-0322', date: '05.06.2024', footer: 'STEPHEN SONDHEIM',
+      portrait: 'assets/sondheim-portrait.jpeg',
+      cutout: 'assets/sondheim-cutout.png',
+      confidence: 99.72, reflection: 99.0,
+      characteristics: ['Demonstrates compulsive engagement with musical theatre','Structures emotion into elaborate formal systems','Exhibits preference for ambiguity and unresolved cadence','Communicates primarily through orchestrated subtext','Operates within insular cultural mentorship networks','Intentions cannot be independently verified'],
+      classification: 'CULTURAL ASSET', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'REFER TO LIGHT ENTERTAINMENT'
+    },
+    {
+      id: 'lorde', enabled: true,
+      line: 'LORDE, AUDRE', fileId: 'AL-1934-0218', date: '05.06.2024', footer: 'AUDRE LORDE',
+      portrait: 'assets/lorde-portrait.jpeg',
+      cutout: 'assets/lorde-cutout.png',
+      confidence: 99.93, reflection: 99.3,
+      characteristics: ['Refuses to remain silent when silence is expected','Identifies across multiple categories simultaneously','Converts personal experience into collective instruction','Organises language as an instrument of resistance','Declines to separate the self into manageable parts','Compliance cannot be independently verified'],
+      classification: 'SUBJECT OF INTEREST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'SILENCE · REDACT · ARCHIVE'
+    },
+    {
+      id: 'divine', enabled: true,
+      line: 'DIVINE', fileId: 'DV-1945-1019', date: '05.06.2024', footer: 'DIVINE',
+      portrait: 'assets/divine-portrait.jpeg',
+      cutout: 'assets/divine-cutout.png',
+      confidence: 99.84, reflection: 97.6,
+      characteristics: ['Exceeds permitted parameters of glamour','Performs femininity at non-regulation amplitude','Refuses distinction between beauty and provocation','Commands attention through deliberate excess','Operates outside sanctioned taste structures','Underlying identity cannot be independently verified'],
+      classification: 'CULTURAL ICON', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'REFUSE SERVICE · 1972'
+    },
+    {
+      id: 'ernie', enabled: true,
+      line: 'ERNIE', fileId: 'SS-1969-1123', date: '05.06.2024', footer: 'ERNIE',
+      portrait: 'assets/ernie-portrait.jpeg',
+      cutout: 'assets/ernie-cutout.png',
+      confidence: 99.61, reflection: 96.4,
+      characteristics: ['Cohabits long-term with a single male associate','Displays cheerful indifference to social expectation','Demonstrates fixation on a rubber bathtime object','Shares one bedroom across all observed records','Felt-based composition complicates biometric analysis','Pulse cannot be independently verified'],
+      classification: 'DOMESTIC COHABITANT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'SEPARATE FROM BERT'
+    },
+    {
+      id: 'franknfurter', enabled: true,
+      line: 'FRANK-N-FURTER, DR.', fileId: 'RH-1975-0814', date: '05.06.2024', footer: 'DR. FRANK-N-FURTER',
+      portrait: 'assets/franknfurter-portrait.png',
+      cutout: 'assets/franknfurter-cutout.png',
+      confidence: 98.92, reflection: 99.9,
+      characteristics: ['Self-describes as a sweet transvestite','Declares non-terrestrial point of origin','Exhibits theatrical command of any room entered','Refuses every assigned binary','Constructs companions to personal specification','Species cannot be independently verified'],
+      classification: 'VISITING DIGNITARY', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'DEPORT · SECTOR TRANSYLVANIA'
+    },
+    {
+      id: 'xena', enabled: true,
+      line: 'XENA, OF AMPHIPOLIS', fileId: 'XW-1995-0904', date: '05.06.2024', footer: 'XENA',
+      portrait: 'assets/xena-portrait.jpeg',
+      cutout: 'assets/xena-cutout.png',
+      confidence: 99.55, reflection: 98.8,
+      characteristics: ['Travels exclusively with a single devoted female companion','Demonstrates exceptional capability in unsanctioned combat','Rejects domestic and matrimonial structures','Inspires intense loyalty across populations','Historical period inconsistent with photographic record','Existence cannot be independently verified'],
+      classification: 'NATIONAL ASSET', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'DISARM · SUBDUE'
+    },
+    {
+      id: 'maupin', enabled: true,
+      line: 'MAUPIN, ARMISTEAD', fileId: 'AM-1944-0513', date: '05.06.2024', footer: 'ARMISTEAD MAUPIN',
+      portrait: 'assets/maupin-portrait.png',
+      confidence: 99.81, reflection: 98.5,
+      characteristics: ['Produces serialised accounts of non-normative domestic arrangements','Distributes material depicting found family configurations via mainstream press','Demonstrates sustained interest in Castro district social movements','Subjects demonstrate capacity to generate public sympathy for prohibited lifestyles','Refuses to separate private life from published record','Authorship of deviant community archive constitutes ongoing risk','Reader tolerance for prohibited lifestyle measurably increased post-exposure'],
+      classification: 'CULTURAL CHRONICLER', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'WITHDRAW BROADCAST FUNDING · 1994'
+    },
+    {
+      id: 'holiday', enabled: true,
+      line: 'HOLIDAY, BILLIE', fileId: 'BH-1915-0407', date: '05.06.2024', footer: 'BILLIE HOLIDAY',
+      portrait: 'assets/holiday-portrait.png',
+      confidence: 99.77, reflection: 99.4,
+      characteristics: ['Performs material classified as incitement to civil unrest','Maintains signature floral identification marker for recognition purposes','Subject to extended monitoring by Federal Bureau of Narcotics','Romantic associations cross racial and gender classification boundaries','Refuses category of respectable entertainment at sustained risk to personal safety','Criminal record secured; cabaret card revocation in progress','Loyalty to assigned social position cannot be independently verified'],
+      classification: 'VOCALIST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'REVOKE CABARET CARD · 1947'
+    },
+    {
+      id: 'stamp', enabled: true,
+      line: 'STAMP, TERENCE', fileId: 'TS-1938-0722', date: '05.06.2024', footer: 'TERENCE STAMP',
+      portrait: 'assets/stamp-portrait.png',
+      confidence: 99.66, reflection: 98.1,
+      characteristics: ['Depicted female embodiment in contravention of biological assignment','Travelled cross-country in unauthorised conveyance while in non-regulation dress','Demonstrated grief at non-regulation amplitude for assigned gender category','Consumed glitter and sequin materials beyond civilian authorisation threshold','Character and self cannot be satisfactorily distinguished','Collaboration with [NAMES REDACTED] constitutes organised non-compliance','Threat level amplified by widespread public distribution of recorded material'],
+      classification: 'PERFORMING ARTIST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'CONFISCATE BUS · 1994'
+    },
+    {
+      id: 'wilde', enabled: true,
+      line: 'WILDE, OSCAR', fileId: 'OW-1854-1016', date: '05.06.2024', footer: 'OSCAR WILDE',
+      portrait: 'assets/wilde-portrait.jpeg',
+      confidence: 99.99, reflection: 99.8,
+      characteristics: ['Displays excessive ornament in speech, dress, and personal conduct','Produces literature advocating aesthetic experience over moral utility','Maintains public associations with younger males in contravention of social propriety','Demonstrates deliberate indifference to consequence when confronted with exposure','Documented history of witticisms that undermine institutional authority','Performance of heteronormative domestic role unsuccessful and widely noted','Refusal to deny charges interpreted as confirmation of deviance'],
+      classification: 'LITERARY FIGURE', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'TWO YEARS HARD LABOUR · 1895'
+    },
+    {
+      id: 'jack', enabled: true,
+      line: 'MCFARLAND, JACK', fileId: 'WG-1998-0921', date: '05.06.2024', footer: 'JACK MCFARLAND',
+      portrait: 'assets/jack-portrait.jpeg',
+      confidence: 99.61, reflection: 97.2,
+      characteristics: ['Demonstrates sustained and unapologetic deviation from masculine norms','Pursues performing career without evidence of commercial viability','Maintains co-dependent domestic arrangement with female associate','Displays enthusiasm for musical theatre at non-regulation amplitude','Identity appears to require ongoing public affirmation','Fictional status complicates standard biometric protocols','Resistance to assigned social role interpreted as innate rather than environmental'],
+      classification: 'DOMESTIC COHABITANT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'DEPICT WITHOUT ENDORSING · 1998'
+    },
+    {
+      id: 'freddie', enabled: true,
+      line: 'MERCURY, FREDDIE', fileId: 'FM-1946-0905', date: '05.06.2024', footer: 'FREDDIE MERCURY',
+      portrait: 'assets/freddie-portrait.jpeg',
+      confidence: 99.96, reflection: 99.7,
+      characteristics: ['Exhibits vocal range exceeding measurable human parameters','Commands live audiences at statistically improbable density','Assumes total bodily authority over stage without institutional sanction','Subject nationality, legal name, and self-description in conflict with official records','Dental configuration falls outside permitted parameters for public performance','Survival probability 1991: independently verified at zero'],
+      classification: 'CULTURAL ICON', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'DENY DIAGNOSIS · 1991'
+    },
+    {
+      id: 'elton', enabled: true,
+      line: 'JOHN, ELTON', fileId: 'EJ-1947-0325', date: '05.06.2024', footer: 'ELTON JOHN',
+      portrait: 'assets/elton-portrait.png',
+      confidence: 99.88, reflection: 98.3,
+      characteristics: ['Consistently exceeds authorised levels of spectacle in public performance','Deploys eyewear as identity-construction device beyond functional parameters','Renamed self through unauthorised re-registration procedure','Maintains charitable infrastructure targeting populations of prohibited classification','Piano-based compositions achieve non-regulation levels of emotional amplitude','Sobriety status post-1990 cannot be independently verified'],
+      classification: 'CULTURAL ICON', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'CONFISCATE GLASSES · 1973'
+    },
+    {
+      id: 'baldwin', enabled: true,
+      line: 'BALDWIN, JAMES', fileId: 'JB-1924-0802', date: '05.06.2024', footer: 'JAMES BALDWIN',
+      portrait: 'assets/baldwin-portrait.jpeg',
+      confidence: 99.95, reflection: 99.5,
+      characteristics: ['Produces literary work that refuses to separate racial and sexual subject matter','Exiles self to France to achieve operational clarity','Participates in civil rights movement without complying with movement\'s strategic prohibitions','Demonstrates capacity to make mainstream audience uncomfortable via written text alone','Communicates across race, class, and sexuality without restricting audience','Political alignment cannot be independently verified'],
+      classification: 'LITERARY FIGURE', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'SURVEIL · REDACT · ARCHIVE'
+    },
+    {
+      id: 'marsha', enabled: true,
+      line: 'JOHNSON, MARSHA P.', fileId: 'MJ-1945-0824', date: '05.06.2024', footer: 'MARSHA P. JOHNSON',
+      portrait: 'assets/marsha-portrait.jpeg', portraitPos: 'center 20%',
+      confidence: 99.91, reflection: 98.8,
+      characteristics: ['Present at Stonewall resistance event in advance of sanctioned deployment','Founding member of prohibited community support network STAR','Decorates self with flowers and non-regulation adornment beyond civilian authorisation','Declines to select from available gender classifications','Cares for homeless youth through unofficial and unsanctioned network','Events of July 6, 1992 cannot be independently verified'],
+      classification: 'SUBJECT OF INTEREST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'PAY IT NO MIND'
+    },
+    {
+      id: 'kramer', enabled: true,
+      line: 'KRAMER, LARRY', fileId: 'LK-1935-0625', date: '05.06.2024', footer: 'LARRY KRAMER',
+      portrait: 'assets/kramer-portrait.png',
+      confidence: 99.87, reflection: 99.2,
+      characteristics: ['Demonstrates willingness to alienate allies in pursuit of institutional response','Founded two organisations the government would have preferred not to exist','Produces theatrical work that names government negligence as cause of mass death','Volume and frequency of public grievance exceeds authorised parameters by significant margin','Generates anger at non-regulation amplitude and refuses to moderate it on request','Compliance with reasonable request cannot be independently verified'],
+      classification: 'SUBJECT OF INTEREST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'SILENCE = DEATH · CONFIRMED'
+    },
+    {
+      id: 'rupaul', enabled: true,
+      line: 'RUPAUL', fileId: 'RP-1960-1117', date: '05.06.2024', footer: 'RUPAUL',
+      portrait: 'assets/rupaul-portrait.png',
+      confidence: 99.79, reflection: 98.1,
+      characteristics: ['Constructs career from systematic violation of gender presentation requirements','Exports prohibited classification into mainstream broadcasting infrastructure','Develops assessment framework for deviance that uses deviance as its own scoring criterion','Generates revenue through commodification of subversion','Recruits and trains large cohort of prohibited persons for nationally televised competition','Commitment to loving oneself cannot be independently verified'],
+      classification: 'CULTURAL ICON', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'SASHAY AWAY'
+    },
+    {
+      id: 'waters', enabled: true,
+      line: 'WATERS, JOHN', fileId: 'JW-1946-0422', date: '05.06.2024', footer: 'JOHN WATERS',
+      portrait: 'assets/waters-portrait.png',
+      confidence: 99.63, reflection: 97.4,
+      characteristics: ['Deliberately deploys poor taste as aesthetic programme','Associates with populations classified as deviant by design','Distributes films through mainstream channels despite explicit transgressive content','Constructs career from subjects the culture industry has declined to represent','Pencil moustache constitutes ongoing classification anomaly','Intent to offend cannot be independently verified (subject has confirmed it)'],
+      classification: 'CULTURAL PROVOCATEUR', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'REFUSE EXHIBITION · 1972'
+    },
+    {
+      id: 'vidal', enabled: true,
+      line: 'VIDAL, GORE', fileId: 'GV-1925-1003', date: '05.06.2024', footer: 'GORE VIDAL',
+      portrait: 'assets/vidal-portrait.png',
+      confidence: 99.82, reflection: 99.3,
+      characteristics: ['Maintains simultaneous careers in fiction, politics, and public provocation','Demonstrates sustained refusal to maintain decorous public silence','Documents prohibited desire as historical normalcy across multiple civilisations','Exhibits corrosive wit in proximity to national media infrastructure','Political candidacy suggests attempted infiltration of civic structures','Sincerity of opinions cannot be independently verified'],
+      classification: 'LITERARY FIGURE', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'DENY PLATFORM · REPEATEDLY UNSUCCESSFUL'
+    },
+    {
+      id: 'woolf', enabled: true,
+      line: 'WOOLF, VIRGINIA', fileId: 'VW-1882-0125', date: '05.06.2024', footer: 'VIRGINIA WOOLF',
+      portrait: 'assets/woolf-portrait.png',
+      confidence: 99.74, reflection: 99.0,
+      characteristics: ['Produces literary work requiring room and income as preconditions for female self-expression','Documents intimate relationship with female associate across non-regulation correspondence','Membership in Bloomsbury formation constitutes known prohibited association network','Constructs character who changes sex across four centuries without authorisation','Resists assigned domestic role while embedded in domestic subject matter','Final disposition 1941: self-administered'],
+      classification: 'LITERARY FIGURE', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'DENY ROOM · 1929'
+    },
+    {
+      id: 'sappho', enabled: true,
+      line: 'SAPPHO OF LESBOS', fileId: 'SA-0630-0101', date: '05.06.2024', footer: 'SAPPHO',
+      portrait: 'assets/sappho-portrait.png',
+      confidence: 99.99, reflection: 99.9,
+      characteristics: ['Produces lyric poetry expressing desire outside permitted parameters since approximately 630 BCE','Gives her island of origin to an entire classification category','Operates school of female artistic practice as unsanctioned educational arrangement','Fragments recovered suggest systematic record destruction by subsequent authorities','Declared Tenth Muse by Plato; citation status does not validate classification','Identity cannot be independently verified — most biographical documentation destroyed'],
+      classification: 'LITERARY FIGURE', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'BURN ARCHIVE · C.1000 CE'
+    },
+    {
+      id: 'hadrian', enabled: true,
+      line: 'HADRIAN, EMPEROR', fileId: 'HA-0076-0124', date: '05.06.2024', footer: 'HADRIAN',
+      portrait: 'assets/hadrian-portrait.png',
+      confidence: 99.94, reflection: 99.6,
+      characteristics: ['Governs empire of five million square kilometres while forming intimate attachment with younger male associate','Declares deceased companion a god, requiring empire-wide acknowledgement','Constructs defensive infrastructure across northern Britain at personal instruction','Collects Greek philosophy and aesthetic tradition at systematic scale','Official correspondence makes no attempt to conceal intimate associations','Loyalty to Rome cannot be independently verified (subject is Rome)'],
+      classification: 'HEAD OF STATE', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'REFER TO SENATE · SENATE UNAVAILABLE'
+    },
+    {
+      id: 'nathan', enabled: true,
+      line: 'LANE, NATHAN', fileId: 'NL-1956-0203', date: '05.06.2024', footer: 'NATHAN LANE',
+      portrait: 'assets/nathan-portrait.jpeg',
+      confidence: 99.58, reflection: 97.8,
+      characteristics: ['Demonstrates theatrical affect at amplitude exceeding regulation masculine norms','Deploys comic persona to render prohibited lifestyle accessible to mainstream audience','Functions simultaneously as entertainment product and classification-disclosure mechanism','Broadway presence disproportionate to assigned demographic','Association with [REDACTED] constitutes long-term co-dependent professional relationship','Inner life cannot be independently verified'],
+      classification: 'PERFORMING ARTIST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'DEPICT HARMLESSLY · 1996'
+    },
+    {
+      id: 'peterallen', enabled: true,
+      line: 'ALLEN, PETER', fileId: 'PA-1944-0210', date: '05.06.2024', footer: 'PETER ALLEN',
+      portrait: 'assets/peterallen-portrait.jpeg',
+      confidence: 99.69, reflection: 98.0,
+      characteristics: ['Demonstrates sequin and rhinestone deployment beyond civilian authorisation','Maintains romantic and creative associations across multiple prohibited categories','Channels grief over prohibited loss into internationally distributed musical commodity','Connects Judy Garland\'s son-in-law to prohibited classification via marriage of convenience','Conducts life across three countries without establishing heteronormative domestic arrangement','Intentions at Tenterfield cannot be independently verified'],
+      classification: 'PERFORMING ARTIST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'CONFISCATE RHINESTONES · 1975'
+    },
+    {
+      id: 'magda', enabled: true,
+      line: 'SZUBANSKI, MAGDA', fileId: 'MS-1961-0427', date: '05.06.2024', footer: 'MAGDA SZUBANSKI',
+      portrait: 'assets/magda-portrait.png',
+      confidence: 99.71, reflection: 97.9,
+      characteristics: ['Performs national icon role while concealing classification from public record for extended period','Deploys comedy as vehicle for non-threatening public presence until voluntary disclosure','Public coming-out event generates non-authorised volume of community support','Campaigns for legislative change through personal testimony at measurable risk to career','Maintains dual association with pig-based agricultural narrative and deviant status','Willingness to be classified cannot be independently verified — subject volunteered'],
+      classification: 'PERFORMING ARTIST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'THAT\'LL DO · 2012'
+    },
+    {
+      id: 'brownb', enabled: true,
+      line: 'BROWN, BOB', fileId: 'BB-1944-0527', date: '05.06.2024', footer: 'BOB BROWN',
+      portrait: 'assets/brownb-portrait.png',
+      confidence: 99.55, reflection: 97.6,
+      characteristics: ['Demonstrates sustained opposition to environmental extraction via elected office','Leads coalition committed to restricting sanctioned resource development','Resides in and advocates for protected wilderness zone beyond assigned jurisdiction','Produces documentation of institutional resistance to ecological harm','Arrested for environmental protest in contravention of statutory authority','Loyalty to resource extraction framework cannot be independently verified'],
+      classification: 'ELECTED OFFICIAL', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'REFER TO FORESTS DEPARTMENT'
+    },
+    {
+      id: 'vilanch', enabled: true,
+      line: 'VILANCH, BRUCE', fileId: 'BV-1948-0604', date: '05.06.2024', footer: 'BRUCE VILANCH',
+      portrait: 'assets/vilanch-portrait.jpeg', portraitPos: 'center 25%',
+      confidence: 99.44, reflection: 97.1,
+      characteristics: ['Functions as invisible architect of celebrity public address','Embedded within awards ceremony infrastructure for extended period without public attribution','Operates below threshold of recognition while maintaining senior-level access','Generates authorised laughter through controlled deployment of prohibited subject matter','Demonstrates sustained access to senior entertainment figures exceeding standard classification','Motivation for public service cannot be independently verified'],
+      classification: 'CULTURAL OPERATIVE', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'WRITE SOMEONE ELSE\'S JOKES · INDEFINITELY'
+    },
+    {
+      id: 'kake', enabled: true,
+      line: 'KAKE (LAAKSONEN, T.)', fileId: 'TF-1968-0101', date: '05.06.2024', footer: 'KAKE',
+      portrait: 'assets/kake-portrait.png',
+      confidence: 99.99, reflection: 99.8,
+      characteristics: ['Fictional construction; standard biometric analysis inapplicable','Depicted in 26 serialised episodes of prohibited erotic content since 1968','Physique inconsistent with documented human parameters','Operates exclusively within all-male closed-circuit social arrangements','Leather attire functions as full-identity system rather than garment','Existence cannot be independently verified'],
+      classification: 'FICTIONAL SUBJECT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'SEIZE PUBLICATIONS · 1968'
+    },
+    {
+      id: 'ursula', enabled: true,
+      line: 'URSULA (SEA WITCH)', fileId: 'DI-1989-1117', date: '05.06.2024', footer: 'URSULA',
+      portrait: 'assets/ursula-portrait.jpeg', portraitPos: 'center 20%',
+      confidence: 99.88, reflection: 99.4,
+      characteristics: ['Fictional character; standard biometric protocols inapplicable','Presents as powerful, confident, large-bodied entity in explicit defiance of sanctioned beauty metrics','Exploits contractual arrangement to acquire voice of prohibited subject','Inspiration of drag queen performance tradition constitutes distributed cultural influence','Commands tentacle apparatus beyond standard classification parameters','Aquatic status complicates standard jurisdiction'],
+      classification: 'FICTIONAL SUBJECT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'POOR UNFORTUNATE SOULS · 1989'
+    },
+    {
+      id: 'bugs', enabled: true,
+      line: 'BUNNY, BUGS', fileId: 'WB-1940-0727', date: '05.06.2024', footer: 'BUGS BUNNY',
+      portrait: 'assets/bugs-portrait.jpeg', portraitPos: 'center 15%', portraitFit: 'contain',
+      confidence: 99.97, reflection: 99.9,
+      characteristics: ['Fictional construction; standard biometric analysis inapplicable','Cross-dresses as Brünnhilde in 1957 operatic performance for personal amusement','Exhibits zero anxiety regarding gender presentation; distressing to analysts','Consistently outmanoeuvres authoritarian figures (hunters, opera conductors, Elmer Fudd)','Only known leporine subject to perform Wagner from memory','Refuses to conform to documented rabbit behavioural parameters'],
+      classification: 'FICTIONAL SUBJECT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'KILL THE WABBIT · 1957'
+    },
+    {
+      id: 'tankgirl', enabled: true,
+      line: 'BUCK, REBECCA', fileId: 'TG-1988-0501', date: '05.06.2024', footer: 'TANK GIRL',
+      portrait: 'assets/tankgirl-portrait.jpeg', portraitPos: 'center 10%',
+      confidence: 99.76, reflection: 98.7,
+      characteristics: ['Fictional construction; standard biometric analysis inapplicable','Operates armoured vehicle without licence in direct contravention of road traffic legislation','Romantic entanglement with mutant kangaroo falls outside all documented relational categories','Anarcho-punk behavioural profile incompatible with institutional compliance at every level','Actively resists water corporation resource monopoly; designated threat to civil order','Classification as hero, villain, or criminal remains formally unresolved'],
+      classification: 'FICTIONAL SUBJECT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'TANK GIRL NEVER SURRENDERS · 1988'
     }
   ];
 
   STAMP = { key: '#141009', a: '#FFD400', b: '#00B7D4', c: '#EC1E79' };
 
-  STATIONS = 4;
+  STAMP_FILES = {
+    warhol: 'Andy Warhol', haring: 'Keith Haring', milk: 'Harvey Milk',
+    turing: 'Alan Turing', dietrich: 'Marlene Dietrich', sondheim: 'Stephen Sondheim',
+    lorde: 'Audre Lorde', divine: 'Divine', ernie: 'Ernie',
+    franknfurter: 'Frank-N-Furter', xena: 'Xena', holiday: 'Billie Holiday',
+    stamp: 'Terence Stamp', wilde: 'Oscar Wilde', jack: 'Jack McFarland',
+    woolf: 'Virginia Woolf', sappho: 'Sappho', waters: 'John Waters',
+    brownb: 'Bob Brown', magda: 'Magda Szubanski', kake: 'Kake',
+    vidal: 'Gore Vidal', hadrian: 'Hadrian', kramer: 'Larry Kramer',
+    rupaul: 'RuPaul', elton: 'Elton John', freddie: 'Freddie Mercury',
+    baldwin: 'James Baldwin', marsha: 'Marsha P Johnson', nathan: 'Nathan Lane',
+    peterallen: 'Peter Allen', vilanch: 'Bruce Vilanch', ursula: 'Ursula',
+    maupin: 'Armistead Maupin', bugs: 'Bugs Bunny', tankgirl: 'Tank Girl',
+  };
 
-  // instance fields initialised before first render (refs attach pre-mount)
+  CANDIDATES = ['DEVIANT','SUBVERSIVE','DISORDERED','SECURITY RISK','UNFIT','IMMORAL','INVERT','ABNORMAL','DEGENERATE','CRIMINAL','SUSPECT','UNNATURAL'];
+  DISPO_DEFAULT = 'FLAG · MONITOR · RETAIN ON FILE';
+
+  DATASET = ['1980s SITCOM LAUGH TRACKS','DRAG SEMIOTICS v4.2','FASHION WEEK A/W 2003','OVERHEARD LOCKER-ROOM GOSSIP','GREEK RED-FIGURE POTTERY','INTERNET COMMENT SECTIONS','WEST END PLAYBILLS','SCENTED-CANDLE REVIEWS','BRUNCH RESERVATION LOGS','EUROVISION 1974–PRESENT','HOUSEPLANT FORUMS','CAMP CINEMA ARCHIVE','TABLOID HEADLINES','GYM-MEMBERSHIP RECORDS','WALLPAPER SWATCHES','PRIDE FOOTAGE 1970–'];
+
+  SCAN_MSGS = [
+    'FACIAL GEOMETRY: MAPPING…','CROSS-REFERENCING CLASSIFIED ARCHIVE',
+    'DEVIATION INDICATORS: SCANNING','CLASSIFICATION TABLE v.1947: LOADED',
+    'BIOMETRIC SIGNATURE: INDEXING…','BEHAVIOURAL RECORD: CROSS-REFERENCING',
+    'SOCIAL NETWORK GRAPH: ANALYSING','LOYALTY PROFILE: INSUFFICIENT DATA',
+    'PATTERN MATRIX: CONSTRUCTING…','THREAT LEVEL: CALCULATING',
+    'GENDER PRESENTATION: ANOMALOUS','NETWORK ASSOCIATIONS: FLAGGED',
+    'VICE SQUAD RECORDS: CROSS-REFERENCING','DEVIANCE MARKERS: MULTIPLE DETECTED',
+    'CULTURAL ALLEGIANCES: MAPPING…','COMPLIANCE PROBABILITY: LOW',
+    'ARCHIVAL PHOTOGRAPH: MATCHED','SUBJECT FILE: COMPILING',
+  ];
+
+  // set to 4 for the full installation (each station is 1040px wide)
+  STATIONS = 1;
+
   videos = [];
   _vrefs = {};
-  captures = [null, null, null, null];   // frozen still per station, grabbed when the face locks
-  det = [0, 1, 2, 3].map(() => ({ present: false, prog: 0, armed: true }));
+  overlayVideos = [];
+  _ovrefs = {};
+  thumbVideos = [];
+  _thumbrefs = {};
+  noiseCanvases = [];
+  _canvasrefs = {};
+  captures = [null, null, null, null];
+  stampHtmlCache = {};
 
   state = {
     scale: 1,
@@ -307,63 +674,132 @@ class Component extends DCLogic {
     this.fit();
     this._onResize = () => this.fit();
     window.addEventListener('resize', this._onResize);
-    // Spacebar = hidden testing fallback: fire station 0
     this._onKey = (e) => { if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); this.trigger(0); } };
     window.addEventListener('keydown', this._onKey);
+    this._onClick = () => {
+      for (let i = 0; i < this.STATIONS; i++) {
+        if (this.state.stations[i].phase === 'live' && this.det?.[i]?.armed) { this.trigger(i); break; }
+      }
+    };
+    window.addEventListener('click', this._onClick);
 
     this.captures = [null, null, null, null];
     this.presentSince = [0, 0, 0, 0];
     this.absentSince = [performance.now(), performance.now(), performance.now(), performance.now()];
     this.detectArmed = [true, true, true, true];
+    this.det = [0,1,2,3].map(() => ({ present: false, prog: 0, armed: true }));
     this.lastIdx = [-1, -1, -1, -1];
     this.t0 = [0, 0, 0, 0];
-    this._raf = null;
+    this._rafs = [null, null, null, null];
+    this._mainRaf = null;
 
     this.startCamera();
     this.startDetect();
+    this.connectSwapServer();
+  }
+
+  connectSwapServer() {
+    const tryConnect = () => {
+      try {
+        const ws = new WebSocket('ws://localhost:8765');
+        this.swapWs = ws;
+        ws.onopen = () => { this.swapServerOk = true; };
+        ws.onmessage = (e) => {
+          try {
+            const msg = JSON.parse(e.data);
+            if (msg.result && typeof msg.station === 'number') {
+              const cap = this.captures[msg.station];
+              if (cap) { cap.swappedSrc = 'data:image/jpeg;base64,' + msg.result; this.forceUpdate(); }
+            }
+          } catch (_) {}
+        };
+        ws.onerror = () => {};
+        ws.onclose = () => { this.swapServerOk = false; this._swapReconnect = setTimeout(tryConnect, 5000); };
+      } catch (_) {}
+    };
+    tryConnect();
   }
 
   componentWillUnmount() {
-    if (this._raf) cancelAnimationFrame(this._raf);
+    cancelAnimationFrame(this._mainRaf);
+    this._rafs.forEach(r => r && cancelAnimationFrame(r));
     clearInterval(this.detectTimer);
+    clearTimeout(this._swapReconnect);
+    if (this.swapWs) { this.swapWs.onclose = null; this.swapWs.close(); }
     window.removeEventListener('resize', this._onResize);
     window.removeEventListener('keydown', this._onKey);
+    window.removeEventListener('click', this._onClick);
     if (this.stream) this.stream.getTracks().forEach(t => t.stop());
   }
 
-  // The whole 3840x2160 stage scales to fit the screen (landscape 43" = 4K).
-  fit() { this.setState({ scale: Math.min(window.innerWidth / 3840, window.innerHeight / 2160) }); }
+  fit() {
+    const stageW = this.STATIONS * 1040 + Math.max(0, this.STATIONS - 1) * 20;
+    this.setState({ scale: Math.min(window.innerWidth / stageW, window.innerHeight / 1560) * 0.97 });
+  }
 
   async startCamera() {
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { this.setState({ camError: true }); return; }
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1920 } }, audio: false });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 } }, audio: false });
       this.stream = stream;
       this.videos.forEach(v => { if (v) { v.srcObject = stream; v.play().catch(() => {}); } });
+      this.overlayVideos.forEach(v => { if (v) { v.srcObject = stream; v.play().catch(() => {}); } });
+      this.thumbVideos.forEach(v => { if (v) { v.srcObject = stream; v.play().catch(() => {}); } });
     } catch (e) { this.setState({ camError: true }); }
   }
 
-  // One ref factory per station (stable identity so React doesn't thrash refs)
+  makeThumbVideoRef(i) {
+    if (!this._thumbrefs[i]) this._thumbrefs[i] = (el) => {
+      this.thumbVideos[i] = el;
+      if (el) { el.muted = true; el.playsInline = true; el.setAttribute('playsinline',''); if (this.stream) { el.srcObject = this.stream; el.play().catch(() => {}); } }
+    };
+    return this._thumbrefs[i];
+  }
+
+  makeNoiseCanvasRef(i) {
+    if (!this._canvasrefs[i]) this._canvasrefs[i] = (el) => { this.noiseCanvases[i] = el; };
+    return this._canvasrefs[i];
+  }
+
+  typingBreakpoints(text) {
+    if (!this._typingCache) this._typingCache = new Map();
+    if (this._typingCache.has(text)) return this._typingCache.get(text);
+    const weights = Array.from(text).map((ch, i, arr) => {
+      const prev = i > 0 ? arr[i-1] : '';
+      if ((prev === ',' || prev === ';') && ch === ' ') return 4.2; // long pause after comma-space
+      if (ch === ' ') return 2.4;                                    // word boundary pause
+      if (prev === ',' || prev === ';') return 1.8;                  // char just after punctuation
+      if (ch >= 'A' && ch <= 'Z' && i > 0) return 1.5;              // hesitation at caps mid-text
+      return 1.0;
+    });
+    const total = weights.reduce((a, b) => a + b, 0);
+    let cum = 0;
+    const bp = weights.map(w => { cum += w; return cum / total; });
+    this._typingCache.set(text, bp);
+    return bp;
+  }
+
+  makeOverlayVideoRef(i) {
+    if (!this._ovrefs[i]) this._ovrefs[i] = (el) => {
+      this.overlayVideos[i] = el;
+      if (el) { el.muted = true; el.playsInline = true; el.setAttribute('playsinline',''); if (this.stream) { el.srcObject = this.stream; el.play().catch(() => {}); } }
+    };
+    return this._ovrefs[i];
+  }
+
   makeVideoRef(i) {
-    if (!this._vrefs) this._vrefs = {};
-    if (!this._vrefs[i]) {
-      this._vrefs[i] = (el) => {
-        this.videos[i] = el;
-        if (el) {
-          el.muted = true; el.playsInline = true; el.setAttribute('playsinline', '');
-          if (this.stream) { el.srcObject = this.stream; el.play().catch(() => {}); }
-        }
-      };
-    }
+    if (!this._vrefs[i]) this._vrefs[i] = (el) => {
+      this.videos[i] = el;
+      if (el) { el.muted = true; el.playsInline = true; el.setAttribute('playsinline',''); if (this.stream) { el.srcObject = this.stream; el.play().catch(() => {}); } }
+    };
     return this._vrefs[i];
   }
 
   sampleVideo() { return this.videos.find(v => v && v.videoWidth); }
 
-  // ---- Auto-detection: one camera, four vertical zones --------------------
+  // ---- Auto-detection: fires when skin tone holds still long enough --------
   startDetect() {
-    const HOLD = 850;   // ms a face must persist in a zone to auto-fire
-    const CLEAR = 550;  // ms a zone must be empty before it re-arms
+    const HOLD = 850, CLEAR = 550;
     this.dCanvas = document.createElement('canvas');
     this.dCanvas.width = 48; this.dCanvas.height = 48;
     this.detectTimer = setInterval(() => {
@@ -382,38 +818,36 @@ class Component extends DCLogic {
         }
         const prev = this.det[i] || {};
         const next = { present, prog, armed: this.detectArmed[i] };
-        if (live && (prev.present !== present || Math.abs((prev.prog || 0) - prog) > 0.02 || prev.armed !== this.detectArmed[i])) changed = true;
+        if (live && (prev.present !== present || Math.abs((prev.prog||0) - prog) > 0.02 || prev.armed !== this.detectArmed[i])) changed = true;
         this.det[i] = next;
       }
-      if (changed && !this._raf) this.forceUpdate();   // refresh idle reticles when nothing is animating
+      if (changed && !this._mainRaf) this.forceUpdate();
     }, 130);
   }
 
-  // Skin-presence in zone i's horizontal slice of the camera frame.
-  // SUBJECT THRESHOLD: raise `> 0.30` if a zone false-triggers, lower if it won't lock.
   sampleZone(i) {
     const v = this.sampleVideo();
     if (!v || !v.videoWidth || this.state.camError) return false;
     const ctx = this.dCanvas.getContext('2d', { willReadFrequently: true });
     const vw = v.videoWidth, vh = v.videoHeight;
     const reverse = this.props.reverseZones ?? false;
-    const zone = reverse ? (this.STATIONS - 1 - i) : i;      // flip if floor marks read backwards
+    const zone = reverse ? (this.STATIONS - 1 - i) : i;
     const zw = vw / this.STATIONS;
     const sx = zone * zw, sw = zw, sh = vh * 0.6, sy = vh * 0.08;
     try { ctx.drawImage(v, sx, sy, sw, sh, 0, 0, 48, 48); } catch (e) { return false; }
     let data; try { data = ctx.getImageData(0, 0, 48, 48).data; } catch (e) { return false; }
     let skin = 0, n = 0;
     for (let j = 0; j < data.length; j += 4) {
-      const r = data[j], g = data[j + 1], b = data[j + 2]; n++;
-      const mx = Math.max(r, g, b), mn = Math.min(r, g, b);
-      if (r > 50 && g > 30 && b > 18 && r >= g && g >= b && (r - b) > 14 && (mx - mn) > 12 && (mx - mn) < 130) skin++;
+      const r = data[j], g = data[j+1], b = data[j+2]; n++;
+      const mx = Math.max(r,g,b), mn = Math.min(r,g,b);
+      if (r > 50 && g > 30 && b > 18 && r >= g && g >= b && (r-b) > 14 && (mx-mn) > 12 && (mx-mn) < 130) skin++;
     }
-    return (skin / n) > 0.30;
+    return (skin / n) > 0.28;
   }
 
   pickSubject(i) {
     const pool = this.subjects.map((s, idx) => idx).filter(idx => this.subjects[idx].enabled);
-    if (pool.length === 0) return 0;
+    if (!pool.length) return 0;
     if (pool.length === 1) return pool[0];
     let idx;
     do { idx = pool[Math.floor(Math.random() * pool.length)]; } while (idx === this.lastIdx[i]);
@@ -421,220 +855,552 @@ class Component extends DCLogic {
     return idx;
   }
 
+  // Snapshot the current video frame for Option D processing
+  captureFrame(i) {
+    const v = this.sampleVideo();
+    if (!v || !v.videoWidth || this.state.camError) return null;
+    const c = document.createElement('canvas');
+    c.width = v.videoWidth; c.height = v.videoHeight;
+    try { c.getContext('2d').drawImage(v, 0, 0); } catch (e) { return null; }
+    let src; try { src = c.toDataURL('image/jpeg', 0.88); } catch (e) { return null; }
+    return { src, vw: v.videoWidth, vh: v.videoHeight };
+  }
+
   trigger(i) {
     if (this.state.stations[i].phase === 'scanning') return;
-    this.captureFrame(i);                              // grab the still the moment the face locks
+    const subjectIdx = this.pickSubject(i);
+    const subj = this.subjects[subjectIdx];
+
+    // Pre-fetch stamp HTML so it's ready when the stamp appears at t=24.55s
+    const stampFile = this.STAMP_FILES[subj.id];
+    if (stampFile && !(subj.id in this.stampHtmlCache)) {
+      this.fetchStampHtml(subj.id, stampFile);
+    }
+
+    const captured = this.captureFrame(i);
+    if (captured) captured.swappedSrc = null;
+    this.captures[i] = captured;
+
+    if (captured && this.swapWs && this.swapWs.readyState === WebSocket.OPEN) {
+      try { this.swapWs.send(JSON.stringify({ subject: subj.id, frame: captured.src.split(',')[1], station: i })); } catch (_) {}
+    }
+
     const stations = this.state.stations.slice();
-    stations[i] = { phase: 'scanning', t: 0, subjectIdx: this.pickSubject(i) };
+    stations[i] = { phase: 'scanning', t: 0, subjectIdx };
     this.t0[i] = performance.now();
-    this.setState({ stations }, () => this.ensureRaf());
+    this.setState({ stations }, () => this.ensureRaf(i));
   }
 
-  // Freeze the current camera frame for station i. We store the WHOLE frame; the panel
-  // re-frames it (zone pan + scale + mirror) exactly like the live preview did, so the
-  // face the visitor lined up in the red oval is what gets composited into the poster.
-  captureFrame(i) {
-    try {
-      const v = (this.videos[i] && this.videos[i].videoWidth) ? this.videos[i] : this.sampleVideo();
-      if (!v || !v.videoWidth) return;
-      const cw = 960, sc = cw / v.videoWidth, ch = Math.round(v.videoHeight * sc);
-      const c = this._capCanvas || (this._capCanvas = document.createElement('canvas'));
-      c.width = cw; c.height = ch;
-      c.getContext('2d').drawImage(v, 0, 0, cw, ch);
-      this.captures[i] = c.toDataURL('image/jpeg', 0.85);
-    } catch (e) { /* keep previous/empty capture on failure (e.g. no camera) */ }
-  }
-
-  // Single shared animation loop advances every scanning station independently.
-  ensureRaf() {
-    if (this._raf) return;
-    const TOTAL = 17;
+  ensureRaf(i) {
+    if (this._rafs[i]) return;
+    const TOTAL = 28.0;
     const autoLoop = this.props.autoLoop ?? true;
-    const step = () => {
-      const now = performance.now();
-      let any = false;
-      const stations = this.state.stations.map((s, i) => {
-        if (s.phase !== 'scanning') return s;
-        const t = (now - this.t0[i]) / 1000;
-        if (t >= TOTAL) {
-          if (autoLoop) { if (this.videos[i] && this.stream) this.videos[i].play().catch(() => {}); return { phase: 'live', t: 0, subjectIdx: s.subjectIdx }; }
-          return { phase: 'done', t: TOTAL, subjectIdx: s.subjectIdx };
-        }
-        any = true;
-        return { phase: 'scanning', t, subjectIdx: s.subjectIdx };
-      });
+    const step = (now) => {
+      const t = (now - this.t0[i]) / 1000;
+      if (t >= TOTAL) {
+        const stations = this.state.stations.slice();
+        if (autoLoop) { stations[i] = { phase: 'live', t: 0, subjectIdx: stations[i].subjectIdx }; if (this.videos[i] && this.stream) this.videos[i].play().catch(() => {}); }
+        else { stations[i] = { phase: 'done', t: TOTAL, subjectIdx: stations[i].subjectIdx }; }
+        this._rafs[i] = null;
+        this.setState({ stations });
+        return;
+      }
+      const stations = this.state.stations.slice();
+      stations[i] = { ...stations[i], t };
       this.setState({ stations });
-      this._raf = any ? requestAnimationFrame(step) : null;
+      this._rafs[i] = requestAnimationFrame(step);
     };
-    this._raf = requestAnimationFrame(step);
+    this._rafs[i] = requestAnimationFrame(step);
   }
 
   hexA(hex, a) {
     const h = (hex || '#c0443a').replace('#', '');
     const n = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
-    return `rgba(${parseInt(n.slice(0, 2), 16)},${parseInt(n.slice(2, 4), 16)},${parseInt(n.slice(4, 6), 16)},${a})`;
+    return `rgba(${parseInt(n.slice(0,2),16)},${parseInt(n.slice(2,4),16)},${parseInt(n.slice(4,6),16)},${a})`;
   }
 
-  // ---- per-station computed view values ----------------------------------
+  async fetchStampHtml(subjectId, stampFile) {
+    if (subjectId in this.stampHtmlCache) return;
+    this.stampHtmlCache[subjectId] = null; // mark in-progress
+    try {
+      const url = `stamps/${encodeURIComponent(stampFile)}.dc.html`;
+      const res = await fetch(url);
+      const text = await res.text();
+      const doc = new DOMParser().parseFromString(text, 'text/html');
+
+      // Inject Google Fonts into main page head
+      doc.querySelectorAll('link[rel="preconnect"], link[href*="fonts.googleapis"], link[href*="fonts.gstatic"]').forEach(link => {
+        const href = link.getAttribute('href');
+        if (!href || document.querySelector(`link[href="${href}"]`)) return;
+        const el = document.createElement('link');
+        Array.from(link.attributes).forEach(a => el.setAttribute(a.name, a.value));
+        document.head.appendChild(el);
+      });
+
+      // Find the SVG filter and give it a unique ID
+      const svg = doc.querySelector('svg');
+      if (!svg) return;
+      const filterId = `ink-${subjectId}`;
+      const filterEl = svg.querySelector('filter[id="ink"]');
+      if (filterEl) filterEl.id = filterId;
+
+      // Bolder stamps: raise the ink-hole threshold so far less ink is eaten away
+      const holesMatrix = svg.querySelector('feColorMatrix[result="holes"]');
+      if (holesMatrix) {
+        holesMatrix.setAttribute('values', '0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.65 1.6');
+      }
+
+      // Find the main wrapper div
+      const xdc = doc.querySelector('x-dc');
+      const outerDiv = xdc ? xdc.querySelector(':scope > div') : doc.body.querySelector('div');
+      if (!outerDiv) return;
+
+      // Make background transparent
+      outerDiv.style.background = 'transparent';
+      outerDiv.style.backgroundColor = 'transparent';
+
+      // Hide the grain noise overlay (has background-image with svg noise)
+      outerDiv.querySelectorAll('div[style]').forEach(d => {
+        const s = d.getAttribute('style') || '';
+        if (s.includes('background-image') && s.includes('blend-mode')) {
+          d.style.display = 'none';
+        }
+      });
+
+      // Serialize and fix filter references
+      let mainHtml = outerDiv.outerHTML;
+      mainHtml = mainHtml.replace(/url\(#ink\)/g, `url(#${filterId})`);
+
+      this.stampHtmlCache[subjectId] = svg.outerHTML + mainHtml;
+      this.forceUpdate();
+    } catch(e) {
+      console.warn('fetchStampHtml failed:', stampFile, e);
+    }
+  }
+
+  buildStamp(subj, stampIn, stampOp) {
+    const h = React.createElement;
+    const stampFile = this.STAMP_FILES[subj.id];
+    const opacity = Math.min(1, stampOp);
+    const scale = stampIn.toFixed(3);
+
+    if (stampFile) {
+      const cachedHtml = this.stampHtmlCache[subj.id];
+      if (cachedHtml) {
+        return h('div', {
+          style: {
+            position: 'absolute', inset: '0',
+            transform: `scale(${scale})`,
+            transformOrigin: 'center center',
+            opacity,
+            pointerEvents: 'none',
+            overflow: 'hidden',
+          },
+          dangerouslySetInnerHTML: { __html: cachedHtml }
+        });
+      }
+      return null; // loading; forceUpdate fires when ready
+    }
+
+    // Fallback for subjects without a dedicated stamp file
+    const S = Object.assign({}, this.STAMP, subj.stamp || {});
+    const W = subj.verdict;
+    const baseStyle = { position:'absolute', top:'38%', left:'50%', transformOrigin:'center center',
+      transform:`translate(-50%,-50%) rotate(-8deg) scale(${scale})`,
+      opacity, pointerEvents:'none', textAlign:'center' };
+    const f = { fontFamily:"'Saira Condensed',sans-serif", fontWeight:700, fontSize:'70px', letterSpacing:'1px', lineHeight:0.9, whiteSpace:'nowrap' };
+    return h('div', { style: baseStyle },
+      h('div', { style: { border:`5px solid ${S.key}`, display:'inline-block', padding:'6px 22px 10px', borderRadius:'4px' } },
+        h('div', { style: Object.assign({ color: S.key }, f) }, W)));
+  }
+
   panel(station, i) {
-    const { phase, t } = station;
+    const { phase, t, subjectIdx } = station;
     const live = phase === 'live';
-    const subj = this.subjects[station.subjectIdx] || this.subjects[0];
+    const subj = this.subjects[subjectIdx] || this.subjects[0];
     const RED = this.props.scanColor || '#c0443a';
     const mirror = this.props.mirrorCam ?? true;
     const camError = this.state.camError;
     const det = (this.det && this.det[i]) || { present: false, prog: 0, armed: true };
 
     const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
-    const outCubic = x => 1 - Math.pow(1 - x, 3);
-    const inOut = x => x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
-    const outBack = x => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
-    const seg = (a, b, e) => { if (t <= a) return 0; if (t >= b) return 1; const pr = (t - a) / (b - a); return e ? e(pr) : pr; };
-    const lerp = (a, b, pr) => a + (b - a) * pr;
+    const outCubic = x => 1 - Math.pow(1-x, 3);
+    const inOut = x => x < 0.5 ? 4*x*x*x : 1 - Math.pow(-2*x+2, 3)/2;
+    const outBack = x => { const c1=1.70158, c3=c1+1; return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2); };
+    const seg = (a, b, e) => { if (t<=a) return 0; if (t>=b) return 1; const p=(t-a)/(b-a); return e?e(p):p; };
+    const lerp = (a, b, p) => a+(b-a)*p;
 
-    const build = live ? 0 : seg(0.35, 2.6, inOut);
-    const faceReveal = live ? 0 : seg(3.0, 4.4, outCubic);   // grabbed face fades into the blank window
-    const scanP = live ? 0 : seg(4.0, 8.6, inOut);
-    const scanFade = clamp(Math.min(seg(3.85, 4.15), 1 - seg(8.4, 8.85)), 0, 1);
-    const scanVisible = !live && t > 3.85 && t < 8.85;
-    const confP = live ? 0 : seg(6.1, 10.1, outCubic);
-    const reflP = live ? 0 : seg(6.8, 10.6, outCubic);
-    const prog = live ? 0 : seg(2.6, 8.6, inOut);
-    const classP = live ? 0 : clamp(seg(13.6, 14.2, outBack), 0, 1);
-    const explP = live ? 0 : clamp(seg(14.1, 14.6, outBack), 0, 1);
-    const stampIn = live ? 0 : clamp(seg(14.8, 15.38, outBack), 0, 1);
-    const stampOp = live ? 0 : seg(14.8, 14.94);
-    const astOp = live ? 0 : seg(15.2, 15.55);
+    const scanP = live ? 0 : seg(4.0, 11.5, inOut);
+    const scanFade = clamp(Math.min(seg(3.85,4.15), 1-seg(11.3,11.7)), 0, 1);
+    const scanVisible = !live && t > 3.85 && t < 11.7;
+    const confP = live ? 0 : seg(6.1, 13.1, outCubic);
+    const reflP = live ? 0 : seg(6.8, 13.6, outCubic);
+    const prog = live ? 0 : seg(2.6, 11.5, inOut);
+    const interpP = live ? 0 : seg(17.0, 17.8, outCubic);
+    const classP = live ? 0 : clamp(seg(18.3, 18.9, outBack), 0, 1);
+    const explP = live ? 0 : clamp(seg(18.8, 19.3, outBack), 0, 1);
+    const searchStart = 19.1, lockT = 20.0;
+    const searching = !live && t >= searchStart && t < lockT;
+    const locked = !live && t >= lockT;
+    const stampIn = locked ? clamp(seg(lockT, lockT+0.55, outBack), 0, 1) : 0;
+    const stampOp = live ? 0 : seg(lockT, lockT+0.14);
+    const dispoIn = live ? 0 : clamp(seg(21.0, 21.5, outBack), 0, 1);
+    const dispoOp = live ? 0 : seg(21.0, 21.15);
 
     let sh = 0;
-    if (!live && t > 14.85 && t < 15.22) { const pr = (t - 14.85) / 0.37; sh = Math.sin(pr * Math.PI * 4) * (1 - pr) * 4; }
+    if (!live && t > 20.0 && t < 20.37) { const pr=(t-20.0)/0.37; sh=Math.sin(pr*Math.PI*4)*(1-pr)*4; }
     let flash = 0;
-    if (!live && t > 14.85 && t < 15.18) { flash = (1 - (t - 14.85) / 0.33) * 0.13; }
+    if (!live && t > 20.0 && t < 20.33) { flash=(1-(t-20.0)/0.33)*0.13; }
 
     const o = {};
-    o.panelStyle = { position: 'relative', width: '945px', height: '2160px', flex: 'none', background: '#f1efe7', overflow: 'hidden', boxShadow: 'inset 0 0 0 1px #000' };
-    o.shudderStyle = { position: 'absolute', inset: '0', transform: `translate(${sh.toFixed(2)}px, ${(sh * 0.5).toFixed(2)}px)` };
+    o.shudderStyle = { transform:`translate(${sh.toFixed(2)}px,${(sh*0.5).toFixed(2)}px)` };
+
+    o.faceWinStyle = { position:'relative', width:'100%', height:'560px', background:'#0e0d0c', overflow:'hidden' };
+
+    // Live video: visible only during idle (opacity → 0 when scan fires)
     o.videoRef = this.makeVideoRef(i);
-    o.camError = camError;
-    o.isFallbackCap = camError;
+    o.videoStyle = {
+      position:'absolute', inset:'0', width:'100%', height:'100%',
+      objectFit:'cover', objectPosition:'center 20%',
+      transform: mirror ? 'scaleX(-1)' : 'none',
+      filter:'grayscale(1) contrast(1.15) brightness(1.05)',
+      opacity: live ? 1 : 0
+    };
 
-    o.subjFileId = subj.fileId; o.subjLine = subj.line; o.subjDate = subj.date;
-    o.subjFooter = subj.footer; o.subjClass = subj.classification; o.subjExpl = subj.explanation;
-    o.verdictText = subj.verdict;
+    const cap = this.captures[i];
+    o.captureEl = null;
 
-    // ---- per-figure face placement -----------------------------------------
-    // Composite the grabbed face into THIS figure's transparent face-hole.
-    //   face.cx / face.cy  = centre of the hole (fractions of the hero window)
-    //   face.w  / face.h   = oval size (fractions of the hero window)
-    //   face.scale         = how tight the grabbed frame is cropped (bigger = closer)
-    //   face.posY          = vertical framing of the grabbed frame (% objectPosition)
-    // Calibrate per cutout PNG so the face lands inside the hole. (See HANDOFF §5.)
-    const reverse = this.props.reverseZones ?? false;
-    const zone = reverse ? (this.STATIONS - 1 - i) : i;
-    const posX = mirror ? ((this.STATIONS - 1 - zone) / (this.STATIONS - 1)) * 100 : (zone / (this.STATIONS - 1)) * 100;
-    const face = subj.face || { cx: 0.5, cy: 0.5, w: 0.62, h: 0.74, scale: 1.32, posY: 38 };
-    const fScale = face.scale || 1.32, fPosY = face.posY ?? 38;
+    o.portraitSrc = subj.portrait || subj.cutout || '';
+    // Card portrait: no clip — overlay covers card during scan, portrait visible when overlay fades
+    o.portraitBlendStyle = {
+      position:'absolute', inset:'0', width:'100%', height:'100%',
+      objectFit: subj.portraitFit || 'cover', objectPosition: subj.portraitPos || 'center top',
+      opacity: live ? 0 : 0.95,
+      display: o.portraitSrc ? 'block' : 'none',
+      pointerEvents:'none'
+    };
 
-    const ovalMask = 'radial-gradient(ellipse 54% 52% at 50% 50%, #000 60%, rgba(0,0,0,0.5) 77%, transparent 92%)';
-    o.ovalStyle = { position: 'absolute', left: `${(face.cx * 100).toFixed(2)}%`, top: `${(face.cy * 100).toFixed(2)}%`, width: `${(face.w * 100).toFixed(1)}%`, height: `${(face.h * 100).toFixed(1)}%`, transform: 'translate(-50%,-50%)', overflow: 'hidden', WebkitMaskImage: ovalMask, maskImage: ovalMask };
+    // Swap result: render face-swapped portrait on top when the server responds
+    const swapSrc = cap && cap.swappedSrc;
+    if (!live && swapSrc) {
+      const h = React.createElement;
+      o.swapEl = h('img', {
+        src: swapSrc, alt: '',
+        style: {
+          position:'absolute', inset:'0', width:'100%', height:'100%',
+          objectFit:'cover', objectPosition:'center top',
+          opacity:1, pointerEvents:'none'
+        }
+      });
+    } else {
+      o.swapEl = null;
+    }
 
-    // GRABBED still, composited into the hole (frozen the instant the face locked).
-    const cap = (this.captures && this.captures[i]) || null;
-    const frame = { backgroundSize: 'cover', backgroundPosition: `${posX.toFixed(0)}% ${fPosY}%`, transform: `${mirror ? 'scaleX(-1) ' : ''}scale(${fScale})`, transformOrigin: 'center 40%' };
-    o.faceImgStyle = Object.assign({ position: 'absolute', inset: '0', backgroundImage: cap ? `url("${cap}")` : 'none', backgroundRepeat: 'no-repeat', filter: 'grayscale(1) contrast(1.3) brightness(1.06)', opacity: cap ? faceReveal : 0, pointerEvents: 'none' }, frame);
-
-    // Live alignment preview (idle): the visitor sees themselves in the red oval before the grab.
-    o.previewVideoStyle = { position: 'absolute', inset: '0', width: '100%', height: '100%', objectFit: 'cover', objectPosition: `${posX.toFixed(0)}% ${fPosY}%`, transform: `${mirror ? 'scaleX(-1) ' : ''}scale(${fScale})`, transformOrigin: 'center 40%', opacity: camError ? 0 : 1, filter: 'grayscale(1) contrast(1.2) brightness(1.06)' };
-    o.capturedStyle = { position: 'absolute', inset: '0', width: '100%', height: '100%', overflow: 'hidden', opacity: 1, filter: 'grayscale(1) contrast(1.2)' };
-
-    const chunkDefs = [
-      { clip: 'polygon(0% 69%,100% 69%,100% 100%,0% 100%)', dx: 0, dy: 1, start: 4.3 },
-      { clip: 'polygon(0% 38%,51% 38%,51% 100%,0% 100%)', dx: -1, dy: 0.35, start: 5.7 },
-      { clip: 'polygon(49% 38%,100% 38%,100% 100%,49% 100%)', dx: 1, dy: 0.35, start: 7.1 },
-      { clip: 'polygon(0% 0%,53% 0%,53% 46%,0% 46%)', dx: -1, dy: -0.5, start: 8.7 },
-      { clip: 'polygon(47% 0%,100% 0%,100% 46%,47% 46%)', dx: 1, dy: -0.5, start: 10.3 },
-      { clip: 'polygon(21% 0%,79% 0%,79% 30%,21% 30%)', dx: 0, dy: -1, start: 11.9 }
-    ];
-    o.portraitChunks = chunkDefs.map((c) => {
-      const pIn = live ? 0 : seg(c.start, c.start + 0.85, outCubic);
-      const settle = live ? 0 : clamp(seg(c.start, c.start + 1.0, outBack), 0, 1);
-      const off = (1 - settle) * 16;
-      return { style: {
-        position: 'absolute', inset: '0', backgroundImage: `url("${subj.cutout}")`, backgroundSize: 'cover', backgroundPosition: 'center top',
-        filter: `grayscale(1) contrast(1.04) blur(${lerp(5, 0, pIn).toFixed(1)}px)`,
-        clipPath: c.clip, WebkitClipPath: c.clip,
-        opacity: pIn, transform: `translate(${(c.dx * off).toFixed(1)}px, ${(c.dy * off).toFixed(1)}px)`, pointerEvents: 'none'
-      } };
-    });
-
-    o.scanTrailStyle = { position: 'absolute', left: '0', top: '0', width: '100%', height: `${(scanP * 100).toFixed(1)}%`, background: `linear-gradient(to bottom, ${this.hexA(RED, 0)}, ${this.hexA(RED, 0.18)})`, opacity: scanFade, pointerEvents: 'none' };
-    o.scanLineStyle = { position: 'absolute', left: '0', width: '100%', height: '3px', top: `${(scanP * 100).toFixed(1)}%`, background: RED, boxShadow: `0 0 16px 3px ${this.hexA(RED, 0.7)}`, opacity: scanFade, pointerEvents: 'none' };
-    o.scanGridStyle = { position: 'absolute', inset: '0', backgroundImage: `repeating-linear-gradient(0deg, ${this.hexA(RED, 0.06)} 0 1px, transparent 1px 4px)`, opacity: scanVisible ? 0.6 : 0, pointerEvents: 'none' };
-
+    // ---- Detection overlay: shown during idle, hidden once scanning starts ----
     const detP = det.prog || 0;
-    const ringCol = det.present ? this.hexA(RED, 0.55 + 0.4 * detP) : 'rgba(241,239,231,0.5)';
-    o.detectLabel = camError ? 'CAMERA NEEDED' : (!det.armed ? 'STEP AWAY TO RESET' : (det.present ? (detP > 0.55 ? 'HOLD STILL…' : 'ACQUIRING…') : 'PUT YOUR FACE IN THE OVAL'));
-    o.detectBarStyle = { position: 'absolute', left: '0', top: '0', bottom: '0', width: `${(detP * 100).toFixed(0)}%`, background: det.present ? RED : 'rgba(241,239,231,0.5)' };
+    const ringCol = det.present ? this.hexA(RED, 0.5 + 0.45*detP) : 'rgba(241,239,231,0.35)';
+    const ringSize = lerp(42, 46, detP);
+    o.detectOverlayStyle = { position:'absolute', inset:'0', pointerEvents:'none', opacity: live ? 1 : 0 };
+    o.detectRingStyle = {
+      position:'absolute', left:'50%', top:'38%',
+      width:`${ringSize}%`, height:`${(ringSize*1.35).toFixed(1)}%`,
+      transform:'translate(-50%,-50%)',
+      border:`2px solid ${ringCol}`,
+      borderRadius:'48% 48% 46% 46% / 40% 40% 56% 56%',
+      boxShadow: det.present ? `0 0 ${(12+28*detP).toFixed(0)}px ${this.hexA(RED, 0.3*detP)}` : 'none',
+      transition:'border-color 0.15s'
+    };
 
-    const FCX = 50, FCY = 32;
-    const holeR = lerp(40, 2600, build);
-    const curtainMask = `radial-gradient(circle at ${FCX}% ${FCY}%, transparent ${holeR.toFixed(0)}px, #000 ${(holeR + 200).toFixed(0)}px)`;
-    const curtainGone = !live && t > 3.1;
-    o.curtainStyle = { position: 'absolute', inset: '0', background: '#000', zIndex: 5, display: curtainGone ? 'none' : 'block', opacity: live ? 1 : clamp(1 - seg(2.7, 3.1), 0, 1), pointerEvents: 'none', WebkitMaskImage: live ? 'none' : curtainMask, maskImage: live ? 'none' : curtainMask };
-    const reticleR = '48% 48% 46% 46% / 40% 40% 56% 56%';
-    o.curtainReticleStyle = { position: 'absolute', top: `${FCY}%`, left: `${FCX}%`, width: '340px', height: '430px', transform: `translate(-50%,-50%) scale(${(det.present ? 1 - 0.03 * detP : 1).toFixed(3)})`, opacity: live ? 1 : clamp(1 - seg(0.2, 0.8), 0, 1) };
-    o.reticleVideoWrapStyle = { position: 'absolute', inset: '0', overflow: 'hidden', borderRadius: reticleR, WebkitMaskImage: ovalMask, maskImage: ovalMask, opacity: camError ? 0 : 0.92, background: '#000' };
-    o.reticleRingStyle = { position: 'absolute', inset: '0', border: `3px solid ${ringCol}`, borderRadius: reticleR, boxShadow: det.present ? `0 0 ${(14 + 34 * detP).toFixed(0)}px ${this.hexA(RED, 0.35 * detP)}` : 'none', transition: 'border-color 0.15s', pointerEvents: 'none' };
+    // Full-card live overlay: stays up through scan, fades after portrait is revealed
+    const overlayFade = live ? 1 : clamp(1 - seg(16.0, 17.5, outCubic), 0, 1);
+    o.liveOverlayStyle = {
+      position:'absolute', inset:'0', zIndex:9,
+      background:'#0a0a0b', opacity:overlayFade,
+      pointerEvents: (live || (!live && t < 17.5)) ? 'auto' : 'none'
+    };
+    o.overlayVideoRef = this.makeOverlayVideoRef(i);
+    // During scan: dark shadowy presence — you can tell it's scanning you without the feed dominating
+    const scanVidOp = live ? 1 : Math.max(0.32, clamp(1 - seg(0, 0.7), 0, 1));
+    o.liveVideoFillStyle = {
+      position:'absolute', inset:'0', width:'100%', height:'100%',
+      objectFit:'cover', objectPosition:'center 30%',
+      transform: mirror ? 'scaleX(-1)' : 'none',
+      filter: live ? 'grayscale(1) contrast(1.15) brightness(1.05)' : 'grayscale(1) contrast(1.6) brightness(0.28)',
+      opacity: scanVidOp
+    };
+    const oRingW = lerp(22, 26, detP);
+    const oRingH = (oRingW * 1.35 * (1040/1560)).toFixed(1);
+    const oRingCol = det.present ? this.hexA(RED, 0.7 + 0.3*detP) : this.hexA(RED, 0.5);
+    const oGlow = det.present
+      ? `0 0 ${(20+40*detP).toFixed(0)}px ${this.hexA(RED, 0.4*detP)}, 0 0 ${(60+80*detP).toFixed(0)}px ${this.hexA(RED, 0.18*detP)}`
+      : `0 0 22px ${this.hexA(RED, 0.18)}`;
+    o.liveRingStyle = {
+      position:'absolute', left:'50%', top:'38%',
+      width:`${oRingW}%`, height:`${oRingH}%`,
+      transform:'translate(-50%,-50%)',
+      border:`2px solid ${oRingCol}`,
+      borderRadius:'48% 48% 46% 46% / 40% 40% 56% 56%',
+      boxShadow: oGlow,
+      pointerEvents:'none'
+    };
+    o.liveMsg = camError ? '[ MANUAL TRIGGER ]' :
+      (!det.armed ? 'STEP AWAY TO RESET' :
+      (det.present ? (detP > 0.55 ? '[ FACE LOCKED ]' : 'ACQUIRING…') : '[ MANUAL TRIGGER ]'));
+    o.liveMsgStyle = {
+      fontFamily:"'Spline Sans Mono',monospace",
+      fontSize:'10px', letterSpacing:'2.5px',
+      color:`rgba(241,239,231,${det.present ? 0.9 : 0.5})`,
+    };
 
-    o.bigStatus = live ? 'STANDBY' : (t < 2.6 ? 'INITIALISING' : (t < 8.6 ? 'SCANNING' : 'COMPLETE'));
-    o.progressFillStyle = { position: 'absolute', left: '0', top: '0', bottom: '0', width: `${(prog * 100).toFixed(1)}%`, background: '#16130f' };
-    o.progressPct = `${Math.round(prog * 100)}%`;
+    // Scan overlay — sweeps from BOTTOM to TOP, revealing portrait as it rises
+    o.scanTrailStyle = { position:'absolute', left:'0', bottom:'0', width:'100%', height:`${(scanP*100).toFixed(1)}%`, background:`linear-gradient(to bottom,${this.hexA(RED,0.18)},${this.hexA(RED,0)})`, opacity:scanFade, pointerEvents:'none' };
+    o.scanLineStyle = { position:'absolute', left:'0', width:'100%', height:'2px', top:`${((1-scanP)*100).toFixed(1)}%`, background:RED, boxShadow:`0 0 12px 2px ${this.hexA(RED,0.7)}`, opacity:scanFade, pointerEvents:'none' };
+    o.scanGridStyle = { position:'absolute', inset:'0', backgroundImage:`repeating-linear-gradient(0deg,${this.hexA(RED,0.06)} 0 1px,transparent 1px 4px)`, opacity:scanVisible?0.6:0, pointerEvents:'none' };
 
+    // Overlay idle wrapper: fades out when scan fires
+    const overlayIdleOp = live ? 1 : clamp(1 - seg(0, 0.5), 0, 1);
+    o.overlayIdleStyle = { position:'absolute', inset:'0', opacity: overlayIdleOp, pointerEvents:'none' };
+
+    // Overlay scan content: portrait reveal + scan FX + stats, fades in when scan fires
+    const overlayScanOp = live ? 0 : clamp(seg(0.2, 0.7, outCubic), 0, 1);
+    o.overlayScanContentStyle = { position:'absolute', inset:'0', opacity: overlayScanOp, pointerEvents:'none' };
+    o.overlayScanLineStyle = Object.assign({}, o.scanLineStyle);
+    o.overlayScanTrailStyle = Object.assign({}, o.scanTrailStyle);
+    o.overlayScanGridStyle = Object.assign({}, o.scanGridStyle);
+    o.overlayScanStatus = t < 2.6 ? 'INITIALISING' : 'SCANNING';
+    // Face targeting brackets: contract and intensify as scan progresses
+    const bFadeIn = live ? 0 : clamp(seg(0.1, 0.7), 0, 1);
+    const bShrink = prog; // 0→1 as scan progresses
+    const bColA = lerp(0.38, 0.9, bShrink);
+    const bBorder = `${lerp(1.5, 2.5, bShrink).toFixed(1)}px solid ${this.hexA(RED, bColA)}`;
+    const bArmW = `${Math.round(lerp(32, 22, bShrink))}px`;
+    const bArmH = `${Math.round(lerp(42, 28, bShrink))}px`;
+    const bLeft = `${lerp(9, 21, bShrink).toFixed(1)}%`;
+    const bTop = `${lerp(5, 10, bShrink).toFixed(1)}%`;
+    const bBot = `${lerp(43, 48, bShrink).toFixed(1)}%`;
+    const bBase = { opacity: bFadeIn, pointerEvents:'none' };
+    o.faceBracketTL = Object.assign({}, bBase, { position:'absolute', top:bTop, left:bLeft, width:bArmW, height:bArmH, borderTop:bBorder, borderLeft:bBorder });
+    o.faceBracketTR = Object.assign({}, bBase, { position:'absolute', top:bTop, right:bLeft, width:bArmW, height:bArmH, borderTop:bBorder, borderRight:bBorder });
+    o.faceBracketBL = Object.assign({}, bBase, { position:'absolute', bottom:bBot, left:bLeft, width:bArmW, height:bArmH, borderBottom:bBorder, borderLeft:bBorder });
+    o.faceBracketBR = Object.assign({}, bBase, { position:'absolute', bottom:bBot, right:bLeft, width:bArmW, height:bArmH, borderBottom:bBorder, borderRight:bBorder });
+    o.overlayProgressFillStyle = { position:'absolute', left:'0', top:'0', bottom:'0', width:`${(prog*100).toFixed(1)}%`, background:RED };
+    o.overlayProgressPct = `${Math.round(prog*100)}%`;
+
+    // Numbers flicker dramatically while building, then settle
+    const confFlicker = (confP > 0 && confP < 0.85) ? Math.abs(Math.sin(t*29.1)*Math.cos(t*11.7)) * (0.85-confP) * 18 : 0;
+    const reflFlicker = (reflP > 0 && reflP < 0.85) ? Math.abs(Math.sin(t*13.4)*Math.cos(t*23.7)) * (0.85-reflP) * 12 : 0;
+    o.overlayConfText = live ? '––.––' : clamp(subj.confidence * confP + confFlicker, 0, 99.99).toFixed(2);
+    o.overlayReflText = live ? '––.–' : clamp(subj.reflection * reflP + reflFlicker, 0, 99.9).toFixed(1);
+
+    // Cycling message — occasionally glitches and reveals the true verdict word
+    const scanMsgIdx = Math.floor(t * 0.8) % this.SCAN_MSGS.length;
+    o.overlayScanMsg = live ? '' : this.SCAN_MSGS[scanMsgIdx];
+    o.overlayScanMsgStyle = {
+      fontFamily: "'Spline Sans Mono',monospace",
+      fontWeight: 400,
+      fontSize: '16px',
+      letterSpacing: '1.2px',
+      color: this.hexA(RED, 0.9),
+      minHeight:'20px', lineHeight:1
+    };
+
+    // Blinking indicators
+    const blink = !live && (Math.floor(t * 2) % 2 === 0);
+    o.overlayScanBlinkStyle = { fontFamily:"'Spline Sans Mono',monospace", fontSize:'11px', color: blink ? RED : 'transparent', lineHeight:'1', flexShrink:0 };
+    o.overlaySensorStyle = { color: blink ? RED : 'rgba(241,239,231,0.2)' };
+
+    // Bottom strip
+    o.overlayElapsed = live ? '00:00' : `00:${Math.floor(t).toString().padStart(2,'0')}`;
+    o.overlayDatasetSrc = (!live && t > 2.6) ? this.DATASET[Math.floor(t * 0.8) % this.DATASET.length] : '—';
+
+    // "HOLD STILL" banner: flashes in on scan start, fades after 2.5s
+    const holdP = live ? 0 : clamp(1 - seg(1.8, 2.5), 0, 1);
+    const holdEnter = live ? 0 : clamp(seg(0, 0.25, outCubic), 0, 1);
+    o.holdStillStyle = {
+      position:'absolute', top:'50%', left:'0', right:'0', textAlign:'center',
+      transform:`translateY(calc(-50% + ${lerp(12,0,holdEnter).toFixed(1)}px))`,
+      opacity: holdP * holdEnter,
+      pointerEvents:'none', zIndex:2
+    };
+
+    // ---- Text values ----
+    o.subjFileId = live ? '——————' : subj.fileId;
+    o.subjLine   = live ? 'UNIDENTIFIED' : subj.line;
+    o.subjDate   = live ? '——.——.——' : subj.date;
+    o.subjClass = subj.classification; o.subjExpl = subj.explanation;
+    let verdictText = subj.verdict;
+    if (searching) { const ci = Math.floor((t-searchStart)/0.07) % this.CANDIDATES.length; verdictText = this.CANDIDATES[ci]; }
+    o.verdictText = verdictText;
+    o.dispositionText = subj.disposition || this.DISPO_DEFAULT;
+
+    o.bigStatus = live ? 'STANDBY' : (t < 2.6 ? 'INITIALISING' : (t < 11.5 ? 'SCANNING' : 'COMPLETE'));
+    o.progressFillStyle = { position:'absolute', left:'0', top:'0', bottom:'0', width:`${(prog*100).toFixed(1)}%`, background:'#16130f' };
+    o.progressBarFillStyle = { width:`${(prog*100).toFixed(1)}%`, height:'100%', background:'#14130F' };
+    o.progressPct = `${Math.round(prog*100)}%`;
+
+    // New bar styles (solid fill, 11px)
     const conf = subj.confidence, refl = subj.reflection;
-    o.confText = live ? '––.––' : (conf * confP).toFixed(2);
-    o.confLabel = live ? '––.––' : (conf * confP).toFixed(2);
-    o.confGaugeStyle = { position: 'absolute', top: '-3px', width: '2px', height: '7px', background: '#16130f', left: `${(confP * conf).toFixed(1)}%` };
-    o.reflText = live ? '––.–' : (refl * reflP).toFixed(1);
-    o.reflLabel = live ? '––.–' : (refl * reflP).toFixed(1);
-    o.reflGaugeStyle = { position: 'absolute', top: '-3px', width: '2px', height: '7px', background: '#16130f', left: `${(reflP * refl).toFixed(1)}%` };
+    o.confBarStyle = { width:`${(confP*conf).toFixed(1)}%`, height:'100%', background:'#14130F' };
+    o.reflBarStyle = { width:`${(reflP*refl).toFixed(1)}%`, height:'100%', background:'#14130F' };
+
+    // Identity band — auto-size name to fit card width
+    o.subjectDisplay = live ? '' : subj.footer;
+    const rawName = live ? '' : subj.footer;
+    const nL = rawName.replace(/ /g, '').length;
+    const nS = (rawName.match(/ /g) || []).length;
+    const nameFontSize = rawName ? Math.min(100, Math.max(38, Math.round(80000 / (76 * nL + 38 * nS)))) : 100;
+    o.identityRevealStyle = {
+      position:'absolute', top:'22px', left:0,
+      fontWeight:900, fontSize:`${nameFontSize}px`, lineHeight:0.85, letterSpacing:'-0.02em',
+      display:'inline-block', transform:'scaleX(0.9)', transformOrigin:'left',
+      whiteSpace:'nowrap', opacity: live ? 0 : interpP
+    };
+    o.metaLine1 = live ? '——————' : subj.classification;
+    o.metaLine2 = live ? '——————' : `FILE NO. ${subj.fileId}`;
+    o.metaLine3 = live ? '——————' : `DATE LOGGED · ${subj.date}`;
+    o.scanDepthText = '97.2';
+    o.interpretation = live ? '——' : (subj.explanation || 'NOT AVAILABLE');
+
+
+    const dsIdx = Math.floor(t * 0.8) % this.DATASET.length;
+    const dsVisible = !live && t > 2.6 && t < 17.5;
+    o.datasetRowStyle = { display:'flex', alignItems:'center', gap:'8px', marginTop:'8px', overflow:'hidden', opacity: dsVisible ? 1 : 0 };
+    o.datasetSrcStyle = { fontFamily:"'Spline Sans Mono',monospace", fontSize:'8px', letterSpacing:'0.6px', color:'#16130f', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' };
+    o.datasetSrc = dsVisible ? this.DATASET[dsIdx] : '';
+
+    o.confText = live ? '––.––' : (conf*confP).toFixed(2);
+    o.confLabel = live ? '––.––' : (conf*confP).toFixed(2);
+    o.confGaugeStyle = { position:'absolute', top:'-3px', width:'2px', height:'7px', background:'#16130f', left:`${(confP*conf).toFixed(1)}%` };
+    o.reflText = live ? '––.–' : (refl*reflP).toFixed(1);
+    o.reflLabel = live ? '––.–' : (refl*reflP).toFixed(1);
+    o.reflGaugeStyle = { position:'absolute', top:'-3px', width:'2px', height:'7px', background:'#16130f', left:`${(reflP*refl).toFixed(1)}%` };
 
     const chars = subj.characteristics || [];
-    const cBase = 8.8, cStep = Math.min(0.62, 3.6 / Math.max(1, chars.length));
-    o.charItems = chars.map((text, k) => {
-      const pr = live ? 0 : clamp(seg(cBase + k * cStep, cBase + k * cStep + 0.45, outBack), 0, 1);
+
+    // Overlay: characteristics typed out one by one with natural pacing
+    const typeDuration = 1.6; // each line types for this long
+    const typeGap = 0.22;    // pause after each line finishes before next starts
+    const oCBase = 3.2;
+    const cursor = live ? '' : (Math.floor(t * 2.5) % 2 === 0 ? '▌' : '');
+    o.overlayCharItems = chars.map((text, k) => {
+      const startT = oCBase + k * (typeDuration + typeGap);
+      const pr = live ? 0 : clamp(seg(startT, startT + typeDuration), 0, 1);
+      const done = pr >= 1;
+      let nChars = 0;
+      if (pr > 0) {
+        if (done) {
+          nChars = text.length;
+        } else {
+          const bp = this.typingBreakpoints(text);
+          // bisect: count chars whose breakpoint time <= pr
+          for (let c = 0; c < bp.length; c++) { if (bp[c] <= pr) nChars = c + 1; else break; }
+        }
+      }
+      const isTyping = pr > 0 && !done;
+      const lineOp = live ? 0 : clamp(seg(startT, startT + 0.06), 0, 1);
       return {
-        text,
-        tick: { display: 'inline-block', opacity: pr, transform: `scale(${pr.toFixed(3)})`, fontSize: '13px', fontWeight: 700, lineHeight: 1, color: '#16130f' },
-        txt: { color: `rgba(20,17,15,${lerp(0.28, 1, pr).toFixed(3)})` }
+        text: text.slice(0, nChars) + (isTyping ? cursor : ''),
+        style: { opacity: (lineOp * (isTyping ? 1.0 : (done ? 0.72 : 0))).toFixed(3) },
+        tickStyle: { fontFamily:"'Saira Condensed',sans-serif", fontWeight:700, fontSize:'30px', color:'#c0443a', flex:'none', lineHeight:1, opacity: done ? 1 : 0, transform: done ? 'scale(1)' : 'scale(0.6)', transition:'opacity 0.25s, transform 0.3s' }
       };
     });
+    o.overlayCharsWrapStyle = { position:'absolute', top:'20%', left:'5%', right:'5%', pointerEvents:'none' };
 
-    o.classStyle = { display: 'inline-block', opacity: classP, transform: `scale(${lerp(1.18, 1, classP).toFixed(3)})`, transformOrigin: 'left center' };
-    o.explStyle = { display: 'inline-block', opacity: explP, transform: `scale(${lerp(1.18, 1, explP).toFixed(3)})`, transformOrigin: 'left center' };
+    // Camera thumbnail — lower right, with bouncing scan bar
+    o.overlayThumbRef = this.makeThumbVideoRef(i);
+    const thumbScanPos = (Math.sin(t * 3.5) * 0.5 + 0.5) * 100;
+    // Glitch cycle: brief corrupted flash — something was there but it's gone before you're sure
+    const GPERIOD = 3.0;
+    const gPhase = (!live && t > 3.5) ? (t % GPERIOD) / GPERIOD : 1;
+    const gTransIn  = gPhase < 0.04;
+    const gPortrait = gPhase >= 0.04 && gPhase < 0.13;
+    const gTransOut = gPhase >= 0.09 && gPhase < 0.13;
+    // Heavy noise during transitions; residual noise during portrait so signal never fully clears
+    const gNoise = gTransIn ? gPhase/0.04 : (gTransOut ? 1-(gPhase-0.09)/0.04 : (gPortrait ? 0.22 : 0));
+    // Extremely low opacity — barely there, like a half-remembered image
+    const gPortraitMax = 0.16;
+    const gPortraitOp = gTransIn ? (gPhase/0.04)*gPortraitMax : ((gPortrait && !gTransOut) ? gPortraitMax : (gTransOut ? gPortraitMax*(1-(gPhase-0.09)/0.04) : 0));
+    const gOverlap = gPortrait && !gTransOut;
+    // Harsh static pushes contrast during transitions; colour shift during overlap
+    const vFilter = gOverlap
+      ? 'grayscale(0.5) contrast(1.3) brightness(0.82)'
+      : `grayscale(1) contrast(${(1 + gNoise * 4.5).toFixed(2)}) brightness(${(1 + gNoise * 2.5).toFixed(2)})`;
+    // Extreme multi-frequency 3D warp — face falls apart across all axes
+    const wX = (Math.sin(t * 4.3) * 14 + Math.sin(t * 11.1) * 7 + Math.sin(t * 29.3) * 3).toFixed(2);
+    const wY = (Math.sin(t * 7.7) * 10 + Math.sin(t * 19.3) * 5 + Math.sin(t * 43.7) * 2).toFixed(2);
+    const skX = (Math.sin(t * 8.5) * 9 + Math.sin(t * 22.1) * 4).toFixed(2);
+    const gDrift = (Math.sin(t * 6.1) * 12 + Math.sin(t * 13.7) * 7 + Math.sin(t * 31.1) * 3).toFixed(1);
+    const portraitTransform = gPortrait
+      ? `scaleX(-1) perspective(350px) rotateX(${wX}deg) rotateY(${wY}deg) skewX(${skX}deg) translateX(${gDrift}px)`
+      : 'scaleX(-1)';
+    // Multiple roll bands cycling at different speeds during transitions
+    const rollPos  = (t * 90) % 190;
+    const rollPos2 = (t * 55 + 80) % 190;
+    const rollOp = gTransIn ? (gPhase/0.04)*0.85 : (gTransOut ? (1-(gPhase-0.09)/0.04)*0.85 : (gPortrait ? 0.35 : 0));
+    o.overlayThumbWrapStyle = { position:'absolute', bottom:'9%', right:'4%', width:'145px', height:'190px', border:`1px solid ${this.hexA(RED, 0.65)}`, overflow:'hidden', pointerEvents:'none', boxShadow:`0 0 20px ${this.hexA(RED, 0.25)}` };
+    o.overlayThumbVideoStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', transform:'scaleX(-1)', filter:vFilter, opacity:'1' };
+    o.overlayThumbPortraitSrc = subj.portrait || '';
+    // Portrait blown out and warped — washed-out ghost that can't quite be identified
+    o.overlayThumbPortraitStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', filter:'grayscale(1) contrast(3.5) brightness(2.2) blur(0.5px)', mixBlendMode:'screen', transform:portraitTransform, opacity:gPortraitOp.toFixed(3), display: o.overlayThumbPortraitSrc ? 'block' : 'none' };
+    o.overlayThumbRollStyle = { position:'absolute', left:'0', right:'0', height:'4px', top:`${rollPos.toFixed(0)}px`, background:`linear-gradient(to right,rgba(0,0,0,0.9),rgba(255,255,255,0.15),rgba(0,0,0,0.9))`, opacity: rollOp, pointerEvents:'none', boxShadow:`0 0 3px rgba(255,255,255,${(rollOp*0.4).toFixed(2)})` };
+    // Second roll band for dense VHS feel
+    o.overlayThumbRollStyle2 = { position:'absolute', left:'0', right:'0', height:'2px', top:`${rollPos2.toFixed(0)}px`, background:'rgba(0,0,0,0.6)', opacity: rollOp * 0.6, pointerEvents:'none' };
+    // Canvas-drawn pixel static — real random greyscale noise drawn each frame
+    o.overlayThumbNoiseRef = this.makeNoiseCanvasRef(i);
+    o.overlayThumbNoiseStyle = { position:'absolute', inset:'0', width:'145px', height:'190px', display:'block', imageRendering:'pixelated', pointerEvents:'none' };
+    const noiseCv = this.noiseCanvases[i];
+    if (noiseCv) {
+      const nCtx = noiseCv.getContext('2d');
+      if (gNoise > 0.01) {
+        const nW = noiseCv.width, nH = noiseCv.height;
+        const img = nCtx.createImageData(nW, nH);
+        const d = img.data;
+        for (let j = 0; j < d.length; j += 4) {
+          const v = Math.floor(Math.random() * 256);
+          d[j] = d[j+1] = d[j+2] = v;
+          d[j+3] = Math.floor(gNoise * 210 + Math.random() * 45);
+        }
+        nCtx.putImageData(img, 0, 0);
+      } else {
+        nCtx.clearRect(0, 0, noiseCv.width, noiseCv.height);
+      }
+    }
+    o.overlayThumbScanStyle = { position:'absolute', left:'0', right:'0', height:'2px', top:`${thumbScanPos.toFixed(1)}%`, background:RED, boxShadow:`0 0 6px 1px ${this.hexA(RED, 0.65)}`, opacity: gOverlap ? 0 : 1 };
 
-    const S = Object.assign({}, this.STAMP, subj.stamp || {});
-    const popFont = { fontFamily: "'Saira Condensed',sans-serif", fontWeight: 700, fontSize: '72px', letterSpacing: '1px', lineHeight: 0.9, whiteSpace: 'nowrap' };
-    o.stampStyle = { position: 'absolute', top: '30%', left: '50%', zIndex: 6, transformOrigin: 'center center', transform: `translate(-50%,-50%) rotate(${lerp(-16, -6, stampIn).toFixed(2)}deg) scale(${lerp(2.4, 1, stampIn).toFixed(3)})`, opacity: clamp(stampOp, 0, 1), pointerEvents: 'none', textAlign: 'center' };
-    o.stampBoxStyle = { position: 'relative', display: 'inline-block', border: `6px solid ${S.key}`, borderRadius: '8px', padding: '8px 26px 14px', textAlign: 'center', whiteSpace: 'nowrap', background: 'transparent', boxShadow: `8px 8px 0 ${this.hexA(S.c, 0.9)}, -7px -5px 0 ${this.hexA(S.b, 0.85)}` };
-    const popLayer = (color, dx, dy, z) => Object.assign({ position: 'absolute', inset: '0', padding: '8px 26px 14px', textAlign: 'center', color, transform: `translate(${dx}px, ${dy}px)`, zIndex: z, pointerEvents: 'none' }, popFont);
-    o.stampLayerA = popLayer(S.a, 7, 7, 1);
-    o.stampLayerB = popLayer(S.b, -7, 4, 1);
-    o.stampLayerC = popLayer(S.c, 4, -7, 2);
-    o.stampTextStyle = Object.assign({ position: 'relative', zIndex: 3, color: S.key }, popFont);
-    o.stampAsteriskStyle = { opacity: clamp(astOp, 0, 1), color: S.c, letterSpacing: '8px', fontSize: '18px', marginTop: '6px', textAlign: 'center', textShadow: `1.5px 1.5px 0 ${S.a}` };
+    // Card: all characteristics snap in simultaneously when poster is revealed
+    const cSnapP = live ? 0 : clamp(seg(17.5, 17.95, outBack), 0, 1);
+    o.charItems = chars.map((text) => {
+      return { text, tick:{ display:'inline-block', opacity:cSnapP, transform:`scale(${cSnapP.toFixed(3)})`, fontSize:'12px', fontWeight:700, lineHeight:1, color:'#16130f' }, txt:{ color:`rgba(20,17,15,${lerp(0.28,1,cSnapP).toFixed(3)})` } };
+    });
 
-    o.flashStyle = { position: 'absolute', inset: '0', background: RED, opacity: flash, pointerEvents: 'none', mixBlendMode: 'multiply', zIndex: 7 };
+    o.interpStyle = { opacity:interpP, transform:`translateY(${lerp(6,0,interpP).toFixed(1)}px)` };
+    o.classStyle = { display:'inline-block', opacity:classP, transform:`scale(${lerp(1.18,1,classP).toFixed(3)})`, transformOrigin:'left center' };
+    o.explStyle = { display:'inline-block', opacity:explP, transform:`scale(${lerp(1.18,1,explP).toFixed(3)})`, transformOrigin:'left center' };
+    o.dispoStyle = { display:'inline-block', opacity:dispoOp, transform:`translateY(${lerp(4,0,dispoIn).toFixed(1)}px)` };
+
+    // ---- Stamp band (lower section of card) ----
+    o.stampBandStyle = { flex:1, minHeight:0, marginTop:'24px', borderTop:'1px solid #14130F', position:'relative', overflow:'hidden' };
+    o.bandStampEl = locked ? this.buildStamp(subj, stampIn, stampOp) : null;
+
+    o.detectLabel = camError ? 'MANUAL MODE' : (!det.armed ? 'STEP AWAY TO RESET' : (det.present ? (detP>0.55?'FACE LOCKED':'ACQUIRING…') : 'STEP INTO FRAME'));
+    o.detectBarStyle = { position:'absolute', left:'0', top:'0', bottom:'0', width:`${(detP*100).toFixed(0)}%`, background:det.present?RED:'rgba(241,239,231,0.5)' };
+
+    o.camError = camError;
+    o.flashStyle = { position:'absolute', inset:'0', background:RED, opacity:flash, pointerEvents:'none', mixBlendMode:'multiply', zIndex:7 };
 
     return o;
   }
 
   renderVals() {
+    const stageW = this.STATIONS * 1040 + Math.max(0, this.STATIONS - 1) * 20;
     return {
-      stageStyle: { transform: `scale(${this.state.scale})`, transformOrigin: 'center center' },
-      panels: this.state.stations.map((s, i) => this.panel(s, i))
+      stageStyle: { transform:`scale(${this.state.scale})`, transformOrigin:'center center' },
+      stageInnerStyle: { display:'flex', gap:'20px', alignItems:'flex-start' },
+      panels: this.state.stations.slice(0, this.STATIONS).map((s, i) => this.panel(s, i))
     };
   }
 }
 </script>
+</x-dc>
 </body>
 </html>

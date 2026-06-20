@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poiret+One&family=Archivo+Narrow:wght@500;700&display=swap" rel="stylesheet">
+<style>html,body{margin:0;height:100%;background:transparent;}body>div{background:transparent!important;}</style>
+</helmet>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="ink" x="-25%" y="-25%" width="150%" height="150%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.013 0.017" numOctaves="5" seed="121" result="big"/>
+    <feDisplacementMap in="SourceGraphic" in2="big" scale="5.5" xChannelSelector="R" yChannelSelector="G" result="disp"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.88" numOctaves="3" seed="7" result="grain"/>
+    <feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.8 1.18" result="holes"/>
+    <feComposite in="disp" in2="holes" operator="in"/>
+  </filter>
+</svg>
+
+<div style="height:100%;display:flex;align-items:center;justify-content:center;background:#ece6d8;background-color:#ece6d8;overflow:hidden;font-family:'Poiret One',sans-serif;">
+  <div style="display:none;position:absolute;inset:0;pointer-events:none;opacity:.5;mix-blend-mode:multiply;background-image:url(&quot;data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/><feColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.06 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>&quot;);"></div>
+
+  <div style="transform:rotate(-2.5deg);filter:url(#ink);mix-blend-mode:multiply;color:#343a44;text-align:center;position:relative;padding:8px 18px;">
+    <!-- deco stepped corners -->
+    <div style="position:absolute;top:0;left:0;width:54px;height:54px;border-top:3px solid currentColor;border-left:3px solid currentColor;"></div>
+    <div style="position:absolute;top:0;right:0;width:54px;height:54px;border-top:3px solid currentColor;border-right:3px solid currentColor;"></div>
+    <div style="position:absolute;bottom:0;left:0;width:54px;height:54px;border-bottom:3px solid currentColor;border-left:3px solid currentColor;"></div>
+    <div style="position:absolute;bottom:0;right:0;width:54px;height:54px;border-bottom:3px solid currentColor;border-right:3px solid currentColor;"></div>
+
+    <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin:14px 0 4px;">
+      <div style="height:2px;width:46px;background:currentColor;"></div>
+      <div style="font-family:'Archivo Narrow',sans-serif;font-weight:700;letter-spacing:.4em;font-size:15px;text-transform:uppercase;padding-left:.4em;white-space:nowrap;">Falling in Love Again</div>
+      <div style="height:2px;width:46px;background:currentColor;"></div>
+    </div>
+    <div style="font-weight:400;font-size:80px;line-height:.92;letter-spacing:.12em;text-transform:uppercase;margin:8px 0 4px;padding-left:.12em;white-space:nowrap;">Homosexual</div>
+    <div style="font-family:'Archivo Narrow',sans-serif;font-weight:700;letter-spacing:.46em;font-size:22px;text-transform:uppercase;padding-left:.46em;white-space:nowrap;margin-top:4px;">Marlene Dietrich</div>
+    <div style="font-family:'Archivo Narrow',sans-serif;font-weight:500;letter-spacing:.3em;font-size:12px;text-transform:uppercase;margin:11px 0 14px;padding-left:.3em;white-space:nowrap;">Berlin &middot; 1901 — 1992</div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
