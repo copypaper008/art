@@ -63,16 +63,16 @@ if [ ! -f ".deps_ok" ]; then
     fi
     echo "         Using $REQS"
     # Use python -m pip so packages land in the same env that runs the server
-    if $PY -m pip install -r "$REQS" websockets 2>&1 | tail -5; then
-        touch .deps_ok
-        echo "         Done."
-    else
+    $PY -m pip install -r "$REQS" websockets
+    if [ $? -ne 0 ]; then
         echo ""
         echo "  ✗  pip install failed. Try running manually:"
         echo "     $PY -m pip install -r $REQS websockets"
         read -p "Press Enter to exit..."
         exit 1
     fi
+    touch .deps_ok
+    echo "         Done."
     echo ""
 fi
 
