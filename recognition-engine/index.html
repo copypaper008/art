@@ -133,15 +133,8 @@
 
         </div>
 
-        <!-- RAINBOW PHRASE BAND -->
-        <div style="flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;margin-top:24px;border-top:1px solid #14130F;position:relative;">
-         <div style="{{ p.phraseCaptionStyle }}">{{ p.phraseCaption }}</div>
-         <div style="position:relative;width:100%;display:flex;align-items:center;justify-content:center;">
-          <div aria-hidden="true" style="{{ p.phraseBlur1Style }}">{{ p.phraseText }}</div>
-          <div aria-hidden="true" style="{{ p.phraseBlur2Style }}">{{ p.phraseText }}</div>
-          <div style="{{ p.phraseMainStyle }}">{{ p.phraseText }}</div>
-         </div>
-        </div>
+        <!-- STAMP BAND -->
+        <div style="{{ p.stampBandStyle }}">{{ p.bandStampEl }}</div>
 
         <!-- FOOTER -->
         <div style="display:flex;justify-content:space-between;align-items:center;border-top:2px solid #14130F;padding-top:16px;margin-top:10px;">
@@ -167,8 +160,6 @@
        </div>
       </div>
 
-      <!-- VERDICT STAMP (absolute, over everything) -->
-      <div style="{{ p.stampStyle }}">{{ p.stampEl }}</div>
 
       <!-- colour flash on verdict slam -->
       <div style="{{ p.flashStyle }}"></div>
@@ -1237,11 +1228,15 @@ class Component extends DCLogic {
     o.confBarStyle = { width:`${(confP*conf).toFixed(1)}%`, height:'100%', background:'#14130F' };
     o.reflBarStyle = { width:`${(reflP*refl).toFixed(1)}%`, height:'100%', background:'#14130F' };
 
-    // Identity band
+    // Identity band — auto-size name to fit card width
     o.subjectDisplay = live ? '' : subj.footer;
+    const rawName = live ? '' : subj.footer;
+    const nL = rawName.replace(/ /g, '').length;
+    const nS = (rawName.match(/ /g) || []).length;
+    const nameFontSize = rawName ? Math.min(100, Math.max(38, Math.round(80000 / (76 * nL + 38 * nS)))) : 100;
     o.identityRevealStyle = {
       position:'absolute', top:'22px', left:0,
-      fontWeight:900, fontSize:'100px', lineHeight:0.85, letterSpacing:'-0.02em',
+      fontWeight:900, fontSize:`${nameFontSize}px`, lineHeight:0.85, letterSpacing:'-0.02em',
       display:'inline-block', transform:'scaleX(0.9)', transformOrigin:'left',
       whiteSpace:'nowrap', opacity: live ? 0 : interpP
     };
@@ -1251,23 +1246,6 @@ class Component extends DCLogic {
     o.scanDepthText = '97.2';
     o.interpretation = live ? '——' : (subj.explanation || 'NOT AVAILABLE');
 
-    // Rainbow phrase (appears after stamp at t=25.05s)
-    const phraseGrad = 'linear-gradient(90deg,#ff2d55,#ff8a00,#ffe000,#34d058,#22b8ff,#6b5bff,#ff2da6,#ff2d55)';
-    const phrBase = {
-      fontWeight:900, fontStyle:'italic', fontSize:'84px', lineHeight:1.02,
-      letterSpacing:'-0.01em',
-      backgroundImage:phraseGrad, backgroundSize:'200% 100%',
-      WebkitBackgroundClip:'text', backgroundClip:'text',
-      WebkitTextFillColor:'transparent', color:'transparent',
-      animation:'rainbowShift 7s linear infinite'
-    };
-    const phrOp = live ? 0 : dispoOp;
-    o.phraseText = live ? '' : subj.verdict;
-    o.phraseCaption = live ? '' : `${subj.footer} · CULTURAL RESIDUE — CLASSIFIED`;
-    o.phraseCaptionStyle = { fontFamily:"'Space Mono',monospace", fontSize:'13px', letterSpacing:'0.3em', color:'#3a3833', marginBottom:'26px', opacity:phrOp };
-    o.phraseMainStyle = Object.assign({}, phrBase, { position:'relative', opacity:phrOp });
-    o.phraseBlur1Style = Object.assign({}, phrBase, { position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', pointerEvents:'none', filter:'blur(26px)', opacity:0.85*phrOp });
-    o.phraseBlur2Style = Object.assign({}, phrBase, { position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', pointerEvents:'none', filter:'blur(58px)', opacity:0.55*phrOp });
 
     const dsIdx = Math.floor(t * 0.8) % this.DATASET.length;
     const dsVisible = !live && t > 2.6 && t < 17.5;
@@ -1385,9 +1363,9 @@ class Component extends DCLogic {
     o.explStyle = { display:'inline-block', opacity:explP, transform:`scale(${lerp(1.18,1,explP).toFixed(3)})`, transformOrigin:'left center' };
     o.dispoStyle = { display:'inline-block', opacity:dispoOp, transform:`translateY(${lerp(4,0,dispoIn).toFixed(1)}px)` };
 
-    // ---- Stamp ----
-    o.stampStyle = { position:'absolute', inset:'0', pointerEvents:'none', zIndex:8 };
-    o.stampEl = locked ? this.buildStamp(subj, stampIn, stampOp) : null;
+    // ---- Stamp band (lower section of card) ----
+    o.stampBandStyle = { flex:1, minHeight:0, marginTop:'24px', borderTop:'1px solid #14130F', position:'relative', overflow:'hidden' };
+    o.bandStampEl = locked ? this.buildStamp(subj, stampIn, stampOp) : null;
 
     o.detectLabel = camError ? 'MANUAL MODE' : (!det.armed ? 'STEP AWAY TO RESET' : (det.present ? (detP>0.55?'FACE LOCKED':'ACQUIRING…') : 'STEP INTO FRAME'));
     o.detectBarStyle = { position:'absolute', left:'0', top:'0', bottom:'0', width:`${(detP*100).toFixed(0)}%`, background:det.present?RED:'rgba(241,239,231,0.5)' };
