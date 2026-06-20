@@ -1070,17 +1070,27 @@ class Component extends DCLogic {
     if (stampFile) {
       const cachedHtml = this.stampHtmlCache[subj.id];
       if (cachedHtml) {
+        // Render stamp in a fixed 600×300 reference box scaled to fit the 340px column.
+        // 600px ref × 0.567 = 340px visual width; 300px ref × 0.567 = 170px visual height.
+        const FIT = 0.567;
         return h('div', {
           style: {
             position: 'absolute', inset: '0',
-            transform: `scale(${scale})`,
-            transformOrigin: 'center center',
+            overflow: 'hidden',
             opacity,
             pointerEvents: 'none',
-            overflow: 'hidden',
+          }
+        },
+        h('div', {
+          style: {
+            position: 'absolute',
+            top: '50%', left: '50%',
+            width: '600px', height: '300px',
+            transform: `translate(-50%,-50%) scale(${(stampIn * FIT).toFixed(3)})`,
+            transformOrigin: 'center center',
           },
           dangerouslySetInnerHTML: { __html: cachedHtml }
-        });
+        }));
       }
       return null; // loading; forceUpdate fires when ready
     }
