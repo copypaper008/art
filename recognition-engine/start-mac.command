@@ -62,12 +62,16 @@ if [ ! -f ".deps_ok" ]; then
         REQS="liveportrait/requirements.txt"
     fi
     echo "         Using $REQS"
-    # Use python -m pip so packages land in the same env that runs the server
-    $PY -m pip install -r "$REQS" websockets
-    if [ $? -ne 0 ]; then
+    # Use python -m pip so packages land in the same env that runs the server.
+    # Filter out onnxruntime-silicon — it was removed from PyPI; the standard
+    # onnxruntime package works fine on Apple Silicon via macOS wheels.
+    grep -v 'onnxruntime-silicon' "$REQS" | $PY -m pip install -r /dev/stdin
+    REQS_STATUS=$?
+    $PY -m pip install onnxruntime websockets
+    if [ $REQS_STATUS -ne 0 ] && [ $? -ne 0 ]; then
         echo ""
         echo "  ✗  pip install failed. Try running manually:"
-        echo "     $PY -m pip install -r $REQS websockets"
+        echo "     $PY -m pip install onnxruntime websockets"
         read -p "Press Enter to exit..."
         exit 1
     fi
