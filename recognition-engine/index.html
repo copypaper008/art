@@ -80,8 +80,6 @@
             <div style="{{ p.scanGridStyle }}"></div>
             <div style="{{ p.scanTrailStyle }}"></div>
             <div style="{{ p.scanLineStyle }}"></div>
-            <!-- STAMP overlaid on portrait -->
-            {{ p.bandStampEl }}
            </div>
            <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:0.04em;color:#3a3833;margin-top:5px;display:flex;justify-content:space-between;">
             <span>IMG&nbsp;8192&nbsp;×&nbsp;10240</span><span>MODE&nbsp;B&amp;W</span><span>SRC&nbsp;ARCHIVE</span>
@@ -138,7 +136,7 @@
          </div>
 
          <!-- RIGHT COLUMN -->
-         <div style="display:flex;flex-direction:column;gap:13px;">
+         <div style="display:flex;flex-direction:column;justify-content:space-between;">
 
           <!-- SCAN STATUS -->
           <div style="border:1.5px solid #14130F;">
@@ -228,6 +226,9 @@
 
       <!-- colour flash on verdict slam -->
       <div style="{{ p.flashStyle }}"></div>
+
+      <!-- STAMP: card-level so it renders over full card area as designed, above flash, below live overlay -->
+      {{ p.bandStampEl }}
 
       <!-- LIVE OVERLAY: stays up through scanning, fades when portrait fully revealed -->
       <div style="{{ p.liveOverlayStyle }}">
