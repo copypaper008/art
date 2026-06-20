@@ -56,6 +56,7 @@ GPU / CPU:
 """
 
 import asyncio
+import concurrent.futures
 import websockets
 import json
 import base64
@@ -64,6 +65,8 @@ import os
 import sys
 import cv2
 import numpy as np
+
+_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 ASSETS = os.path.join(os.path.dirname(__file__), 'assets')
 LP_ROOT = os.path.join(os.path.dirname(__file__), 'liveportrait')
@@ -217,6 +220,48 @@ print(f"\n{len(portraits)}/{len(PORTRAIT_FILES)} portraits ready.")
 print("Listening on ws://localhost:8765  (Ctrl-C to stop)\n")
 
 
+# ---- Per-frame inference (runs in thread executor) --------------------------
+
+def _infer_frame(p, driving_rgb, is_first, station, station_refs):
+    """Return base64 JPEG of the animated portrait, or None if no face found."""
+    ret_d = cropper.crop_driving_video([driving_rgb])
+    if not ret_d or not ret_d.get('frame_crop_lst'):
+        return None
+
+    driving_crop_256 = cv2.resize(ret_d['frame_crop_lst'][0], (256, 256))
+
+    # prepare_videos([list]) → (T,1,3,H,W) 5D; index [0] → (1,3,H,W) 4D,
+    # matching exactly how execute() feeds frames to get_kp_info.
+    I_d_i = wrapper.prepare_videos([driving_crop_256])[0]
+    x_d_i_info = wrapper.get_kp_info(I_d_i)
+
+    # First frame sets the neutral reference pose for this station
+    if is_first or station not in station_refs:
+        station_refs[station] = copy.deepcopy(x_d_i_info)
+
+    x_d_0_info = station_refs[station]
+
+    # Compute RELATIVE expression delta from neutral pose and add to
+    # the portrait's own keypoints — this is what makes the mouth/eyes move
+    x_d_i_new = copy.deepcopy(p['x_s_info'])
+    x_d_i_new['exp'] = (
+        p['x_s_info']['exp']
+        + (x_d_i_info['exp'] - x_d_0_info['exp'])
+    )
+    x_d_i_new['t'] = p['x_s_info']['t'] + (x_d_i_info['t'] - x_d_0_info['t'])
+
+    x_d_i_new = wrapper.transform_keypoint(x_d_i_new)
+
+    out_dict = wrapper.warp_decode(p['f_s'], p['x_s'], x_d_i_new)
+    out_rgb = wrapper.parse_output(out_dict['out'])[0]  # 256×256 uint8 RGB
+
+    result_rgb = paste_back(out_rgb, p['M_c2o'], p['img_rgb'], p['mask_ori'])
+    result_bgr = cv2.cvtColor(result_rgb, cv2.COLOR_RGB2BGR)
+
+    _, buf = cv2.imencode('.jpg', result_bgr, [cv2.IMWRITE_JPEG_QUALITY, 88])
+    return base64.b64encode(buf).decode('utf-8')
+
+
 # ---- WebSocket handler ------------------------------------------------------
 
 async def handle(ws):
@@ -246,47 +291,18 @@ async def handle(ws):
 
             p = portraits[subj_id]
 
-            # Crop the face from the driving (webcam) frame.
-            # crop_driving_video returns 512px crops; resize to 256 for the model.
-            ret_d = cropper.crop_driving_video([driving_rgb])
-            if not ret_d or not ret_d.get('frame_crop_lst'):
+            # Run all CPU/GPU-heavy work in a thread so the event loop stays
+            # responsive to WebSocket pings and doesn't drop the connection.
+            loop = asyncio.get_event_loop()
+            result_b64 = await loop.run_in_executor(
+                _executor,
+                _infer_frame,
+                p, driving_rgb, is_first, station, station_refs,
+            )
+
+            if result_b64 is None:
                 await ws.send(json.dumps({'error': 'No face in driving frame', 'station': station}))
                 continue
-
-            driving_crop_256 = cv2.resize(ret_d['frame_crop_lst'][0], (256, 256))
-
-            # prepare_videos([list]) → (T,1,3,H,W) 5D; index [0] → (1,3,H,W) 4D,
-            # matching exactly how execute() feeds frames to get_kp_info.
-            I_d_i = wrapper.prepare_videos([driving_crop_256])[0]
-            x_d_i_info = wrapper.get_kp_info(I_d_i)
-
-            # First frame sets the neutral reference pose for this station
-            if is_first or station not in station_refs:
-                station_refs[station] = copy.deepcopy(x_d_i_info)
-
-            x_d_0_info = station_refs[station]
-
-            # Compute RELATIVE expression delta from neutral pose and add to
-            # the portrait's own keypoints — this is what makes the mouth/eyes move
-            x_d_i_new = copy.deepcopy(p['x_s_info'])
-            x_d_i_new['exp'] = (
-                p['x_s_info']['exp']
-                + (x_d_i_info['exp'] - x_d_0_info['exp'])
-            )
-            x_d_i_new['t'] = p['x_s_info']['t'] + (x_d_i_info['t'] - x_d_0_info['t'])
-
-            x_d_i_new = wrapper.transform_keypoint(x_d_i_new)
-
-            # Warp the portrait face and decode to RGB image
-            out_dict = wrapper.warp_decode(p['f_s'], p['x_s'], x_d_i_new)
-            out_rgb = wrapper.parse_output(out_dict['out'])[0]  # 256×256 uint8 RGB
-
-            # Paste animated face back onto the full portrait image with blending
-            result_rgb = paste_back(out_rgb, p['M_c2o'], p['img_rgb'], p['mask_ori'])
-            result_bgr = cv2.cvtColor(result_rgb, cv2.COLOR_RGB2BGR)
-
-            _, buf = cv2.imencode('.jpg', result_bgr, [cv2.IMWRITE_JPEG_QUALITY, 88])
-            result_b64 = base64.b64encode(buf).decode('utf-8')
 
             await ws.send(json.dumps({'result': result_b64, 'station': station}))
 
@@ -299,7 +315,9 @@ async def handle(ws):
 
 
 async def main():
-    async with websockets.serve(handle, 'localhost', 8765):
+    # ping_timeout=None prevents websockets from dropping the connection while
+    # the inference thread is running (inference can take 1-3 s on CPU).
+    async with websockets.serve(handle, 'localhost', 8765, ping_timeout=None):
         await asyncio.Future()
 
 asyncio.run(main())
