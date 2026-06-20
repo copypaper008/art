@@ -32,7 +32,7 @@
 
        <!-- HEADER -->
        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:24px;">
-        <div style="margin:0;flex:1;min-width:0;font-weight:900;font-size:42px;line-height:0.9;letter-spacing:-1.4px;">SUBJECT ANALYSIS REPORT</div>
+        <div style="margin:0;flex:1;min-width:0;font-weight:900;font-size:34px;line-height:0.9;letter-spacing:-1.4px;white-space:nowrap;">SUBJECT ANALYSIS REPORT</div>
         <div style="flex:none;text-align:right;padding-top:4px;">
          <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:0.5px;"><span style="font-weight:700;">RECOGNITION ENGINE</span> &nbsp;v.7.3.1</div>
          <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:0.4px;color:#6a6f76;margin-top:2px;">BUREAU OF CULTURAL PATTERN ASSESSMENT</div>
@@ -140,9 +140,25 @@
        </div>
 
        <!-- LOWER ROW -->
-       <div style="display:flex;gap:26px;margin-top:24px;align-items:stretch;">
+       <div style="display:flex;gap:26px;margin-top:24px;align-items:stretch;position:relative;">
 
-        <!-- source analysis -->
+        <!-- classification (left column, aligns under photo) -->
+        <div style="flex:none;width:248px;display:flex;flex-direction:column;">
+         <div style="padding-bottom:11px;border-bottom:1px solid #d8d6cd;">
+          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px;color:#6a6f76;">CLASSIFICATION TYPE:</div>
+          <div style="font-weight:700;font-size:15px;letter-spacing:0.2px;color:#11151c;margin-top:2px;">{{ p.subjClass }}</div>
+         </div>
+         <div style="padding:11px 0;border-bottom:1px solid #d8d6cd;">
+          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px;color:#6a6f76;">OUTCOME STATUS:</div>
+          <div style="font-weight:800;font-size:17px;letter-spacing:0.5px;color:#1f8a3b;margin-top:2px;">CONFIRMED</div>
+         </div>
+         <div style="padding:11px 0 14px;">
+          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px;color:#6a6f76;">DISPOSITION:</div>
+          <div style="font-weight:700;font-size:14px;letter-spacing:0.2px;color:#11151c;margin-top:2px;">{{ p.dispositionText }}</div>
+         </div>
+        </div>
+
+        <!-- source analysis (right column, aligns under variables table) -->
         <div style="flex:1;border:1px solid #11151c;background:#f3f1e9;display:flex;flex-direction:column;">
          <div style="padding:13px 16px;border-bottom:1px solid #11151c;font-weight:800;font-size:18px;letter-spacing:0.3px;color:#11151c;">CONFIDENCE SOURCE ANALYSIS</div>
          <div style="display:grid;grid-template-columns:1fr 52px 116px;align-items:center;column-gap:14px;padding:9px 16px 6px;font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px;color:#6a6f76;">
@@ -162,23 +178,8 @@
          </div>
         </div>
 
-        <!-- classification + archive tag -->
-        <div style="flex:none;width:340px;display:flex;flex-direction:column;">
-         <div style="padding-bottom:11px;border-bottom:1px solid #d8d6cd;">
-          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px;color:#6a6f76;">CLASSIFICATION TYPE:</div>
-          <div style="font-weight:700;font-size:15px;letter-spacing:0.2px;color:#11151c;margin-top:2px;">{{ p.subjClass }}</div>
-         </div>
-         <div style="padding:11px 0;border-bottom:1px solid #d8d6cd;">
-          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px;color:#6a6f76;">OUTCOME STATUS:</div>
-          <div style="font-weight:800;font-size:17px;letter-spacing:0.5px;color:#1f8a3b;margin-top:2px;">CONFIRMED</div>
-         </div>
-         <div style="padding:11px 0 14px;">
-          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px;color:#6a6f76;">DISPOSITION:</div>
-          <div style="font-weight:700;font-size:14px;letter-spacing:0.2px;color:#11151c;margin-top:2px;">{{ p.dispositionText }}</div>
-         </div>
-         <!-- archive tag: individual animated stamp -->
-         <div style="{{ p.archiveTagStyle }}">{{ p.archiveTagEl }}</div>
-        </div>
+        <!-- archive stamp: full-width centered watermark over lower section -->
+        <div style="{{ p.archiveTagStyle }}">{{ p.archiveTagEl }}</div>
        </div>
 
        <!-- FOOTER -->
@@ -1071,8 +1072,8 @@ class Component extends DCLogic {
       const cachedHtml = this.stampHtmlCache[subj.id];
       if (cachedHtml) {
         // Render stamp in a fixed 600×300 reference box scaled to fit the 340px column.
-        // 600px ref × 0.567 = 340px visual width; 300px ref × 0.567 = 170px visual height.
-        const FIT = 0.567;
+        // 600px ref × 1.0 = 600px visual width, centered watermark over lower section.
+        const FIT = 1.0;
         return h('div', {
           style: {
             position: 'absolute', inset: '0',
@@ -1514,7 +1515,7 @@ class Component extends DCLogic {
     ]);
 
     // Archive tag: individual animated stamp (same as old stamp band, just in the dossier column)
-    o.archiveTagStyle = { marginTop:'auto', position:'relative', height:'240px', overflow:'hidden' };
+    o.archiveTagStyle = { position:'absolute', inset:'0', pointerEvents:'none', overflow:'hidden' };
     o.archiveTagEl = locked ? this.buildStamp(subj, stampIn, stampOp) : null;
 
     return o;
