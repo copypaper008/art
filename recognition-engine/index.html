@@ -176,6 +176,8 @@
       <div style="{{ p.liveOverlayStyle }}">
        <!-- Camera video: fades out when scan fires -->
        <video muted autoplay playsinline ref="{{ p.overlayVideoRef }}" style="{{ p.liveVideoFillStyle }}"></video>
+       <!-- Reenacted portrait: replaces live video once LivePortrait returns the first frame -->
+       <img src="{{ p.swapFillSrc }}" alt="" style="{{ p.swapFillStyle }}" />
        <!-- IDLE CONTENT: fades out when scan fires -->
        <div style="{{ p.overlayIdleStyle }}">
         <div style="position:absolute;top:6%;left:0;right:0;text-align:center;pointer-events:none;">
@@ -1195,6 +1197,17 @@ class Component extends DCLogic {
       filter: live ? 'grayscale(1) contrast(1.15) brightness(1.05)' : 'grayscale(1) contrast(1.6) brightness(0.28)',
       opacity: scanVidOp
     };
+    // Reenacted portrait fill: sits on top of the live video in the overlay,
+    // visible as soon as the first LivePortrait frame arrives.
+    const swapSrc = cap && cap.swappedSrc;
+    o.swapFillSrc = swapSrc || '';
+    o.swapFillStyle = {
+      position: 'absolute', inset: '0', width: '100%', height: '100%',
+      objectFit: 'cover', objectPosition: 'center top',
+      opacity: (!live && swapSrc) ? 1 : 0,
+      pointerEvents: 'none',
+    };
+
     const oRingW = lerp(22, 26, detP);
     const oRingH = (oRingW * 1.35 * (1040/1560)).toFixed(1);
     const oRingCol = det.present ? this.hexA(RED, 0.7 + 0.3*detP) : this.hexA(RED, 0.5);

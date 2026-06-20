@@ -305,6 +305,7 @@ async def handle(ws):
                 continue
 
             await ws.send(json.dumps({'result': result_b64, 'station': station}))
+            print(f"  ok    station={station}  {subj_id}")
 
         except Exception as e:
             print(f"  error: {e}")
