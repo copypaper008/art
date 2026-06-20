@@ -708,6 +708,7 @@ class Component extends DCLogic {
   noiseCanvases = [];
   _canvasrefs = {};
   captures = [null, null, null, null];
+  streamTimers = [null, null, null, null];
   stampHtmlCache = {};
 
   state = {
@@ -770,6 +771,7 @@ class Component extends DCLogic {
   componentWillUnmount() {
     cancelAnimationFrame(this._mainRaf);
     this._rafs.forEach(r => r && cancelAnimationFrame(r));
+    this.streamTimers.forEach((t, i) => { if (t) { clearInterval(t); this.streamTimers[i] = null; } });
     clearInterval(this.detectTimer);
     clearTimeout(this._swapReconnect);
     if (this.swapWs) { this.swapWs.onclose = null; this.swapWs.close(); }
@@ -915,6 +917,10 @@ class Component extends DCLogic {
 
   trigger(i) {
     if (this.state.stations[i].phase === 'scanning') return;
+
+    // Stop any existing stream for this station before starting new one
+    if (this.streamTimers[i]) { clearInterval(this.streamTimers[i]); this.streamTimers[i] = null; }
+
     const subjectIdx = this.pickSubject(i);
     const subj = this.subjects[subjectIdx];
 
@@ -928,9 +934,21 @@ class Component extends DCLogic {
     if (captured) captured.swappedSrc = null;
     this.captures[i] = captured;
 
-    if (captured && this.swapWs && this.swapWs.readyState === WebSocket.OPEN) {
-      try { this.swapWs.send(JSON.stringify({ subject: subj.id, frame: captured.src.split(',')[1], station: i })); } catch (_) {}
-    }
+    // Send a live frame to the swap server, flagging the first as the neutral reference
+    const sendLiveFrame = (first = false) => {
+      if (!this.swapWs || this.swapWs.readyState !== WebSocket.OPEN) return;
+      const frame = this.captureFrame(i);
+      if (!frame) return;
+      try {
+        this.swapWs.send(JSON.stringify({ subject: subj.id, frame: frame.src.split(',')[1], station: i, first }));
+      } catch (_) {}
+    };
+
+    // Send first frame immediately (neutral reference for LivePortrait)
+    sendLiveFrame(true);
+
+    // Stream subsequent frames every 150 ms for live reenactment
+    this.streamTimers[i] = setInterval(() => sendLiveFrame(false), 150);
 
     const stations = this.state.stations.slice();
     stations[i] = { phase: 'scanning', t: 0, subjectIdx };
@@ -945,6 +963,8 @@ class Component extends DCLogic {
     const step = (now) => {
       const t = (now - this.t0[i]) / 1000;
       if (t >= TOTAL) {
+        // Stop live streaming when the scan cycle ends
+        if (this.streamTimers[i]) { clearInterval(this.streamTimers[i]); this.streamTimers[i] = null; }
         const stations = this.state.stations.slice();
         if (autoLoop) { stations[i] = { phase: 'live', t: 0, subjectIdx: stations[i].subjectIdx }; if (this.videos[i] && this.stream) this.videos[i].play().catch(() => {}); }
         else { stations[i] = { phase: 'done', t: TOTAL, subjectIdx: stations[i].subjectIdx }; }
