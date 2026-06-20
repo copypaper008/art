@@ -225,6 +225,11 @@
        </div>
        <!-- SCAN CONTENT: portrait reveal + scan FX + stats, fades in when scan fires -->
        <div style="{{ p.overlayScanContentStyle }}">
+        <!-- Face targeting brackets — contract as scan locks in -->
+        <div style="{{ p.faceBracketTL }}"></div>
+        <div style="{{ p.faceBracketTR }}"></div>
+        <div style="{{ p.faceBracketBL }}"></div>
+        <div style="{{ p.faceBracketBR }}"></div>
         <div style="{{ p.overlayScanGridStyle }}"></div>
         <div style="{{ p.overlayScanTrailStyle }}"></div>
         <div style="{{ p.overlayScanLineStyle }}"></div>
@@ -274,6 +279,7 @@
         <div style="{{ p.overlayThumbWrapStyle }}">
          <video muted autoplay playsinline ref="{{ p.overlayThumbRef }}" style="{{ p.overlayThumbVideoStyle }}"></video>
          <img src="{{ p.overlayThumbPortraitSrc }}" alt="" style="{{ p.overlayThumbPortraitStyle }}" />
+         <div style="{{ p.overlayThumbRollStyle }}"></div>
          <canvas ref="{{ p.overlayThumbNoiseRef }}" width="72" height="95" style="{{ p.overlayThumbNoiseStyle }}"></canvas>
          <div style="{{ p.overlayThumbScanStyle }}"></div>
         </div>
@@ -870,12 +876,14 @@ class Component extends DCLogic {
       pointerEvents: (live || (!live && t < 17.5)) ? 'auto' : 'none'
     };
     o.overlayVideoRef = this.makeOverlayVideoRef(i);
+    // During scan: keep viewer visible so the scan feels like it's reading them
+    const scanVidOp = live ? 1 : Math.max(0.55, clamp(1 - seg(0, 0.7), 0, 1));
     o.liveVideoFillStyle = {
       position:'absolute', inset:'0', width:'100%', height:'100%',
       objectFit:'cover', objectPosition:'center 30%',
       transform: mirror ? 'scaleX(-1)' : 'none',
-      filter:'grayscale(1) contrast(1.15) brightness(1.05)',
-      opacity: live ? 1 : clamp(1 - seg(0, 0.5), 0, 1)
+      filter: live ? 'grayscale(1) contrast(1.15) brightness(1.05)' : 'grayscale(1) contrast(1.5) brightness(0.7)',
+      opacity: scanVidOp
     };
     const oRingW = lerp(22, 26, detP);
     const oRingH = (oRingW * 1.35 * (824/1240)).toFixed(1);
@@ -917,6 +925,21 @@ class Component extends DCLogic {
     o.overlayScanTrailStyle = Object.assign({}, o.scanTrailStyle);
     o.overlayScanGridStyle = Object.assign({}, o.scanGridStyle);
     o.overlayScanStatus = t < 2.6 ? 'INITIALISING' : 'SCANNING';
+    // Face targeting brackets: contract and intensify as scan progresses
+    const bFadeIn = live ? 0 : clamp(seg(0.1, 0.7), 0, 1);
+    const bShrink = prog; // 0→1 as scan progresses
+    const bColA = lerp(0.38, 0.9, bShrink);
+    const bBorder = `${lerp(1.5, 2.5, bShrink).toFixed(1)}px solid ${this.hexA(RED, bColA)}`;
+    const bArmW = `${Math.round(lerp(32, 22, bShrink))}px`;
+    const bArmH = `${Math.round(lerp(42, 28, bShrink))}px`;
+    const bLeft = `${lerp(9, 21, bShrink).toFixed(1)}%`;
+    const bTop = `${lerp(5, 10, bShrink).toFixed(1)}%`;
+    const bBot = `${lerp(43, 48, bShrink).toFixed(1)}%`;
+    const bBase = { opacity: bFadeIn, pointerEvents:'none' };
+    o.faceBracketTL = Object.assign({}, bBase, { position:'absolute', top:bTop, left:bLeft, width:bArmW, height:bArmH, borderTop:bBorder, borderLeft:bBorder });
+    o.faceBracketTR = Object.assign({}, bBase, { position:'absolute', top:bTop, right:bLeft, width:bArmW, height:bArmH, borderTop:bBorder, borderRight:bBorder });
+    o.faceBracketBL = Object.assign({}, bBase, { position:'absolute', bottom:bBot, left:bLeft, width:bArmW, height:bArmH, borderBottom:bBorder, borderLeft:bBorder });
+    o.faceBracketBR = Object.assign({}, bBase, { position:'absolute', bottom:bBot, right:bLeft, width:bArmW, height:bArmH, borderBottom:bBorder, borderRight:bBorder });
     o.overlayProgressFillStyle = { position:'absolute', left:'0', top:'0', bottom:'0', width:`${(prog*100).toFixed(1)}%`, background:RED };
     o.overlayProgressPct = `${Math.round(prog*100)}%`;
 
@@ -1019,28 +1042,38 @@ class Component extends DCLogic {
     // Camera thumbnail — lower right, with bouncing scan bar
     o.overlayThumbRef = this.makeThumbVideoRef(i);
     const thumbScanPos = (Math.sin(t * 3.5) * 0.5 + 0.5) * 100;
-    // Glitch cycle: briefly cuts from live feed to subject portrait with static interference
-    const GPERIOD = 5.2;
+    // Glitch cycle: brief flash of subject portrait over live feed — gone too fast to fully register
+    const GPERIOD = 4.0;
     const gPhase = (!live && t > 3.5) ? (t % GPERIOD) / GPERIOD : 1;
-    const gTransIn  = gPhase < 0.07;
-    const gPortrait = gPhase >= 0.07 && gPhase < 0.38;
-    const gTransOut = gPhase >= 0.31 && gPhase < 0.38;
-    // Noise ramps up during transitions; residual whisper while overlapping
-    const gNoise = gTransIn ? gPhase/0.07 : (gTransOut ? 1-(gPhase-0.31)/0.07 : (gPortrait ? 0.08 : 0));
-    // Portrait materialises through static, holds as screen-blended ghost, dissolves back through static
-    const gPortraitOp = gTransIn ? (gPhase/0.07)*0.78 : ((gPortrait && !gTransOut) ? 0.78 : (gTransOut ? 0.78*(1-(gPhase-0.31)/0.07) : 0));
-    const gOverlap = gPortrait && !gTransIn && !gTransOut;
-    // Video always visible; desaturate slightly while portrait ghost is present
+    const gTransIn  = gPhase < 0.06;
+    const gPortrait = gPhase >= 0.06 && gPhase < 0.23;
+    const gTransOut = gPhase >= 0.17 && gPhase < 0.23;
+    // Noise ramps up during transitions; barely-there whisper during overlap
+    const gNoise = gTransIn ? gPhase/0.06 : (gTransOut ? 1-(gPhase-0.17)/0.06 : (gPortrait ? 0.05 : 0));
+    // Portrait at low opacity — more suggestion of a face than a clear image
+    const gPortraitMax = 0.35;
+    const gPortraitOp = gTransIn ? (gPhase/0.06)*gPortraitMax : ((gPortrait && !gTransOut) ? gPortraitMax : (gTransOut ? gPortraitMax*(1-(gPhase-0.17)/0.06) : 0));
+    const gOverlap = gPortrait && !gTransOut;
+    // Video: slight colour shift while portrait bleeds through, static contrast spike during transitions
     const vFilter = gOverlap
       ? 'grayscale(0.6) contrast(1.15) brightness(0.88)'
       : `grayscale(1) contrast(${(1 + gNoise * 3.5).toFixed(2)}) brightness(${(1 + gNoise * 2).toFixed(2)})`;
-    // Subtle horizontal drift on the portrait during overlap — registration error feel
-    const gDrift = gOverlap ? (Math.sin(t * 6.1) * 2.5 + Math.sin(t * 13.7) * 1.2).toFixed(1) : '0';
+    // Multi-frequency wave on portrait — two signals phasing through each other
+    const wX = (Math.sin(t * 4.3) * 3.5 + Math.sin(t * 11.1) * 1.8).toFixed(2);
+    const wY = (Math.sin(t * 7.7) * 2.1 + Math.sin(t * 19.3) * 0.9).toFixed(2);
+    const gDrift = (Math.sin(t * 6.1) * 2.5 + Math.sin(t * 13.7) * 1.2).toFixed(1);
+    const portraitTransform = gPortrait
+      ? `scaleX(-1) perspective(500px) rotateX(${wX}deg) rotateY(${wY}deg) translateX(${gDrift}px)`
+      : 'scaleX(-1)';
+    // VHS roll band: dark stripe sliding down through frame during transitions
+    const rollPos = (t * 65) % 190;
+    const rollOp = gTransIn ? (gPhase/0.06)*0.7 : (gTransOut ? (1-(gPhase-0.17)/0.06)*0.7 : 0);
     o.overlayThumbWrapStyle = { position:'absolute', bottom:'9%', right:'4%', width:'145px', height:'190px', border:`1px solid ${this.hexA(RED, 0.65)}`, overflow:'hidden', pointerEvents:'none', boxShadow:`0 0 20px ${this.hexA(RED, 0.25)}` };
     o.overlayThumbVideoStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', transform:'scaleX(-1)', filter:vFilter, opacity:'1' };
     o.overlayThumbPortraitSrc = subj.portrait || '';
-    // Portrait mirrored to match camera, screen blend so it ghosts onto the live face
-    o.overlayThumbPortraitStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', filter:'grayscale(1) contrast(2.2) brightness(1.4)', mixBlendMode:'screen', transform:`scaleX(-1) translateX(${gDrift}px)`, opacity:gPortraitOp.toFixed(3), display: o.overlayThumbPortraitSrc ? 'block' : 'none' };
+    // Portrait screen-blended as a ghost: warped, low opacity, gone fast
+    o.overlayThumbPortraitStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', filter:'grayscale(1) contrast(2.2) brightness(1.4)', mixBlendMode:'screen', transform:portraitTransform, opacity:gPortraitOp.toFixed(3), display: o.overlayThumbPortraitSrc ? 'block' : 'none' };
+    o.overlayThumbRollStyle = { position:'absolute', left:'0', right:'0', height:'3px', top:`${rollPos.toFixed(0)}px`, background:'rgba(0,0,0,0.8)', opacity: rollOp, pointerEvents:'none' };
     // Canvas-drawn pixel static — real random greyscale noise drawn each frame
     o.overlayThumbNoiseRef = this.makeNoiseCanvasRef(i);
     o.overlayThumbNoiseStyle = { position:'absolute', inset:'0', width:'145px', height:'190px', display:'block', imageRendering:'pixelated', pointerEvents:'none' };
@@ -1061,7 +1094,7 @@ class Component extends DCLogic {
         nCtx.clearRect(0, 0, noiseCv.width, noiseCv.height);
       }
     }
-    o.overlayThumbScanStyle = { position:'absolute', left:'0', right:'0', height:'2px', top:`${thumbScanPos.toFixed(1)}%`, background:RED, boxShadow:`0 0 6px 1px ${this.hexA(RED, 0.65)}`, opacity: (gPortrait && !gTransIn && !gTransOut) ? 0 : 1 };
+    o.overlayThumbScanStyle = { position:'absolute', left:'0', right:'0', height:'2px', top:`${thumbScanPos.toFixed(1)}%`, background:RED, boxShadow:`0 0 6px 1px ${this.hexA(RED, 0.65)}`, opacity: gOverlap ? 0 : 1 };
 
     // Card: all characteristics snap in simultaneously when poster is revealed
     const cSnapP = live ? 0 : clamp(seg(17.5, 17.95, outBack), 0, 1);
