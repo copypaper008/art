@@ -25,7 +25,7 @@ SETUP
        import sys; sys.path.insert(0,'liveportrait')
        from src.config.inference_config import InferenceConfig
        from src.config.crop_config import CropConfig
-       from src.pipelines.live_portrait_pipeline import LivePortraitPipeline
+       from src.live_portrait_pipeline import LivePortraitPipeline
        LivePortraitPipeline(inference_cfg=InferenceConfig(), crop_cfg=CropConfig())
        print('Models ready.')
        "
@@ -112,7 +112,7 @@ sys.path.insert(0, LP_ROOT)
 try:
     from src.config.inference_config import InferenceConfig
     from src.config.crop_config import CropConfig
-    from src.pipelines.live_portrait_pipeline import LivePortraitPipeline
+    from src.live_portrait_pipeline import LivePortraitPipeline
     from src.utils.crop import paste_back
 except ImportError as e:
     print(f"\n  ERROR importing LivePortrait modules: {e}")
