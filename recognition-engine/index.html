@@ -51,7 +51,7 @@
 
        <!-- SUBJECT ROW -->
        <div style="display:flex;justify-content:space-between;align-items:center;gap:24px;margin-top:20px;">
-        <div>
+        <div style="min-width:0;overflow:hidden;">
          <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:#6a6f76;">IDENTIFIED SUBJECT</div>
          <div style="{{ p.identityRevealStyle }}">{{ p.subjectDisplay }}</div>
         </div>
@@ -1341,7 +1341,7 @@ class Component extends DCLogic {
     const rawName = live ? '' : subj.footer;
     const nL = rawName.replace(/ /g, '').length;
     const nS = (rawName.match(/ /g) || []).length;
-    const nameFontSize = rawName ? Math.min(100, Math.max(38, Math.round(80000 / (76 * nL + 38 * nS)))) : 100;
+    const nameFontSize = rawName ? Math.min(100, Math.max(36, Math.round(54000 / (76 * nL + 38 * nS)))) : 100;
     o.identityRevealStyle = {
       fontWeight:900, fontSize:`${nameFontSize}px`, lineHeight:0.85, letterSpacing:'-0.02em',
       display:'block', transform:'scaleX(0.9)', transformOrigin:'left',
