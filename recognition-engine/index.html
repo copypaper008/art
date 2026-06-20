@@ -261,6 +261,16 @@
          </div>
         </div>
        </div>
+       <!-- SIGNAL DEBUG PANEL — toggle with D key -->
+       <div style="{{ p.debugPanelStyle }}">
+        <div style="color:rgba(192,68,58,0.9);font-weight:700;letter-spacing:1.5px;margin-bottom:6px;">◆ SIGNAL ROUTING  [D = toggle]</div>
+        <div>FACE·SIZE &nbsp;&nbsp;{{ p.dbgFaceRaw }}</div>
+        <div>GLASSES &nbsp;&nbsp;&nbsp;{{ p.dbgGlassRaw }}</div>
+        <div>LUMINANCE &nbsp;{{ p.dbgBrightRaw }}</div>
+        <div>TIME·BAND &nbsp;{{ p.dbgTimeRaw }}</div>
+        <div style="border-top:1px solid rgba(192,68,58,0.3);margin-top:6px;padding-top:6px;">ACTIVE &nbsp;&nbsp;&nbsp;&nbsp;{{ p.dbgActiveStr }}</div>
+        <div>ROUTING &nbsp;&nbsp;&nbsp;{{ p.dbgRouteStr }}</div>
+       </div>
       </div>
      </div>
     </div>
@@ -636,6 +646,31 @@ class Component extends DCLogic {
   CANDIDATES = ['DEVIANT','SUBVERSIVE','DISORDERED','SECURITY RISK','UNFIT','IMMORAL','INVERT','ABNORMAL','DEGENERATE','CRIMINAL','SUSPECT','UNNATURAL'];
   DISPO_DEFAULT = 'FLAG · MONITOR · RETAIN ON FILE';
 
+  // Signal → subject routing map.
+  // Each entry is a list of subject IDs that get a probability boost when that signal fires.
+  SIGNAL_MAP = {
+    glasses: ['elton','haring','vilanch','sondheim'],
+    close:   ['warhol','kramer','rupaul','franknfurter','divine','marsha'],
+    far:     ['turing','woolf','baldwin','sappho','hadrian'],
+    night:   ['kake','divine','franknfurter','waters','jack'],
+    morning: ['hadrian','sappho','woolf','turing','wilde'],
+    dark:    ['turing','baldwin','woolf','kake','waters'],
+    bright:  ['warhol','elton','divine','rupaul','dietrich'],
+  };
+
+  // Raw thresholds for each signal (tune these if signals are too sensitive/insensitive)
+  SIGNAL_THRESH = {
+    close:        0.10,  // faceRatio > this → CLOSE
+    far:          0.04,  // faceRatio < this → FAR  (and > 0)
+    glasses:      0.17,  // glassesScore > this → GLASSES
+    dark:         0.28,  // brightness < this → DARK
+    bright:       0.60,  // brightness > this → BRIGHT
+    nightStart:   22,    // hour >= this OR hour < nightEnd → NIGHT
+    nightEnd:     4,
+    morningStart: 6,
+    morningEnd:   10,
+  };
+
   DATASET = ['1980s SITCOM LAUGH TRACKS','DRAG SEMIOTICS v4.2','FASHION WEEK A/W 2003','OVERHEARD LOCKER-ROOM GOSSIP','GREEK RED-FIGURE POTTERY','INTERNET COMMENT SECTIONS','WEST END PLAYBILLS','SCENTED-CANDLE REVIEWS','BRUNCH RESERVATION LOGS','EUROVISION 1974–PRESENT','HOUSEPLANT FORUMS','CAMP CINEMA ARCHIVE','TABLOID HEADLINES','GYM-MEMBERSHIP RECORDS','WALLPAPER SWATCHES','PRIDE FOOTAGE 1970–'];
 
   SCAN_MSGS = [
@@ -663,10 +698,13 @@ class Component extends DCLogic {
   _canvasrefs = {};
   captures = [null, null, null, null];
   stampHtmlCache = {};
+  _liveSignals   = [null, null, null, null];  // updated every detect tick
+  triggerSignals = [null, null, null, null];  // signals at the moment of each trigger
 
   state = {
     scale: 1,
     camError: false,
+    debugMode: false,
     stations: [0, 1, 2, 3].map(() => ({ phase: 'live', t: 0, subjectIdx: 0 }))
   };
 
@@ -674,7 +712,10 @@ class Component extends DCLogic {
     this.fit();
     this._onResize = () => this.fit();
     window.addEventListener('resize', this._onResize);
-    this._onKey = (e) => { if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); this.trigger(0); } };
+    this._onKey = (e) => {
+      if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); this.trigger(0); }
+      if (e.key === 'd' || e.key === 'D') { this.setState({ debugMode: !this.state.debugMode }); }
+    };
     window.addEventListener('keydown', this._onKey);
     this._onClick = () => {
       for (let i = 0; i < this.STATIONS; i++) {
@@ -689,6 +730,8 @@ class Component extends DCLogic {
     this.detectArmed = [true, true, true, true];
     this.det = [0,1,2,3].map(() => ({ present: false, prog: 0, armed: true }));
     this.lastIdx = [-1, -1, -1, -1];
+    this._liveSignals   = [null, null, null, null];
+    this.triggerSignals = [null, null, null, null];
     this.t0 = [0, 0, 0, 0];
     this._rafs = [null, null, null, null];
     this._mainRaf = null;
@@ -820,9 +863,60 @@ class Component extends DCLogic {
         const next = { present, prog, armed: this.detectArmed[i] };
         if (live && (prev.present !== present || Math.abs((prev.prog||0) - prog) > 0.02 || prev.armed !== this.detectArmed[i])) changed = true;
         this.det[i] = next;
+        this._liveSignals[i] = this.analyzeFrame(i);
       }
       if (changed && !this._mainRaf) this.forceUpdate();
     }, 130);
+  }
+
+  // Pixel analysis of the current video frame for conditional subject routing.
+  // Returns { faceRatio, glassesScore, brightness, hour }.
+  analyzeFrame(i) {
+    const v = this.sampleVideo();
+    const fallback = { faceRatio: 0.3, glassesScore: 0, brightness: 0.5, hour: new Date().getHours() };
+    if (!v || !v.videoWidth || this.state.camError) return fallback;
+    if (!this._aCanvas) { this._aCanvas = document.createElement('canvas'); this._aCanvas.width = 96; this._aCanvas.height = 96; }
+    const ctx = this._aCanvas.getContext('2d', { willReadFrequently: true });
+    const vw = v.videoWidth, vh = v.videoHeight;
+    const zw = vw / this.STATIONS;
+    const sx = i * zw, sw = zw, sh = vh * 0.78, sy = vh * 0.04;
+    try { ctx.drawImage(v, sx, sy, sw, sh, 0, 0, 96, 96); } catch (e) { return fallback; }
+    let data; try { data = ctx.getImageData(0, 0, 96, 96).data; } catch (e) { return fallback; }
+
+    let skin = 0, bSum = 0;
+    let sL = 96, sR = 0, sT = 96, sB = 0;
+    for (let py = 0; py < 96; py++) {
+      for (let px = 0; px < 96; px++) {
+        const j = (py * 96 + px) * 4;
+        const r = data[j], g = data[j+1], b = data[j+2];
+        const mx = Math.max(r,g,b), mn = Math.min(r,g,b);
+        bSum += (r+g+b) / 3;
+        if (r>50&&g>30&&b>18&&r>=g&&g>=b&&(r-b)>14&&(mx-mn)>12&&(mx-mn)<130) {
+          skin++;
+          if (px<sL) sL=px; if (px>sR) sR=px; if (py<sT) sT=py; if (py>sB) sB=py;
+        }
+      }
+    }
+    const faceRatio = skin / (96*96);
+    const brightness = bSum / (96*96*255);
+
+    // Glasses: horizontal edge density in the upper ~30% of the face bounding box (eye strip).
+    // Glasses frames create strong horizontal contrast bands that interrupt the skin-tone region.
+    let glassesScore = 0;
+    if (skin > 30 && sB > sT) {
+      const eyeBot = Math.round(sT + (sB - sT) * 0.32);
+      let eSum = 0, eN = 0;
+      for (let py = sT; py < Math.min(eyeBot, 94); py++) {
+        for (let px = Math.max(0, sL); px <= Math.min(sR, 95); px++) {
+          const j1 = (py*96+px)*4, j2 = ((py+1)*96+px)*4;
+          eSum += (Math.abs(data[j1]-data[j2]) + Math.abs(data[j1+1]-data[j2+1]) + Math.abs(data[j1+2]-data[j2+2])) / 3;
+          eN++;
+        }
+      }
+      glassesScore = eN > 0 ? (eSum / eN) / 255 : 0;
+    }
+
+    return { faceRatio, glassesScore, brightness, hour: new Date().getHours() };
   }
 
   sampleZone(i) {
@@ -845,14 +939,50 @@ class Component extends DCLogic {
     return (skin / n) > 0.28;
   }
 
-  pickSubject(i) {
+  pickSubject(i, signals = {}) {
     const pool = this.subjects.map((s, idx) => idx).filter(idx => this.subjects[idx].enabled);
     if (!pool.length) return 0;
     if (pool.length === 1) return pool[0];
-    let idx;
-    do { idx = pool[Math.floor(Math.random() * pool.length)]; } while (idx === this.lastIdx[i]);
-    this.lastIdx[i] = idx;
-    return idx;
+
+    const { faceRatio = 0.3, glassesScore = 0, brightness = 0.5, hour = new Date().getHours() } = signals;
+    const T = this.SIGNAL_THRESH;
+
+    const flags = {
+      glasses: glassesScore > T.glasses,
+      close:   faceRatio   > T.close,
+      far:     faceRatio   > 0 && faceRatio < T.far,
+      night:   hour >= T.nightStart || hour < T.nightEnd,
+      morning: hour >= T.morningStart && hour < T.morningEnd,
+      dark:    brightness  < T.dark,
+      bright:  brightness  > T.bright,
+    };
+
+    const STRONG = 4.0;   // boost for primary signal matches
+    const MID    = 2.5;   // boost for secondary signal matches
+
+    const weights = pool.map(idx => {
+      if (idx === this.lastIdx[i]) return 0;   // never repeat
+      const id = this.subjects[idx].id;
+      let w = 1.0;
+      if (flags.glasses && this.SIGNAL_MAP.glasses.includes(id)) w *= STRONG;
+      if (flags.close   && this.SIGNAL_MAP.close.includes(id))   w *= MID;
+      if (flags.far     && this.SIGNAL_MAP.far.includes(id))     w *= MID;
+      if (flags.night   && this.SIGNAL_MAP.night.includes(id))   w *= STRONG;
+      if (flags.morning && this.SIGNAL_MAP.morning.includes(id)) w *= MID;
+      if (flags.dark    && this.SIGNAL_MAP.dark.includes(id))    w *= MID;
+      if (flags.bright  && this.SIGNAL_MAP.bright.includes(id))  w *= MID;
+      return w;
+    });
+
+    const total = weights.reduce((a, b) => a + b, 0);
+    if (!total) {
+      const fb = pool.find(idx => idx !== this.lastIdx[i]) ?? pool[0];
+      this.lastIdx[i] = fb; return fb;
+    }
+    let r = Math.random() * total;
+    for (let k = 0; k < pool.length; k++) { r -= weights[k]; if (r <= 0) { this.lastIdx[i] = pool[k]; return pool[k]; } }
+    const fb = pool.find(idx => idx !== this.lastIdx[i]) ?? pool[0];
+    this.lastIdx[i] = fb; return fb;
   }
 
   // Snapshot the current video frame for Option D processing
@@ -868,7 +998,9 @@ class Component extends DCLogic {
 
   trigger(i) {
     if (this.state.stations[i].phase === 'scanning') return;
-    const subjectIdx = this.pickSubject(i);
+    const signals = this._liveSignals[i] || {};
+    this.triggerSignals[i] = signals;
+    const subjectIdx = this.pickSubject(i, signals);
     const subj = this.subjects[subjectIdx];
 
     // Pre-fetch stamp HTML so it's ready when the stamp appears at t=24.55s
@@ -1387,6 +1519,43 @@ class Component extends DCLogic {
 
     o.camError = camError;
     o.flashStyle = { position:'absolute', inset:'0', background:RED, opacity:flash, pointerEvents:'none', mixBlendMode:'multiply', zIndex:7 };
+
+    // ---- Debug signal panel (toggle with D key) ----
+    const dbg = this.state.debugMode;
+    const sig = this._liveSignals[i] || {};
+    const T = this.SIGNAL_THRESH;
+    const dFR = sig.faceRatio    ?? 0;
+    const dGS = sig.glassesScore ?? 0;
+    const dBR = sig.brightness   ?? 0;
+    const dH  = sig.hour         ?? new Date().getHours();
+    const dFlags = {
+      GLASSES: dGS > T.glasses,
+      CLOSE:   dFR > T.close,
+      FAR:     dFR > 0 && dFR < T.far,
+      NIGHT:   dH >= T.nightStart || dH < T.nightEnd,
+      MORNING: dH >= T.morningStart && dH < T.morningEnd,
+      DARK:    dBR < T.dark,
+      BRIGHT:  dBR > T.bright,
+    };
+    const dActive = Object.keys(dFlags).filter(k => dFlags[k]);
+    const dRouting = dActive.length
+      ? dActive.flatMap(f => (this.SIGNAL_MAP[f.toLowerCase()] || []).slice(0, 2)).filter((v,k,a)=>a.indexOf(v)===k).slice(0,4).join(', ')
+      : 'random';
+
+    o.debugPanelStyle = dbg ? {
+      position:'absolute', bottom:'16px', left:'16px', zIndex:20,
+      background:'rgba(0,0,0,0.9)', border:`1px solid ${this.hexA(RED, 0.55)}`,
+      padding:'10px 14px', fontFamily:"'Spline Sans Mono',monospace",
+      fontSize:'10px', color:'rgba(241,239,231,0.82)', lineHeight:1.75,
+      letterSpacing:'0.6px', pointerEvents:'none', minWidth:'270px',
+      boxShadow:`0 0 18px ${this.hexA(RED, 0.15)}`
+    } : { display:'none' };
+    o.dbgFaceRaw   = dFR.toFixed(3) + (dFR > T.close ? '  ← CLOSE' : dFR > 0 && dFR < T.far ? '  ← FAR' : '');
+    o.dbgGlassRaw  = dGS.toFixed(3) + (dGS > T.glasses ? '  ← GLASSES' : '');
+    o.dbgBrightRaw = dBR.toFixed(3) + (dBR > T.bright ? '  ← BRIGHT' : dBR < T.dark ? '  ← DARK' : '');
+    o.dbgTimeRaw   = `${String(dH).padStart(2,'0')}:xx  ${dH >= T.nightStart || dH < T.nightEnd ? '← NIGHT' : dH >= T.morningStart && dH < T.morningEnd ? '← MORNING' : '← DAY'}`;
+    o.dbgActiveStr = dActive.length ? dActive.join(' · ') : '—';
+    o.dbgRouteStr  = live ? dRouting : `→ ${subj.footer}`;
 
     return o;
   }
