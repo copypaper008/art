@@ -201,27 +201,56 @@
       <!-- colour flash on verdict slam -->
       <div style="{{ p.flashStyle }}"></div>
 
-      <!-- LIVE OVERLAY: black screen + camera + oval during idle -->
+      <!-- LIVE OVERLAY: stays up through scanning, fades when portrait fully revealed -->
       <div style="{{ p.liveOverlayStyle }}">
+       <!-- Camera video: fades out when scan fires -->
        <video muted autoplay playsinline ref="{{ p.overlayVideoRef }}" style="{{ p.liveVideoFillStyle }}"></video>
-       <!-- header -->
-       <div style="position:absolute;top:6%;left:0;right:0;text-align:center;pointer-events:none;">
-        <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:3px;color:rgba(241,239,231,0.4);margin-bottom:14px;">RECOGNITION ENGINE v.7.3.1</div>
-        <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:60px;line-height:0.9;color:#f1efe7;">AWAITING<br>SUBJECT</div>
+       <!-- IDLE CONTENT: fades out when scan fires -->
+       <div style="{{ p.overlayIdleStyle }}">
+        <div style="position:absolute;top:6%;left:0;right:0;text-align:center;pointer-events:none;">
+         <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:3px;color:rgba(241,239,231,0.4);margin-bottom:14px;">RECOGNITION ENGINE v.7.3.1</div>
+         <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:60px;line-height:0.9;color:#f1efe7;">AWAITING<br>SUBJECT</div>
+        </div>
+        <div style="position:absolute;left:36%;top:26%;width:22px;height:22px;border-top:2px solid rgba(241,239,231,0.45);border-left:2px solid rgba(241,239,231,0.45);pointer-events:none;"></div>
+        <div style="position:absolute;right:36%;top:26%;width:22px;height:22px;border-top:2px solid rgba(241,239,231,0.45);border-right:2px solid rgba(241,239,231,0.45);pointer-events:none;"></div>
+        <div style="position:absolute;left:36%;top:49%;width:22px;height:22px;border-bottom:2px solid rgba(241,239,231,0.45);border-left:2px solid rgba(241,239,231,0.45);pointer-events:none;"></div>
+        <div style="position:absolute;right:36%;top:49%;width:22px;height:22px;border-bottom:2px solid rgba(241,239,231,0.45);border-right:2px solid rgba(241,239,231,0.45);pointer-events:none;"></div>
+        <div style="{{ p.liveRingStyle }}"></div>
+        <div style="position:absolute;top:56%;left:8%;right:8%;text-align:center;pointer-events:none;">
+         <p style="margin:0 0 8px;font-family:'Archivo',sans-serif;font-size:13px;line-height:1.5;color:#f1efe7;font-weight:600;">Step into the frame. The engine will record your face,<br>decide what you are, and file the verdict.</p>
+         <p style="margin:0 0 20px;font-family:'Archivo',sans-serif;font-size:11.5px;line-height:1.45;color:rgba(241,239,231,0.55);">You do not get to see the criteria.<br>You do not get to disagree.</p>
+         <div style="width:40%;margin:0 auto 18px;height:1px;background:rgba(241,239,231,0.18);"></div>
+         <div style="{{ p.liveMsgStyle }}">{{ p.liveMsg }}</div>
+        </div>
        </div>
-       <!-- corner brackets -->
-       <div style="position:absolute;left:36%;top:26%;width:22px;height:22px;border-top:2px solid rgba(241,239,231,0.45);border-left:2px solid rgba(241,239,231,0.45);pointer-events:none;"></div>
-       <div style="position:absolute;right:36%;top:26%;width:22px;height:22px;border-top:2px solid rgba(241,239,231,0.45);border-right:2px solid rgba(241,239,231,0.45);pointer-events:none;"></div>
-       <div style="position:absolute;left:36%;top:49%;width:22px;height:22px;border-bottom:2px solid rgba(241,239,231,0.45);border-left:2px solid rgba(241,239,231,0.45);pointer-events:none;"></div>
-       <div style="position:absolute;right:36%;top:49%;width:22px;height:22px;border-bottom:2px solid rgba(241,239,231,0.45);border-right:2px solid rgba(241,239,231,0.45);pointer-events:none;"></div>
-       <!-- detection oval -->
-       <div style="{{ p.liveRingStyle }}"></div>
-       <!-- bottom text -->
-       <div style="position:absolute;top:56%;left:8%;right:8%;text-align:center;pointer-events:none;">
-        <p style="margin:0 0 8px;font-family:'Archivo',sans-serif;font-size:13px;line-height:1.5;color:#f1efe7;font-weight:600;">Step into the frame. The engine will record your face,<br>decide what you are, and file the verdict.</p>
-        <p style="margin:0 0 20px;font-family:'Archivo',sans-serif;font-size:11.5px;line-height:1.45;color:rgba(241,239,231,0.55);">You do not get to see the criteria.<br>You do not get to disagree.</p>
-        <div style="width:40%;margin:0 auto 18px;height:1px;background:rgba(241,239,231,0.18);"></div>
-        <div style="{{ p.liveMsgStyle }}">{{ p.liveMsg }}</div>
+       <!-- SCAN CONTENT: portrait reveal + scan FX + stats, fades in when scan fires -->
+       <div style="{{ p.overlayScanContentStyle }}">
+        <img src="{{ p.portraitSrc }}" alt="" style="{{ p.overlayScanPortraitStyle }}" />
+        {{ p.overlayScanSwapEl }}
+        <div style="{{ p.overlayScanGridStyle }}"></div>
+        <div style="{{ p.overlayScanTrailStyle }}"></div>
+        <div style="{{ p.overlayScanLineStyle }}"></div>
+        <!-- Stats: gradient banner across top -->
+        <div style="position:absolute;top:0;left:0;right:0;background:linear-gradient(to bottom,rgba(10,10,11,0.93) 0%,rgba(10,10,11,0.72) 55%,transparent 100%);padding:28px 32px 80px;pointer-events:none;">
+         <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:3px;color:rgba(241,239,231,0.42);margin-bottom:6px;">RECOGNITION ENGINE v.7.3.1</div>
+         <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:44px;line-height:1;color:#f1efe7;margin-bottom:14px;">{{ p.overlayScanStatus }}</div>
+         <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+          <div style="flex:1;height:6px;border:1px solid rgba(241,239,231,0.25);position:relative;background:rgba(241,239,231,0.06);">
+           <div style="{{ p.overlayProgressFillStyle }}"></div>
+          </div>
+          <span style="font-family:'Spline Sans Mono',monospace;font-size:10px;color:#f1efe7;min-width:38px;">{{ p.overlayProgressPct }}</span>
+         </div>
+         <div style="display:flex;gap:36px;">
+          <div>
+           <div style="font-family:'Spline Sans Mono',monospace;font-size:8px;letter-spacing:1.5px;color:rgba(241,239,231,0.42);margin-bottom:2px;">CONFIDENCE</div>
+           <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:36px;line-height:1;color:#f1efe7;">{{ p.overlayConfText }}<span style="font-size:20px;">%</span></div>
+          </div>
+          <div>
+           <div style="font-family:'Spline Sans Mono',monospace;font-size:8px;letter-spacing:1.5px;color:rgba(241,239,231,0.42);margin-bottom:2px;">REFLECTION</div>
+           <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:36px;line-height:1;color:#f1efe7;">{{ p.overlayReflText }}<span style="font-size:20px;">%</span></div>
+          </div>
+         </div>
+        </div>
        </div>
       </div>
      </div>
@@ -605,7 +634,7 @@ class Component extends DCLogic {
 
   ensureRaf(i) {
     if (this._rafs[i]) return;
-    const TOTAL = 18.6;
+    const TOTAL = 21.5;
     const autoLoop = this.props.autoLoop ?? true;
     const step = (now) => {
       const t = (now - this.t0[i]) / 1000;
@@ -678,21 +707,21 @@ class Component extends DCLogic {
     const confP = live ? 0 : seg(6.1, 10.1, outCubic);
     const reflP = live ? 0 : seg(6.8, 10.6, outCubic);
     const prog = live ? 0 : seg(2.6, 8.6, inOut);
-    const interpP = live ? 0 : seg(12.9, 13.7, outCubic);
-    const classP = live ? 0 : clamp(seg(13.6, 14.2, outBack), 0, 1);
-    const explP = live ? 0 : clamp(seg(14.1, 14.6, outBack), 0, 1);
-    const searchStart = 13.7, lockT = 14.85;
+    const interpP = live ? 0 : seg(15.6, 16.4, outCubic);
+    const classP = live ? 0 : clamp(seg(16.3, 16.9, outBack), 0, 1);
+    const explP = live ? 0 : clamp(seg(16.8, 17.3, outBack), 0, 1);
+    const searchStart = 16.4, lockT = 17.55;
     const searching = !live && t >= searchStart && t < lockT;
     const locked = !live && t >= lockT;
     const stampIn = locked ? clamp(seg(lockT, lockT+0.55, outBack), 0, 1) : 0;
     const stampOp = live ? 0 : seg(lockT, lockT+0.14);
-    const dispoIn = live ? 0 : clamp(seg(15.35, 15.85, outBack), 0, 1);
-    const dispoOp = live ? 0 : seg(15.35, 15.5);
+    const dispoIn = live ? 0 : clamp(seg(18.05, 18.55, outBack), 0, 1);
+    const dispoOp = live ? 0 : seg(18.05, 18.2);
 
     let sh = 0;
-    if (!live && t > 14.85 && t < 15.22) { const pr=(t-14.85)/0.37; sh=Math.sin(pr*Math.PI*4)*(1-pr)*4; }
+    if (!live && t > 17.55 && t < 17.92) { const pr=(t-17.55)/0.37; sh=Math.sin(pr*Math.PI*4)*(1-pr)*4; }
     let flash = 0;
-    if (!live && t > 14.85 && t < 15.18) { flash=(1-(t-14.85)/0.33)*0.13; }
+    if (!live && t > 17.55 && t < 17.88) { flash=(1-(t-17.55)/0.33)*0.13; }
 
     const o = {};
     o.shudderStyle = { transform:`translate(${sh.toFixed(2)}px,${(sh*0.5).toFixed(2)}px)` };
@@ -712,26 +741,24 @@ class Component extends DCLogic {
     const cap = this.captures[i];
     o.captureEl = null;
 
-    // Portrait reveals from BOTTOM to TOP as scan sweeps upward — body first, face last.
-    // clip grows to show bottom portion first; face (objectPosition top) revealed last.
+    // clipReveal is used by the OVERLAY portrait during scan; card portrait is always fully visible.
     const clipPct = ((1 - scanP) * 100).toFixed(1);
     const clipReveal = live ? 'inset(100% 0 0 0)' : `inset(${clipPct}% 0 0 0)`;
     const hasSwap = !live && cap && cap.swappedSrc;
     o.portraitSrc = subj.portrait || subj.cutout || '';
+    // Card portrait: no clip — overlay covers card during scan, portrait visible when overlay fades
     o.portraitBlendStyle = {
       position:'absolute', inset:'0', width:'100%', height:'100%',
       objectFit:'cover', objectPosition:'center top',
-      clipPath: clipReveal,
       opacity: hasSwap ? 0 : (live ? 0 : 0.95),
       display: o.portraitSrc ? 'block' : 'none',
       pointerEvents:'none'
     };
 
-    // Swap result from local Python server — same clip reveal, no blend mode needed
+    // Swap result from local Python server — on card, always fully visible when shown
     o.swapEl = hasSwap ? React.createElement('img', { src: cap.swappedSrc, alt:'', style: {
       position:'absolute', inset:'0', width:'100%', height:'100%',
       objectFit:'cover', objectPosition:'center top',
-      clipPath: clipReveal,
       opacity: 0.95,
       pointerEvents:'none'
     } }) : null;
@@ -751,19 +778,20 @@ class Component extends DCLogic {
       transition:'border-color 0.15s'
     };
 
-    // Full-card live overlay: dark screen + camera + oval during idle, fades out when scan fires
-    const overlayFade = live ? 1 : clamp(1 - seg(0, 0.6), 0, 1);
+    // Full-card live overlay: stays up through scan, fades after portrait is revealed
+    const overlayFade = live ? 1 : clamp(1 - seg(9.0, 10.5, outCubic), 0, 1);
     o.liveOverlayStyle = {
       position:'absolute', inset:'0', zIndex:9,
       background:'#0a0a0b', opacity:overlayFade,
-      pointerEvents: live ? 'auto' : 'none'
+      pointerEvents: (live || (!live && t < 10.5)) ? 'auto' : 'none'
     };
     o.overlayVideoRef = this.makeOverlayVideoRef(i);
     o.liveVideoFillStyle = {
       position:'absolute', inset:'0', width:'100%', height:'100%',
       objectFit:'cover', objectPosition:'center 30%',
       transform: mirror ? 'scaleX(-1)' : 'none',
-      filter:'grayscale(1) contrast(1.15) brightness(1.05)'
+      filter:'grayscale(1) contrast(1.15) brightness(1.05)',
+      opacity: live ? 1 : clamp(1 - seg(0, 0.5), 0, 1)
     };
     const oRingW = lerp(22, 26, detP);
     const oRingH = (oRingW * 1.35 * (824/1240)).toFixed(1);
@@ -794,6 +822,34 @@ class Component extends DCLogic {
     o.scanLineStyle = { position:'absolute', left:'0', width:'100%', height:'2px', top:`${((1-scanP)*100).toFixed(1)}%`, background:RED, boxShadow:`0 0 12px 2px ${this.hexA(RED,0.7)}`, opacity:scanFade, pointerEvents:'none' };
     o.scanGridStyle = { position:'absolute', inset:'0', backgroundImage:`repeating-linear-gradient(0deg,${this.hexA(RED,0.06)} 0 1px,transparent 1px 4px)`, opacity:scanVisible?0.6:0, pointerEvents:'none' };
 
+    // Overlay idle wrapper: fades out when scan fires
+    const overlayIdleOp = live ? 1 : clamp(1 - seg(0, 0.5), 0, 1);
+    o.overlayIdleStyle = { position:'absolute', inset:'0', opacity: overlayIdleOp, pointerEvents:'none' };
+
+    // Overlay scan content: portrait reveal + scan FX + stats, fades in when scan fires
+    const overlayScanOp = live ? 0 : clamp(seg(0.2, 0.7, outCubic), 0, 1);
+    o.overlayScanContentStyle = { position:'absolute', inset:'0', opacity: overlayScanOp, pointerEvents:'none' };
+    o.overlayScanPortraitStyle = {
+      position:'absolute', inset:'0', width:'100%', height:'100%',
+      objectFit:'cover', objectPosition:'center top',
+      clipPath: clipReveal,
+      opacity: hasSwap ? 0 : 0.8,
+      display: o.portraitSrc ? 'block' : 'none'
+    };
+    o.overlayScanSwapEl = hasSwap ? React.createElement('img', { src: cap.swappedSrc, alt:'', style: {
+      position:'absolute', inset:'0', width:'100%', height:'100%',
+      objectFit:'cover', objectPosition:'center top',
+      clipPath: clipReveal, opacity:0.8
+    }}) : null;
+    o.overlayScanLineStyle = Object.assign({}, o.scanLineStyle);
+    o.overlayScanTrailStyle = Object.assign({}, o.scanTrailStyle);
+    o.overlayScanGridStyle = Object.assign({}, o.scanGridStyle);
+    o.overlayScanStatus = t < 2.6 ? 'INITIALISING' : 'SCANNING';
+    o.overlayProgressFillStyle = { position:'absolute', left:'0', top:'0', bottom:'0', width:`${(prog*100).toFixed(1)}%`, background:RED };
+    o.overlayProgressPct = `${Math.round(prog*100)}%`;
+    o.overlayConfText = live ? '––.––' : (subj.confidence * confP).toFixed(2);
+    o.overlayReflText = live ? '––.–' : (subj.reflection * reflP).toFixed(1);
+
     // ---- Text values ----
     o.subjFileId = live ? '——————' : subj.fileId;
     o.subjLine   = live ? 'UNIDENTIFIED' : subj.line;
@@ -809,7 +865,7 @@ class Component extends DCLogic {
     o.progressPct = `${Math.round(prog*100)}%`;
 
     const dsIdx = Math.floor(t * 0.8) % this.DATASET.length;
-    const dsVisible = !live && t > 2.6 && t < 14;
+    const dsVisible = !live && t > 2.6 && t < 10.5;
     o.datasetRowStyle = { display:'flex', alignItems:'center', gap:'8px', marginTop:'8px', overflow:'hidden', opacity: dsVisible ? 1 : 0 };
     o.datasetSrcStyle = { fontFamily:"'Spline Sans Mono',monospace", fontSize:'8px', letterSpacing:'0.6px', color:'#16130f', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' };
     o.datasetSrc = dsVisible ? this.DATASET[dsIdx] : '';
@@ -823,7 +879,7 @@ class Component extends DCLogic {
     o.reflGaugeStyle = { position:'absolute', top:'-3px', width:'2px', height:'7px', background:'#16130f', left:`${(reflP*refl).toFixed(1)}%` };
 
     const chars = subj.characteristics || [];
-    const cBase = 8.8, cStep = Math.min(0.62, 3.6/Math.max(1,chars.length));
+    const cBase = 11.5, cStep = Math.min(0.62, 3.6/Math.max(1,chars.length));
     o.charItems = chars.map((text, k) => {
       const pr = live ? 0 : clamp(seg(cBase+k*cStep, cBase+k*cStep+0.45, outBack), 0, 1);
       return { text, tick:{ display:'inline-block', opacity:pr, transform:`scale(${pr.toFixed(3)})`, fontSize:'12px', fontWeight:700, lineHeight:1, color:'#16130f' }, txt:{ color:`rgba(20,17,15,${lerp(0.28,1,pr).toFixed(3)})` } };
