@@ -67,6 +67,19 @@ PORTRAIT_FILES = [
     ('kramer',       'kramer-portrait.png'),
     ('rupaul',       'rupaul-portrait.png'),
     ('elton',        'elton-portrait.png'),
+    # additional subjects
+    ('freddie',      'freddie-portrait.jpeg'),
+    ('baldwin',      'baldwin-portrait.jpeg'),
+    ('marsha',       'marsha-portrait.jpeg'),
+    ('vilanch',      'vilanch-portrait.jpeg'),
+    ('ursula',       'ursula-portrait.jpeg'),
+    ('bugs',         'bugs-portrait.jpeg'),
+    ('gadsby',       'gadsby-portrait.jpeg'),
+    ('vita',         'vita-portrait.jpeg'),
+    ('nathan',       'nathan-portrait.jpeg'),
+    ('peterallen',   'peterallen-portrait.jpeg'),
+    ('tankgirl',     'tankgirl-portrait.jpeg'),
+    ('sylvester',    'sylvester-portrait.jpeg'),
 ]
 
 # ---- startup ----------------------------------------------------------------
