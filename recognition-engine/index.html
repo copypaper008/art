@@ -176,19 +176,8 @@
           <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px;color:#6a6f76;">DISPOSITION:</div>
           <div style="font-weight:700;font-size:14px;letter-spacing:0.2px;color:#11151c;margin-top:2px;">{{ p.dispositionText }}</div>
          </div>
-         <!-- archive tag -->
-         <div style="{{ p.archiveTagStyle }}">
-          <div style="display:flex;align-items:center;justify-content:center;gap:7px;">
-           <span style="{{ p.tagRingStyle }}"></span>
-           <span style="{{ p.tagBarStyle }}"></span>
-           <span style="{{ p.tagRingStyle }}"></span>
-          </div>
-          <div style="{{ p.tagEyebrowStyle }}">ARCHIVE IDENTITY TAGGING</div>
-          <div style="{{ p.tagHeadlineStyle }}">{{ p.verdictText }}</div>
-          <div style="{{ p.tagSubjectStyle }}">{{ p.subjectDisplay }}</div>
-          <div style="{{ p.tagDividerStyle }}"></div>
-          <div style="{{ p.tagFooterStyle }}"><span style="opacity:0.7;">RECORD UPDATED:</span> {{ p.subjDate }}</div>
-         </div>
+         <!-- archive tag: individual animated stamp -->
+         <div style="{{ p.archiveTagStyle }}">{{ p.archiveTagEl }}</div>
         </div>
        </div>
 
@@ -1510,29 +1499,9 @@ class Component extends DCLogic {
       ['Unknown',             4, 0,  10, '#a9a59a'],
     ]);
 
-    // Per-subject archive tag ink color — extracted from each subject's stamp file
-    const TAG_INK_MAP = {
-      warhol:'#e6177f',   haring:'#e22427',   milk:'#b3262a',     turing:'#b3262a',
-      dietrich:'#343a44', sondheim:'#2f2a3d',  lorde:'#33307a',    divine:'#d11f7e',
-      ernie:'#c8551b',    franknfurter:'#a3142f', xena:'#8a6a1f',  maupin:'#b3434f',
-      holiday:'#7a3b5e',  stamp:'#9c5518',     wilde:'#1d6b3f',    jack:'#bd2a6a',
-      woolf:'#3a5a6b',    sappho:'#9a4b2e',    waters:'#cf2469',   brownb:'#2f7a3f',
-      magda:'#3f8a4d',    kake:'#111111',      vidal:'#3a4456',    hadrian:'#8a3b2e',
-      kramer:'#c01622',   rupaul:'#b8860b',    elton:'#1f7a8c',    freddie:'#5a2483',
-      baldwin:'#2c2a28',  marsha:'#d63384',    nathan:'#d6336c',   peterallen:'#cc5500',
-      vilanch:'#c2185b',  ursula:'#6b2d8a',    bugs:'#8a5a1a',     tankgirl:'#4a5240',
-      sylvester:'#8a1a6e', vita:'#2d5a27',     gadsby:'#1a2a5e',   fry:'#002147',
-    };
-    const tagInk = TAG_INK_MAP[subj.id] || '#11151c';
-    const archiveTagOp = live ? 0 : stampOp;
-    o.archiveTagStyle = { marginTop:'auto', border:`1px solid ${tagInk}`, background:'#eef2f1', padding:'16px 18px 14px', textAlign:'center', opacity:archiveTagOp };
-    o.tagRingStyle = { display:'inline-block', width:'20px', height:'20px', border:`2.5px solid ${tagInk}`, borderRadius:'50%' };
-    o.tagBarStyle = { display:'inline-block', width:'9px', height:'2.5px', background:tagInk };
-    o.tagEyebrowStyle = { fontFamily:"'Space Mono',monospace", fontSize:'9px', letterSpacing:'2.5px', color:tagInk, marginTop:'7px' };
-    o.tagHeadlineStyle = { fontWeight:800, fontSize:'34px', letterSpacing:'0.5px', lineHeight:1, color:tagInk, marginTop:'4px' };
-    o.tagSubjectStyle = { fontWeight:700, fontSize:'14px', letterSpacing:'2px', color:tagInk, marginTop:'5px' };
-    o.tagDividerStyle = { height:'1px', background:tagInk, opacity:0.4, margin:'12px 0 9px' };
-    o.tagFooterStyle = { fontFamily:"'Space Mono',monospace", fontSize:'9.5px', letterSpacing:'0.8px', color:tagInk };
+    // Archive tag: individual animated stamp (same as old stamp band, just in the dossier column)
+    o.archiveTagStyle = { marginTop:'auto', position:'relative', height:'240px', overflow:'hidden' };
+    o.archiveTagEl = locked ? this.buildStamp(subj, stampIn, stampOp) : null;
 
     return o;
   }
