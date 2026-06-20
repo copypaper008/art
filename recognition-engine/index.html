@@ -40,7 +40,8 @@
          </div>
          <div style="text-align:right;">
           <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.04em;color:#3a3833;">RECOGNITION ENGINE v.7.3.1</div>
-          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.04em;color:#3a3833;margin-bottom:9px;">CULTURAL PATTERN RECOGNITION SYSTEM</div>
+          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.04em;color:#3a3833;">BUREAU OF CULTURAL PATTERN ASSESSMENT</div>
+          <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:0.06em;color:#3a3833;margin-bottom:9px;opacity:0.55;">FORM RE-7731-B</div>
           <div style="width:230px;height:34px;margin-left:auto;background:repeating-linear-gradient(90deg,#14130F 0 2px,transparent 2px 4px,#14130F 4px 5px,transparent 5px 9px,#14130F 9px 12px,transparent 12px 14px,#14130F 14px 15px,transparent 15px 18px);"></div>
          </div>
         </div>
@@ -128,7 +129,10 @@
             <div style="font-family:'Space Mono',monospace;font-size:13px;color:#3a3833;width:54px;text-align:right;">{{ p.reflText }}</div>
            </div>
           </div>
-          <div style="background:#14130F;color:#ECEAE3;font-family:'Space Mono',monospace;font-size:13px;font-weight:700;letter-spacing:0.1em;padding:9px 16px;margin-top:auto;">MACHINE INTERPRETATION: {{ p.interpretation }}</div>
+          <div style="background:#14130F;color:#ECEAE3;font-family:'Space Mono',monospace;font-weight:700;letter-spacing:0.1em;padding:9px 16px;margin-top:auto;">
+           <div style="font-size:13px;">HUMAN REVIEW: WAIVED</div>
+           <div style="font-size:11px;margin-top:3px;opacity:0.65;">MACHINE INTERPRETATION: {{ p.interpretation }}</div>
+          </div>
          </div>
 
         </div>
@@ -149,10 +153,14 @@
           <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.04em;color:#3a3833;line-height:1.7;">
            <div>CLASSIFICATION: {{ p.subjClass }}</div>
            <div style="{{ p.dispoStyle }}">DISPOSITION: {{ p.dispositionText }}</div>
+           <div style="margin-top:1px;">METHODOLOGY: <span style="display:inline-block;background:#14130F;color:#ECEAE3;font-size:9px;padding:1px 7px;letter-spacing:0.16em;font-weight:700;vertical-align:middle;">REDACTED</span></div>
           </div>
          </div>
          <div style="display:flex;align-items:center;gap:12px;">
-          <div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;letter-spacing:0.12em;">CASE CLOSED</div>
+          <div style="text-align:right;">
+           <div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;letter-spacing:0.12em;">CASE CLOSED</div>
+           <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.1em;color:#3a3833;margin-top:2px;">NO APPEAL</div>
+          </div>
           <div style="width:20px;height:20px;border-radius:50%;background:#14130F;"></div>
          </div>
         </div>
@@ -599,7 +607,7 @@ class Component extends DCLogic {
     {
       id: 'bugs', enabled: true,
       line: 'BUNNY, BUGS', fileId: 'WB-1940-0727', date: '05.06.2024', footer: 'BUGS BUNNY',
-      portrait: 'assets/bugs-portrait.jpeg', portraitPos: 'center 15%', portraitFit: 'contain',
+      portrait: 'assets/bugs-portrait.jpeg', portraitPos: 'center 20%', portraitFit: 'cover',
       confidence: 99.97, reflection: 99.9,
       characteristics: ['Fictional construction; standard biometric analysis inapplicable','Cross-dresses as Brünnhilde in 1957 operatic performance for personal amusement','Exhibits zero anxiety regarding gender presentation; distressing to analysts','Consistently outmanoeuvres authoritarian figures (hunters, opera conductors, Elmer Fudd)','Only known leporine subject to perform Wagner from memory','Refuses to conform to documented rabbit behavioural parameters'],
       classification: 'FICTIONAL SUBJECT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
@@ -613,6 +621,42 @@ class Component extends DCLogic {
       characteristics: ['Fictional construction; standard biometric analysis inapplicable','Operates armoured vehicle without licence in direct contravention of road traffic legislation','Romantic entanglement with mutant kangaroo falls outside all documented relational categories','Anarcho-punk behavioural profile incompatible with institutional compliance at every level','Actively resists water corporation resource monopoly; designated threat to civil order','Classification as hero, villain, or criminal remains formally unresolved'],
       classification: 'FICTIONAL SUBJECT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
       disposition: 'TANK GIRL NEVER SURRENDERS · 1988'
+    },
+    {
+      id: 'sylvester', enabled: true,
+      line: 'JAMES, SYLVESTER', fileId: 'SF-1947-0906', date: '05.06.2024', footer: 'SYLVESTER',
+      portrait: 'assets/sylvester-portrait.jpeg', portraitPos: 'center 18%',
+      confidence: 99.92, reflection: 99.6,
+      characteristics: ['Falsetto register documented at frequencies inconsistent with assigned vocal category','Disco-era flamboyance index exceeds all measurable parameters','Gospel training redirected into secular ecstasy; institutional disapproval noted','Associated with Two Tons o\'Fun; collective joy output classified as excessive','Rhinestone and sequin deployment at levels incompatible with heteronormative dress code','San Francisco scene integration at maximum observed density'],
+      classification: 'PERFORMER', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'YOU MAKE ME FEEL · 1978'
+    },
+    {
+      id: 'vita', enabled: true,
+      line: 'SACKVILLE-WEST, VITA', fileId: 'GB-1892-0309', date: '02.06.2024', footer: 'VITA',
+      portrait: 'assets/vita-portrait.jpeg', portraitPos: 'center 20%',
+      confidence: 99.71, reflection: 99.34,
+      characteristics: ['Sustained correspondence with V. Woolf: classified non-administrative','Breeches habitually worn; trouser deployment predating social license','Orlando (1928) dedicated to subject by V. Woolf; content assessed as confirming','Open marriage arrangement documented; reciprocal non-prosecution suspected','Sissinghurst garden design principles deemed excessively sensory','Literary output characterised by romantic intensity at impermissible levels'],
+      classification: 'WRITER', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'ORLANDO · 1928'
+    },
+    {
+      id: 'gadsby', enabled: true,
+      line: 'GADSBY, HANNAH', fileId: 'AU-1978-0112', date: '11.06.2024', footer: 'GADSBY',
+      portrait: 'assets/gadsby-portrait.jpeg', portraitPos: 'center center', portraitFit: 'contain',
+      confidence: 99.85, reflection: 99.72,
+      characteristics: ['Stand-up format deconstructed without institutional permission','Art history qualification deployed in non-accredited settings','Nanette (2018): comedy structure dismantled; audience expectations violated','Self-identification as non-binary; binary compliance: NIL','Excessive critical insight directed at heteronormative cultural frameworks','Australian; compounding factor: unapologetically visible'],
+      classification: 'COMEDIAN / CULTURAL CRITIC', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'NANETTE · 2018'
+    },
+    {
+      id: 'fry', enabled: true,
+      line: 'FRY, STEPHEN', fileId: 'GB-1957-0824', date: '19.06.2024', footer: 'FRY',
+      portrait: '', portraitPos: 'center 20%',
+      confidence: 99.88, reflection: 99.51,
+      characteristics: ['Vocabulary deployment exceeds heteronormative output thresholds by measurable margin','Classical education repurposed for comic and literary subversion','Jeeves & Wooster (1990): manservant devotion dynamics classified as suspicious','QI: systematic undermining of received factual assumptions, 2003–present','Publicly acknowledged homosexuality 1997; no retraction filed','Historical adjacency to Oscar Wilde; compounding literary association noted'],
+      classification: 'WRITER / COMEDIAN / ACTOR', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'OUT · 1997'
     }
   ];
 
@@ -631,6 +675,8 @@ class Component extends DCLogic {
     baldwin: 'James Baldwin', marsha: 'Marsha P Johnson', nathan: 'Nathan Lane',
     peterallen: 'Peter Allen', vilanch: 'Bruce Vilanch', ursula: 'Ursula',
     maupin: 'Armistead Maupin', bugs: 'Bugs Bunny', tankgirl: 'Tank Girl',
+    sylvester: 'Sylvester', vita: 'Vita Sackville-West', gadsby: 'Hannah Gadsby',
+    fry: 'Stephen Fry',
   };
 
   CANDIDATES = ['DEVIANT','SUBVERSIVE','DISORDERED','SECURITY RISK','UNFIT','IMMORAL','INVERT','ABNORMAL','DEGENERATE','CRIMINAL','SUSPECT','UNNATURAL'];
@@ -676,6 +722,7 @@ class Component extends DCLogic {
     window.addEventListener('resize', this._onResize);
     this._onKey = (e) => { if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); this.trigger(0); } };
     window.addEventListener('keydown', this._onKey);
+    window.__trigger = (i) => this.trigger(i);
     this._onClick = () => {
       for (let i = 0; i < this.STATIONS; i++) {
         if (this.state.stations[i].phase === 'live' && this.det?.[i]?.armed) { this.trigger(i); break; }
