@@ -935,6 +935,12 @@ class Component extends DCLogic {
       const filterEl = svg.querySelector('filter[id="ink"]');
       if (filterEl) filterEl.id = filterId;
 
+      // Bolder stamps: raise the ink-hole threshold so far less ink is eaten away
+      const holesMatrix = svg.querySelector('feColorMatrix[result="holes"]');
+      if (holesMatrix) {
+        holesMatrix.setAttribute('values', '0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.65 1.6');
+      }
+
       // Find the main wrapper div
       const xdc = doc.querySelector('x-dc');
       const outerDiv = xdc ? xdc.querySelector(':scope > div') : doc.body.querySelector('div');
@@ -1021,7 +1027,7 @@ class Component extends DCLogic {
     const confP = live ? 0 : seg(6.1, 13.1, outCubic);
     const reflP = live ? 0 : seg(6.8, 13.6, outCubic);
     const prog = live ? 0 : seg(2.6, 11.5, inOut);
-    const interpP = live ? 0 : seg(22.6, 23.4, outCubic);
+    const interpP = live ? 0 : seg(17.0, 17.8, outCubic);
     const classP = live ? 0 : clamp(seg(23.3, 23.9, outBack), 0, 1);
     const explP = live ? 0 : clamp(seg(23.8, 24.3, outBack), 0, 1);
     const searchStart = 23.4, lockT = 24.55;
