@@ -632,6 +632,15 @@ class Component extends DCLogic {
       characteristics: ['Fictional character; standard biometric protocols inapplicable','Presents as powerful, confident, large-bodied entity in explicit defiance of sanctioned beauty metrics','Exploits contractual arrangement to acquire voice of prohibited subject','Inspiration of drag queen performance tradition constitutes distributed cultural influence','Commands tentacle apparatus beyond standard classification parameters','Aquatic status complicates standard jurisdiction'],
       classification: 'FICTIONAL SUBJECT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
       disposition: 'POOR UNFORTUNATE SOULS · 1989'
+    },
+    {
+      id: 'bugs', enabled: false,
+      line: 'BUNNY, BUGS', fileId: 'WB-1940-0727', date: '05.06.2024', footer: 'BUGS BUNNY',
+      portrait: 'assets/bugs-portrait.png',
+      confidence: 99.97, reflection: 99.9,
+      characteristics: ['Fictional construction; standard biometric analysis inapplicable','Cross-dresses as Brünnhilde in 1957 operatic performance for personal amusement','Exhibits zero anxiety regarding gender presentation; distressing to analysts','Consistently outmanoeuvres authoritarian figures (hunters, opera conductors, Elmer Fudd)','Only known leporine subject to perform Wagner from memory','Refuses to conform to documented rabbit behavioural parameters'],
+      classification: 'FICTIONAL SUBJECT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
+      disposition: 'KILL THE WABBIT · 1957'
     }
   ];
 
@@ -649,6 +658,7 @@ class Component extends DCLogic {
     rupaul: 'RuPaul', elton: 'Elton John', freddie: 'Freddie Mercury',
     baldwin: 'James Baldwin', marsha: 'Marsha P Johnson', nathan: 'Nathan Lane',
     peterallen: 'Peter Allen', vilanch: 'Bruce Vilanch', ursula: 'Ursula',
+    maupin: 'Armistead Maupin', bugs: 'Bugs Bunny',
   };
 
   CANDIDATES = ['DEVIANT','SUBVERSIVE','DISORDERED','SECURITY RISK','UNFIT','IMMORAL','INVERT','ABNORMAL','DEGENERATE','CRIMINAL','SUSPECT','UNNATURAL'];
@@ -680,6 +690,7 @@ class Component extends DCLogic {
   noiseCanvases = [];
   _canvasrefs = {};
   captures = [null, null, null, null];
+  stampHtmlCache = {};
 
   state = {
     scale: 1,
@@ -887,6 +898,13 @@ class Component extends DCLogic {
     if (this.state.stations[i].phase === 'scanning') return;
     const subjectIdx = this.pickSubject(i);
     const subj = this.subjects[subjectIdx];
+
+    // Pre-fetch stamp HTML so it's ready when the stamp appears at t=24.55s
+    const stampFile = this.STAMP_FILES[subj.id];
+    if (stampFile && !(subj.id in this.stampHtmlCache)) {
+      this.fetchStampHtml(subj.id, stampFile);
+    }
+
     const captured = this.captureFrame(i);
     if (captured) captured.swappedSrc = null;
     this.captures[i] = captured;
@@ -929,6 +947,59 @@ class Component extends DCLogic {
     return `rgba(${parseInt(n.slice(0,2),16)},${parseInt(n.slice(2,4),16)},${parseInt(n.slice(4,6),16)},${a})`;
   }
 
+  async fetchStampHtml(subjectId, stampFile) {
+    if (subjectId in this.stampHtmlCache) return;
+    this.stampHtmlCache[subjectId] = null; // mark in-progress
+    try {
+      const url = `stamps/${encodeURIComponent(stampFile)}.dc.html`;
+      const res = await fetch(url);
+      const text = await res.text();
+      const doc = new DOMParser().parseFromString(text, 'text/html');
+
+      // Inject Google Fonts into main page head
+      doc.querySelectorAll('link[rel="preconnect"], link[href*="fonts.googleapis"], link[href*="fonts.gstatic"]').forEach(link => {
+        const href = link.getAttribute('href');
+        if (!href || document.querySelector(`link[href="${href}"]`)) return;
+        const el = document.createElement('link');
+        Array.from(link.attributes).forEach(a => el.setAttribute(a.name, a.value));
+        document.head.appendChild(el);
+      });
+
+      // Find the SVG filter and give it a unique ID
+      const svg = doc.querySelector('svg');
+      if (!svg) return;
+      const filterId = `ink-${subjectId}`;
+      const filterEl = svg.querySelector('filter[id="ink"]');
+      if (filterEl) filterEl.id = filterId;
+
+      // Find the main wrapper div
+      const xdc = doc.querySelector('x-dc');
+      const outerDiv = xdc ? xdc.querySelector(':scope > div') : doc.body.querySelector('div');
+      if (!outerDiv) return;
+
+      // Make background transparent
+      outerDiv.style.background = 'transparent';
+      outerDiv.style.backgroundColor = 'transparent';
+
+      // Hide the grain noise overlay (has background-image with svg noise)
+      outerDiv.querySelectorAll('div[style]').forEach(d => {
+        const s = d.getAttribute('style') || '';
+        if (s.includes('background-image') && s.includes('blend-mode')) {
+          d.style.display = 'none';
+        }
+      });
+
+      // Serialize and fix filter references
+      let mainHtml = outerDiv.outerHTML;
+      mainHtml = mainHtml.replace(/url\(#ink\)/g, `url(#${filterId})`);
+
+      this.stampHtmlCache[subjectId] = svg.outerHTML + mainHtml;
+      this.forceUpdate();
+    } catch(e) {
+      console.warn('fetchStampHtml failed:', stampFile, e);
+    }
+  }
+
   buildStamp(subj, stampIn, stampOp) {
     const h = React.createElement;
     const stampFile = this.STAMP_FILES[subj.id];
@@ -936,27 +1007,21 @@ class Component extends DCLogic {
     const scale = stampIn.toFixed(3);
 
     if (stampFile) {
-      const src = `stamps/${encodeURIComponent(stampFile)}.dc.html`;
-      return h('div', {
-        style: {
-          position: 'absolute', inset: '0',
-          transform: `scale(${scale})`,
-          transformOrigin: 'center center',
-          opacity,
-          pointerEvents: 'none',
-        }
-      },
-        h('iframe', {
-          src,
-          allowTransparency: 'true',
+      const cachedHtml = this.stampHtmlCache[subj.id];
+      if (cachedHtml) {
+        return h('div', {
           style: {
-            width: '100%', height: '100%',
-            border: 'none',
+            position: 'absolute', inset: '0',
+            transform: `scale(${scale})`,
+            transformOrigin: 'center center',
+            opacity,
             pointerEvents: 'none',
-            background: 'transparent',
-          }
-        })
-      );
+            overflow: 'hidden',
+          },
+          dangerouslySetInnerHTML: { __html: cachedHtml }
+        });
+      }
+      return null; // loading; forceUpdate fires when ready
     }
 
     // Fallback for subjects without a dedicated stamp file
