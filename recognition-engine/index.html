@@ -637,17 +637,18 @@ class Component extends DCLogic {
 
   STAMP = { key: '#141009', a: '#FFD400', b: '#00B7D4', c: '#EC1E79' };
 
-  STAMPKIND = {
-    warhol: 'popart', haring: 'graffiti', milk: 'seal', turing: 'stencil',
-    dietrich: 'engrave', sondheim: 'marquee', lorde: 'redact', divine: 'tabloid',
-    ernie: 'sticker', franknfurter: 'neon', xena: 'bronze',
-    maupin: 'popart', holiday: 'engrave', stamp: 'tabloid',
-    wilde: 'engrave', jack: 'popart',
-    freddie: 'popart', elton: 'popart', baldwin: 'popart', marsha: 'popart',
-    kramer: 'popart', rupaul: 'popart', waters: 'popart', vidal: 'engrave',
-    woolf: 'engrave', sappho: 'seal', hadrian: 'seal', nathan: 'popart',
-    peterallen: 'popart', magda: 'popart', brownb: 'popart',
-    vilanch: 'popart', kake: 'stencil', ursula: 'popart'
+  STAMP_FILES = {
+    warhol: 'Andy Warhol', haring: 'Keith Haring', milk: 'Harvey Milk',
+    turing: 'Alan Turing', dietrich: 'Marlene Dietrich', sondheim: 'Stephen Sondheim',
+    lorde: 'Audre Lorde', divine: 'Divine', ernie: 'Ernie',
+    franknfurter: 'Frank-N-Furter', xena: 'Xena', holiday: 'Billie Holiday',
+    stamp: 'Terence Stamp', wilde: 'Oscar Wilde', jack: 'Jack McFarland',
+    woolf: 'Virginia Woolf', sappho: 'Sappho', waters: 'John Waters',
+    brownb: 'Bob Brown', magda: 'Magda Szubanski', kake: 'Kake',
+    vidal: 'Gore Vidal', hadrian: 'Hadrian', kramer: 'Larry Kramer',
+    rupaul: 'RuPaul', elton: 'Elton John', freddie: 'Freddie Mercury',
+    baldwin: 'James Baldwin', marsha: 'Marsha P Johnson', nathan: 'Nathan Lane',
+    peterallen: 'Peter Allen', vilanch: 'Bruce Vilanch', ursula: 'Ursula',
   };
 
   CANDIDATES = ['DEVIANT','SUBVERSIVE','DISORDERED','SECURITY RISK','UNFIT','IMMORAL','INVERT','ABNORMAL','DEGENERATE','CRIMINAL','SUSPECT','UNNATURAL'];
@@ -930,24 +931,40 @@ class Component extends DCLogic {
 
   buildStamp(subj, stampIn, stampOp) {
     const h = React.createElement;
-    const kind = this.STAMPKIND[subj.id] || 'popart';
+    const stampFile = this.STAMP_FILES[subj.id];
+    const opacity = Math.min(1, stampOp);
+    const scale = stampIn.toFixed(3);
+
+    if (stampFile) {
+      const src = `stamps/${encodeURIComponent(stampFile)}.dc.html`;
+      return h('div', {
+        style: {
+          position: 'absolute', inset: '0',
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+          opacity,
+          pointerEvents: 'none',
+        }
+      },
+        h('iframe', {
+          src,
+          style: {
+            width: '100%', height: '100%',
+            border: 'none',
+            pointerEvents: 'none',
+            mixBlendMode: 'multiply',
+          }
+        })
+      );
+    }
+
+    // Fallback for subjects without a dedicated stamp file
     const S = Object.assign({}, this.STAMP, subj.stamp || {});
     const W = subj.verdict;
-    const baseStyle = { position:'absolute', top:'38%', left:'50%', zIndex:8, transformOrigin:'center center',
-      transform:`translate(-50%,-50%) rotate(-8deg) scale(${stampIn.toFixed(3)})`,
-      opacity: Math.min(1, stampOp), pointerEvents:'none', textAlign:'center' };
+    const baseStyle = { position:'absolute', top:'38%', left:'50%', transformOrigin:'center center',
+      transform:`translate(-50%,-50%) rotate(-8deg) scale(${scale})`,
+      opacity, pointerEvents:'none', textAlign:'center' };
     const f = { fontFamily:"'Saira Condensed',sans-serif", fontWeight:700, fontSize:'70px', letterSpacing:'1px', lineHeight:0.9, whiteSpace:'nowrap' };
-
-    if (kind === 'popart') {
-      const box = { position:'relative', display:'inline-block', border:`6px solid ${S.key}`, borderRadius:'8px', padding:'8px 26px 14px', whiteSpace:'nowrap', boxShadow:`8px 8px 0 ${this.hexA(S.c,0.9)}, -7px -5px 0 ${this.hexA(S.b,0.85)}` };
-      const layer = (c, dx, dy, z) => Object.assign({ position:'absolute', inset:'0', padding:'8px 26px 14px', color:c, transform:`translate(${dx}px,${dy}px)`, zIndex:z }, f);
-      return h('div', { style: baseStyle },
-        h('div', { style: box },
-          h('div', { style: layer(S.a, 7, 7, 1) }, W),
-          h('div', { style: layer(S.b, -7, 4, 1) }, W),
-          h('div', { style: layer(S.c, 4, -7, 2) }, W),
-          h('div', { style: Object.assign({ position:'relative', zIndex:3, color:S.key }, f) }, W)));
-    }
     return h('div', { style: baseStyle },
       h('div', { style: { border:`5px solid ${S.key}`, display:'inline-block', padding:'6px 22px 10px', borderRadius:'4px' } },
         h('div', { style: Object.assign({ color: S.key }, f) }, W)));
