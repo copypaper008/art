@@ -703,7 +703,7 @@ class Component extends DCLogic {
 
   ensureRaf(i) {
     if (this._rafs[i]) return;
-    const TOTAL = 21.5;
+    const TOTAL = 24.5;
     const autoLoop = this.props.autoLoop ?? true;
     const step = (now) => {
       const t = (now - this.t0[i]) / 1000;
@@ -770,27 +770,27 @@ class Component extends DCLogic {
     const seg = (a, b, e) => { if (t<=a) return 0; if (t>=b) return 1; const p=(t-a)/(b-a); return e?e(p):p; };
     const lerp = (a, b, p) => a+(b-a)*p;
 
-    const scanP = live ? 0 : seg(4.0, 8.6, inOut);
-    const scanFade = clamp(Math.min(seg(3.85,4.15), 1-seg(8.4,8.85)), 0, 1);
-    const scanVisible = !live && t > 3.85 && t < 8.85;
-    const confP = live ? 0 : seg(6.1, 10.1, outCubic);
-    const reflP = live ? 0 : seg(6.8, 10.6, outCubic);
-    const prog = live ? 0 : seg(2.6, 8.6, inOut);
-    const interpP = live ? 0 : seg(15.6, 16.4, outCubic);
-    const classP = live ? 0 : clamp(seg(16.3, 16.9, outBack), 0, 1);
-    const explP = live ? 0 : clamp(seg(16.8, 17.3, outBack), 0, 1);
-    const searchStart = 16.4, lockT = 17.55;
+    const scanP = live ? 0 : seg(4.0, 11.5, inOut);
+    const scanFade = clamp(Math.min(seg(3.85,4.15), 1-seg(11.3,11.7)), 0, 1);
+    const scanVisible = !live && t > 3.85 && t < 11.7;
+    const confP = live ? 0 : seg(6.1, 13.1, outCubic);
+    const reflP = live ? 0 : seg(6.8, 13.6, outCubic);
+    const prog = live ? 0 : seg(2.6, 11.5, inOut);
+    const interpP = live ? 0 : seg(18.6, 19.4, outCubic);
+    const classP = live ? 0 : clamp(seg(19.3, 19.9, outBack), 0, 1);
+    const explP = live ? 0 : clamp(seg(19.8, 20.3, outBack), 0, 1);
+    const searchStart = 19.4, lockT = 20.55;
     const searching = !live && t >= searchStart && t < lockT;
     const locked = !live && t >= lockT;
     const stampIn = locked ? clamp(seg(lockT, lockT+0.55, outBack), 0, 1) : 0;
     const stampOp = live ? 0 : seg(lockT, lockT+0.14);
-    const dispoIn = live ? 0 : clamp(seg(18.05, 18.55, outBack), 0, 1);
-    const dispoOp = live ? 0 : seg(18.05, 18.2);
+    const dispoIn = live ? 0 : clamp(seg(21.05, 21.55, outBack), 0, 1);
+    const dispoOp = live ? 0 : seg(21.05, 21.2);
 
     let sh = 0;
-    if (!live && t > 17.55 && t < 17.92) { const pr=(t-17.55)/0.37; sh=Math.sin(pr*Math.PI*4)*(1-pr)*4; }
+    if (!live && t > 20.55 && t < 20.92) { const pr=(t-20.55)/0.37; sh=Math.sin(pr*Math.PI*4)*(1-pr)*4; }
     let flash = 0;
-    if (!live && t > 17.55 && t < 17.88) { flash=(1-(t-17.55)/0.33)*0.13; }
+    if (!live && t > 20.55 && t < 20.88) { flash=(1-(t-20.55)/0.33)*0.13; }
 
     const o = {};
     o.shudderStyle = { transform:`translate(${sh.toFixed(2)}px,${(sh*0.5).toFixed(2)}px)` };
@@ -848,11 +848,11 @@ class Component extends DCLogic {
     };
 
     // Full-card live overlay: stays up through scan, fades after portrait is revealed
-    const overlayFade = live ? 1 : clamp(1 - seg(9.0, 10.5, outCubic), 0, 1);
+    const overlayFade = live ? 1 : clamp(1 - seg(12.0, 13.5, outCubic), 0, 1);
     o.liveOverlayStyle = {
       position:'absolute', inset:'0', zIndex:9,
       background:'#0a0a0b', opacity:overlayFade,
-      pointerEvents: (live || (!live && t < 10.5)) ? 'auto' : 'none'
+      pointerEvents: (live || (!live && t < 13.5)) ? 'auto' : 'none'
     };
     o.overlayVideoRef = this.makeOverlayVideoRef(i);
     o.liveVideoFillStyle = {
@@ -913,7 +913,7 @@ class Component extends DCLogic {
     o.overlayScanLineStyle = Object.assign({}, o.scanLineStyle);
     o.overlayScanTrailStyle = Object.assign({}, o.scanTrailStyle);
     o.overlayScanGridStyle = Object.assign({}, o.scanGridStyle);
-    o.overlayScanStatus = t < 2.6 ? 'INITIALISING' : (t > 8.6 ? 'ANALYSIS COMPLETE' : 'SCANNING');
+    o.overlayScanStatus = t < 2.6 ? 'INITIALISING' : 'SCANNING';
     o.overlayProgressFillStyle = { position:'absolute', left:'0', top:'0', bottom:'0', width:`${(prog*100).toFixed(1)}%`, background:RED };
     o.overlayProgressPct = `${Math.round(prog*100)}%`;
 
@@ -924,16 +924,14 @@ class Component extends DCLogic {
     o.overlayReflText = live ? '––.–' : clamp(subj.reflection * reflP + reflFlicker, 0, 99.9).toFixed(1);
 
     // Cycling message — occasionally glitches and reveals the true verdict word
-    const scanMsgIdx = Math.floor(t * 2.8) % this.SCAN_MSGS.length;
-    const isGlitch = !live && [5.4, 6.7, 7.9].some(gt => t >= gt && t < gt + 0.32);
-    const glitchWord = isGlitch ? this.CANDIDATES[Math.floor(t * 77) % this.CANDIDATES.length] : null;
-    o.overlayScanMsg = live ? '' : (glitchWord || this.SCAN_MSGS[scanMsgIdx]);
+    const scanMsgIdx = Math.floor(t * 0.8) % this.SCAN_MSGS.length;
+    o.overlayScanMsg = live ? '' : this.SCAN_MSGS[scanMsgIdx];
     o.overlayScanMsgStyle = {
-      fontFamily: glitchWord ? "'Saira Condensed',sans-serif" : "'Spline Sans Mono',monospace",
-      fontWeight: glitchWord ? 700 : 400,
-      fontSize: glitchWord ? '56px' : '16px',
-      letterSpacing: glitchWord ? '6px' : '1.2px',
-      color: this.hexA(RED, glitchWord ? 1.0 : 0.9),
+      fontFamily: "'Spline Sans Mono',monospace",
+      fontWeight: 400,
+      fontSize: '16px',
+      letterSpacing: '1.2px',
+      color: this.hexA(RED, 0.9),
       minHeight:'20px', lineHeight:1
     };
 
@@ -966,12 +964,12 @@ class Component extends DCLogic {
     o.verdictText = verdictText;
     o.dispositionText = subj.disposition || this.DISPO_DEFAULT;
 
-    o.bigStatus = live ? 'STANDBY' : (t < 2.6 ? 'INITIALISING' : (t < 8.6 ? 'SCANNING' : 'COMPLETE'));
+    o.bigStatus = live ? 'STANDBY' : (t < 2.6 ? 'INITIALISING' : (t < 11.5 ? 'SCANNING' : 'COMPLETE'));
     o.progressFillStyle = { position:'absolute', left:'0', top:'0', bottom:'0', width:`${(prog*100).toFixed(1)}%`, background:'#16130f' };
     o.progressPct = `${Math.round(prog*100)}%`;
 
     const dsIdx = Math.floor(t * 0.8) % this.DATASET.length;
-    const dsVisible = !live && t > 2.6 && t < 10.5;
+    const dsVisible = !live && t > 2.6 && t < 13.5;
     o.datasetRowStyle = { display:'flex', alignItems:'center', gap:'8px', marginTop:'8px', overflow:'hidden', opacity: dsVisible ? 1 : 0 };
     o.datasetSrcStyle = { fontFamily:"'Spline Sans Mono',monospace", fontSize:'8px', letterSpacing:'0.6px', color:'#16130f', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' };
     o.datasetSrc = dsVisible ? this.DATASET[dsIdx] : '';
@@ -987,7 +985,7 @@ class Component extends DCLogic {
     const chars = subj.characteristics || [];
 
     // Overlay: characteristics tick in one by one during scanning
-    const oCBase = 3.2, oCStep = Math.min(0.7, 5.2/Math.max(1, chars.length));
+    const oCBase = 3.2, oCStep = Math.min(1.3, 7.5/Math.max(1, chars.length));
     o.overlayCharItems = chars.map((text, k) => {
       const pr = live ? 0 : clamp(seg(oCBase + k*oCStep, oCBase + k*oCStep + 0.45, outCubic), 0, 1);
       const isLatest = !live && pr > 0 && (k === chars.length-1 || (live ? 0 : clamp(seg(oCBase+(k+1)*oCStep, oCBase+(k+1)*oCStep+0.45, outCubic), 0, 1)) < 0.5);
@@ -1002,7 +1000,7 @@ class Component extends DCLogic {
     o.overlayThumbScanStyle = { position:'absolute', left:'0', right:'0', height:'2px', top:`${thumbScanPos.toFixed(1)}%`, background:RED, boxShadow:`0 0 6px 1px ${this.hexA(RED, 0.65)}` };
 
     // Card: all characteristics snap in simultaneously when poster is revealed
-    const cSnapP = live ? 0 : clamp(seg(10.5, 10.95, outBack), 0, 1);
+    const cSnapP = live ? 0 : clamp(seg(13.5, 13.95, outBack), 0, 1);
     o.charItems = chars.map((text) => {
       return { text, tick:{ display:'inline-block', opacity:cSnapP, transform:`scale(${cSnapP.toFixed(3)})`, fontSize:'12px', fontWeight:700, lineHeight:1, color:'#16130f' }, txt:{ color:`rgba(20,17,15,${lerp(0.28,1,cSnapP).toFixed(3)})` } };
     });
