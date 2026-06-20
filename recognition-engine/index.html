@@ -200,6 +200,13 @@
 
       <!-- colour flash on verdict slam -->
       <div style="{{ p.flashStyle }}"></div>
+
+      <!-- LIVE OVERLAY: black screen + camera + oval during idle -->
+      <div style="{{ p.liveOverlayStyle }}">
+       <video muted autoplay playsinline ref="{{ p.overlayVideoRef }}" style="{{ p.liveVideoFillStyle }}"></video>
+       <div style="{{ p.liveRingStyle }}"></div>
+       <div style="{{ p.liveMsgStyle }}">{{ p.liveMsg }}</div>
+      </div>
      </div>
     </div>
    </sc-for>
@@ -394,6 +401,8 @@ class Component extends DCLogic {
 
   videos = [];
   _vrefs = {};
+  overlayVideos = [];
+  _ovrefs = {};
   captures = [null, null, null, null];
 
   state = {
@@ -468,7 +477,16 @@ class Component extends DCLogic {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 } }, audio: false });
       this.stream = stream;
       this.videos.forEach(v => { if (v) { v.srcObject = stream; v.play().catch(() => {}); } });
+      this.overlayVideos.forEach(v => { if (v) { v.srcObject = stream; v.play().catch(() => {}); } });
     } catch (e) { this.setState({ camError: true }); }
+  }
+
+  makeOverlayVideoRef(i) {
+    if (!this._ovrefs[i]) this._ovrefs[i] = (el) => {
+      this.overlayVideos[i] = el;
+      if (el) { el.muted = true; el.playsInline = true; el.setAttribute('playsinline',''); if (this.stream) { el.srcObject = this.stream; el.play().catch(() => {}); } }
+    };
+    return this._ovrefs[i];
   }
 
   makeVideoRef(i) {
@@ -734,6 +752,42 @@ class Component extends DCLogic {
       borderRadius:'48% 48% 46% 46% / 40% 40% 56% 56%',
       boxShadow: det.present ? `0 0 ${(12+28*detP).toFixed(0)}px ${this.hexA(RED, 0.3*detP)}` : 'none',
       transition:'border-color 0.15s'
+    };
+
+    // Full-card live overlay: dark screen + camera + oval during idle, fades out when scan fires
+    const overlayFade = live ? 1 : clamp(1 - seg(0, 0.6), 0, 1);
+    o.liveOverlayStyle = {
+      position:'absolute', inset:'0', zIndex:9,
+      background:'#0a0a0b', opacity:overlayFade,
+      pointerEvents: live ? 'auto' : 'none'
+    };
+    o.overlayVideoRef = this.makeOverlayVideoRef(i);
+    o.liveVideoFillStyle = {
+      position:'absolute', inset:'0', width:'100%', height:'100%',
+      objectFit:'cover', objectPosition:'center 30%',
+      transform: mirror ? 'scaleX(-1)' : 'none',
+      filter:'grayscale(1) contrast(1.15) brightness(1.05)'
+    };
+    const oRingW = lerp(22, 26, detP);
+    const oRingH = (oRingW * 1.35 * (824/1240)).toFixed(1);
+    o.liveRingStyle = {
+      position:'absolute', left:'50%', top:'42%',
+      width:`${oRingW}%`, height:`${oRingH}%`,
+      transform:'translate(-50%,-50%)',
+      border:`2px solid ${ringCol}`,
+      borderRadius:'48% 48% 46% 46% / 40% 40% 56% 56%',
+      boxShadow: det.present ? `0 0 ${(16+36*detP).toFixed(0)}px ${this.hexA(RED, 0.35*detP)}` : 'none',
+      pointerEvents:'none'
+    };
+    o.liveMsg = camError ? 'NO SIGNAL — MANUAL TRIGGER' :
+      (!det.armed ? 'STEP AWAY TO RESET' :
+      (det.present ? (detP > 0.55 ? 'FACE LOCKED' : 'ACQUIRING…') : 'STEP INTO FRAME'));
+    o.liveMsgStyle = {
+      position:'absolute', bottom:'14%', left:'0', right:'0',
+      textAlign:'center', fontFamily:"'Spline Sans Mono',monospace",
+      fontSize:'11px', letterSpacing:'2.5px',
+      color:`rgba(241,239,231,${det.present ? 0.85 : 0.5})`,
+      pointerEvents:'none'
     };
 
     // Scan overlay effects
