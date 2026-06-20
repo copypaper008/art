@@ -38,6 +38,7 @@ ASSETS = os.path.join(os.path.dirname(__file__), 'assets')
 MODEL_PATH = os.path.join(os.path.dirname(__file__), 'inswapper_128.onnx')
 
 PORTRAIT_FILES = [
+    # original 16
     ('warhol',       'warhol-portrait.jpeg'),
     ('haring',       'haring-portrait.jpeg'),
     ('milk',         'milk-portrait.jpeg'),
@@ -47,13 +48,25 @@ PORTRAIT_FILES = [
     ('lorde',        'lorde-portrait.jpeg'),
     ('divine',       'divine-portrait.jpeg'),
     ('ernie',        'ernie-portrait.jpeg'),
-    ('franknfurter', 'franknfurter-portrait.jpeg'),
+    ('franknfurter', 'franknfurter-portrait.png'),
     ('xena',         'xena-portrait.jpeg'),
-    ('maupin',       'maupin-portrait.jpeg'),
-    ('holiday',      'holiday-portrait.jpeg'),
-    ('stamp',        'stamp-portrait.jpeg'),
+    ('maupin',       'maupin-portrait.png'),
+    ('holiday',      'holiday-portrait.png'),
+    ('stamp',        'stamp-portrait.png'),
     ('wilde',        'wilde-portrait.jpeg'),
     ('jack',         'jack-portrait.jpeg'),
+    # new subjects
+    ('woolf',        'woolf-portrait.png'),
+    ('sappho',       'sappho-portrait.png'),
+    ('waters',       'waters-portrait.png'),
+    ('brownb',       'brownb-portrait.png'),
+    ('magda',        'magda-portrait.png'),
+    ('kake',         'kake-portrait.png'),
+    ('vidal',        'vidal-portrait.png'),
+    ('hadrian',      'hadrian-portrait.png'),
+    ('kramer',       'kramer-portrait.png'),
+    ('rupaul',       'rupaul-portrait.png'),
+    ('elton',        'elton-portrait.png'),
 ]
 
 # ---- startup ----------------------------------------------------------------
