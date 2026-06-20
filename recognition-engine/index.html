@@ -264,7 +264,7 @@
          <sc-for list="{{ p.overlayCharItems }}" as="item">
           <div style="{{ item.style }}">
            <div style="display:flex;gap:14px;align-items:baseline;margin-bottom:16px;">
-            <span style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:30px;color:#c0443a;flex:none;line-height:1;">✓</span>
+            <span style="{{ item.tickStyle }}">✓</span>
             <span style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:36px;line-height:1.2;color:#f1efe7;text-shadow:0 2px 8px rgba(0,0,0,1),0 0 20px rgba(0,0,0,0.95);">{{ item.text }}</span>
            </div>
           </div>
@@ -274,7 +274,7 @@
         <div style="{{ p.overlayThumbWrapStyle }}">
          <video muted autoplay playsinline ref="{{ p.overlayThumbRef }}" style="{{ p.overlayThumbVideoStyle }}"></video>
          <img src="{{ p.overlayThumbPortraitSrc }}" alt="" style="{{ p.overlayThumbPortraitStyle }}" />
-         <div style="{{ p.overlayThumbNoiseStyle }}"></div>
+         <canvas ref="{{ p.overlayThumbNoiseRef }}" width="72" height="95" style="{{ p.overlayThumbNoiseStyle }}"></canvas>
          <div style="{{ p.overlayThumbScanStyle }}"></div>
         </div>
         <!-- BOTTOM DATA STRIP -->
@@ -502,6 +502,8 @@ class Component extends DCLogic {
   _ovrefs = {};
   thumbVideos = [];
   _thumbrefs = {};
+  noiseCanvases = [];
+  _canvasrefs = {};
   captures = [null, null, null, null];
 
   state = {
@@ -594,6 +596,29 @@ class Component extends DCLogic {
       if (el) { el.muted = true; el.playsInline = true; el.setAttribute('playsinline',''); if (this.stream) { el.srcObject = this.stream; el.play().catch(() => {}); } }
     };
     return this._thumbrefs[i];
+  }
+
+  makeNoiseCanvasRef(i) {
+    if (!this._canvasrefs[i]) this._canvasrefs[i] = (el) => { this.noiseCanvases[i] = el; };
+    return this._canvasrefs[i];
+  }
+
+  typingBreakpoints(text) {
+    if (!this._typingCache) this._typingCache = new Map();
+    if (this._typingCache.has(text)) return this._typingCache.get(text);
+    const weights = Array.from(text).map((ch, i, arr) => {
+      const prev = i > 0 ? arr[i-1] : '';
+      if ((prev === ',' || prev === ';') && ch === ' ') return 4.2; // long pause after comma-space
+      if (ch === ' ') return 2.4;                                    // word boundary pause
+      if (prev === ',' || prev === ';') return 1.8;                  // char just after punctuation
+      if (ch >= 'A' && ch <= 'Z' && i > 0) return 1.5;              // hesitation at caps mid-text
+      return 1.0;
+    });
+    const total = weights.reduce((a, b) => a + b, 0);
+    let cum = 0;
+    const bp = weights.map(w => { cum += w; return cum / total; });
+    this._typingCache.set(text, bp);
+    return bp;
   }
 
   makeOverlayVideoRef(i) {
@@ -962,12 +987,30 @@ class Component extends DCLogic {
 
     const chars = subj.characteristics || [];
 
-    // Overlay: characteristics tick in one by one during scanning
-    const oCBase = 3.2, oCStep = 1.8;
+    // Overlay: characteristics typed out one by one with natural pacing
+    const oCBase = 3.2, oCStep = 1.8, typeDuration = 2.2;
+    const cursor = live ? '' : (Math.floor(t * 2.5) % 2 === 0 ? '▌' : '');
     o.overlayCharItems = chars.map((text, k) => {
-      const pr = live ? 0 : clamp(seg(oCBase + k*oCStep, oCBase + k*oCStep + 0.65, outCubic), 0, 1);
-      const isLatest = !live && pr > 0 && (k === chars.length-1 || (live ? 0 : clamp(seg(oCBase+(k+1)*oCStep, oCBase+(k+1)*oCStep+0.65, outCubic), 0, 1)) < 0.5);
-      return { text, style: { opacity: pr * (isLatest ? 1 : 0.55), transform:`translateY(${lerp(10,0,pr).toFixed(1)}px)` } };
+      const startT = oCBase + k * oCStep;
+      const pr = live ? 0 : clamp(seg(startT, startT + typeDuration), 0, 1);
+      const done = pr >= 1;
+      let nChars = 0;
+      if (pr > 0) {
+        if (done) {
+          nChars = text.length;
+        } else {
+          const bp = this.typingBreakpoints(text);
+          // bisect: count chars whose breakpoint time <= pr
+          for (let c = 0; c < bp.length; c++) { if (bp[c] <= pr) nChars = c + 1; else break; }
+        }
+      }
+      const isTyping = pr > 0 && !done;
+      const lineOp = live ? 0 : clamp(seg(startT, startT + 0.06), 0, 1);
+      return {
+        text: text.slice(0, nChars) + (isTyping ? cursor : ''),
+        style: { opacity: (lineOp * (isTyping ? 1.0 : (done ? 0.72 : 0))).toFixed(3) },
+        tickStyle: { fontFamily:"'Saira Condensed',sans-serif", fontWeight:700, fontSize:'30px', color:'#c0443a', flex:'none', lineHeight:1, opacity: done ? 1 : 0, transform: done ? 'scale(1)' : 'scale(0.6)', transition:'opacity 0.25s, transform 0.3s' }
+      };
     });
     o.overlayCharsWrapStyle = { position:'absolute', top:'20%', left:'5%', right:'5%', pointerEvents:'none' };
 
@@ -980,16 +1023,33 @@ class Component extends DCLogic {
     const gTransIn  = gPhase < 0.07;
     const gPortrait = gPhase >= 0.07 && gPhase < 0.38;
     const gTransOut = gPhase >= 0.31 && gPhase < 0.38;
-    const gNoise = gTransIn ? gPhase/0.07 : (gTransOut ? 1 - (gPhase-0.31)/0.07 : 0);
+    const gNoise = gTransIn ? gPhase/0.07 : (gTransOut ? 1 - (gPhase-0.31)/0.07 : (gPortrait ? 0.1 : 0));
     const gVideoOp = gTransIn ? 1 - gPhase/0.07 : (gPortrait ? (gTransOut ? (gPhase-0.31)/0.07 : 0) : 1);
     const gPortraitOp = (gPortrait && !gTransOut) ? 1 : (gTransOut ? 1 - (gPhase-0.31)/0.07 : 0);
-    const fN = Math.floor(t * 60);
-    const sH = ((fN * 7 + 3) % 5) + 2;
     o.overlayThumbWrapStyle = { position:'absolute', bottom:'9%', right:'4%', width:'145px', height:'190px', border:`1px solid ${this.hexA(RED, 0.65)}`, overflow:'hidden', pointerEvents:'none', boxShadow:`0 0 20px ${this.hexA(RED, 0.25)}` };
     o.overlayThumbVideoStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', transform:'scaleX(-1)', filter:`grayscale(1) contrast(${(1 + gNoise * 3.5).toFixed(2)}) brightness(${(1 + gNoise * 2).toFixed(2)})`, opacity:gVideoOp.toFixed(3) };
     o.overlayThumbPortraitSrc = subj.portrait || '';
     o.overlayThumbPortraitStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', filter:'grayscale(0.4) contrast(1.15) brightness(0.9) sepia(0.2) hue-rotate(330deg)', opacity:gPortraitOp.toFixed(3), display: o.overlayThumbPortraitSrc ? 'block' : 'none' };
-    o.overlayThumbNoiseStyle = { position:'absolute', inset:'0', background: gNoise > 0.03 ? `repeating-linear-gradient(0deg, rgba(241,239,231,${(gNoise*0.38).toFixed(3)}) 0 ${sH}px, rgba(10,10,11,${(gNoise*0.28).toFixed(3)}) ${sH}px ${sH*2}px)` : 'none', mixBlendMode:'overlay', pointerEvents:'none' };
+    // Canvas-drawn pixel static — real random greyscale noise drawn each frame
+    o.overlayThumbNoiseRef = this.makeNoiseCanvasRef(i);
+    o.overlayThumbNoiseStyle = { position:'absolute', inset:'0', width:'145px', height:'190px', display:'block', imageRendering:'pixelated', pointerEvents:'none' };
+    const noiseCv = this.noiseCanvases[i];
+    if (noiseCv) {
+      const nCtx = noiseCv.getContext('2d');
+      if (gNoise > 0.01) {
+        const nW = noiseCv.width, nH = noiseCv.height;
+        const img = nCtx.createImageData(nW, nH);
+        const d = img.data;
+        for (let j = 0; j < d.length; j += 4) {
+          const v = Math.floor(Math.random() * 256);
+          d[j] = d[j+1] = d[j+2] = v;
+          d[j+3] = Math.floor(gNoise * 210 + Math.random() * 45);
+        }
+        nCtx.putImageData(img, 0, 0);
+      } else {
+        nCtx.clearRect(0, 0, noiseCv.width, noiseCv.height);
+      }
+    }
     o.overlayThumbScanStyle = { position:'absolute', left:'0', right:'0', height:'2px', top:`${thumbScanPos.toFixed(1)}%`, background:RED, boxShadow:`0 0 6px 1px ${this.hexA(RED, 0.65)}`, opacity: (gPortrait && !gTransIn && !gTransOut) ? 0 : 1 };
 
     // Card: all characteristics snap in simultaneously when poster is revealed
