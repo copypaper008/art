@@ -119,9 +119,31 @@ except ImportError as e:
     print("  Make sure you ran:  pip install -r liveportrait/requirements.txt\n")
     sys.exit(1)
 
+# ---- Download model weights if missing --------------------------------------
+
+WEIGHTS_DIR = os.path.join(LP_ROOT, 'pretrained_weights')
+WEIGHTS_MARKER = os.path.join(WEIGHTS_DIR, 'liveportrait', 'base_models', 'appearance_feature_extractor.pth')
+
+if not os.path.exists(WEIGHTS_MARKER):
+    print("Model weights not found — downloading from HuggingFace (~600 MB)...")
+    try:
+        from huggingface_hub import snapshot_download
+        snapshot_download(
+            repo_id='KwaiVGI/LivePortrait',
+            local_dir=WEIGHTS_DIR,
+            ignore_patterns=['*.git*', 'README.md', '*.DS_Store'],
+        )
+        print("Download complete.\n")
+    except Exception as e:
+        print(f"\n  ERROR downloading models: {e}")
+        print("  Download manually:")
+        print("    cd liveportrait")
+        print("    python3 -c \"from huggingface_hub import snapshot_download; snapshot_download('KwaiVGI/LivePortrait', local_dir='pretrained_weights')\"")
+        sys.exit(1)
+
 # ---- Load pipeline ----------------------------------------------------------
 
-print("Loading LivePortrait models (may download ~600 MB on first run)...")
+print("Loading LivePortrait models...")
 inference_cfg = InferenceConfig()
 crop_cfg = CropConfig()
 pipeline = LivePortraitPipeline(inference_cfg=inference_cfg, crop_cfg=crop_cfg)
