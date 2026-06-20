@@ -1028,20 +1028,20 @@ class Component extends DCLogic {
     const reflP = live ? 0 : seg(6.8, 13.6, outCubic);
     const prog = live ? 0 : seg(2.6, 11.5, inOut);
     const interpP = live ? 0 : seg(17.0, 17.8, outCubic);
-    const classP = live ? 0 : clamp(seg(23.3, 23.9, outBack), 0, 1);
-    const explP = live ? 0 : clamp(seg(23.8, 24.3, outBack), 0, 1);
-    const searchStart = 23.4, lockT = 24.55;
+    const classP = live ? 0 : clamp(seg(18.3, 18.9, outBack), 0, 1);
+    const explP = live ? 0 : clamp(seg(18.8, 19.3, outBack), 0, 1);
+    const searchStart = 19.1, lockT = 20.0;
     const searching = !live && t >= searchStart && t < lockT;
     const locked = !live && t >= lockT;
     const stampIn = locked ? clamp(seg(lockT, lockT+0.55, outBack), 0, 1) : 0;
     const stampOp = live ? 0 : seg(lockT, lockT+0.14);
-    const dispoIn = live ? 0 : clamp(seg(25.05, 25.55, outBack), 0, 1);
-    const dispoOp = live ? 0 : seg(25.05, 25.2);
+    const dispoIn = live ? 0 : clamp(seg(21.0, 21.5, outBack), 0, 1);
+    const dispoOp = live ? 0 : seg(21.0, 21.15);
 
     let sh = 0;
-    if (!live && t > 24.55 && t < 24.92) { const pr=(t-24.55)/0.37; sh=Math.sin(pr*Math.PI*4)*(1-pr)*4; }
+    if (!live && t > 20.0 && t < 20.37) { const pr=(t-20.0)/0.37; sh=Math.sin(pr*Math.PI*4)*(1-pr)*4; }
     let flash = 0;
-    if (!live && t > 24.55 && t < 24.88) { flash=(1-(t-24.55)/0.33)*0.13; }
+    if (!live && t > 20.0 && t < 20.33) { flash=(1-(t-20.0)/0.33)*0.13; }
 
     const o = {};
     o.shudderStyle = { transform:`translate(${sh.toFixed(2)}px,${(sh*0.5).toFixed(2)}px)` };
