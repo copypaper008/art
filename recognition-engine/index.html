@@ -939,11 +939,14 @@ class Component extends DCLogic {
       const src = `stamps/${encodeURIComponent(stampFile)}.dc.html`;
       return h('div', {
         style: {
-          position: 'absolute', inset: '0',
-          transform: `scale(${scale})`,
+          position: 'absolute',
+          top: '38%', left: '50%',
+          width: '760px', height: '340px',
+          transform: `translate(-50%,-50%) rotate(-5deg) scale(${scale})`,
           transformOrigin: 'center center',
           opacity,
           pointerEvents: 'none',
+          overflow: 'hidden',
         }
       },
         h('iframe', {
