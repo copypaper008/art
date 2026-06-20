@@ -72,6 +72,7 @@
            <video muted autoplay playsinline ref="{{ p.videoRef }}" style="{{ p.videoStyle }}"></video>
            {{ p.captureEl }}
            <img src="{{ p.portraitSrc }}" alt="" style="{{ p.portraitBlendStyle }}" />
+           {{ p.swapEl }}
            <!-- detect feedback: label + bar at bottom, only during idle -->
            <div style="{{ p.detectOverlayStyle }}">
             <div style="position:absolute;bottom:0;left:0;right:0;height:3px;overflow:hidden;">
@@ -420,12 +421,37 @@ class Component extends DCLogic {
 
     this.startCamera();
     this.startDetect();
+    this.connectSwapServer();
+  }
+
+  connectSwapServer() {
+    const tryConnect = () => {
+      try {
+        const ws = new WebSocket('ws://localhost:8765');
+        this.swapWs = ws;
+        ws.onopen = () => { this.swapServerOk = true; };
+        ws.onmessage = (e) => {
+          try {
+            const msg = JSON.parse(e.data);
+            if (msg.result && typeof msg.station === 'number') {
+              const cap = this.captures[msg.station];
+              if (cap) { cap.swappedSrc = 'data:image/jpeg;base64,' + msg.result; this.forceUpdate(); }
+            }
+          } catch (_) {}
+        };
+        ws.onerror = () => {};
+        ws.onclose = () => { this.swapServerOk = false; this._swapReconnect = setTimeout(tryConnect, 5000); };
+      } catch (_) {}
+    };
+    tryConnect();
   }
 
   componentWillUnmount() {
     cancelAnimationFrame(this._mainRaf);
     this._rafs.forEach(r => r && cancelAnimationFrame(r));
     clearInterval(this.detectTimer);
+    clearTimeout(this._swapReconnect);
+    if (this.swapWs) { this.swapWs.onclose = null; this.swapWs.close(); }
     window.removeEventListener('resize', this._onResize);
     window.removeEventListener('keydown', this._onKey);
     if (this.stream) this.stream.getTracks().forEach(t => t.stop());
@@ -526,10 +552,18 @@ class Component extends DCLogic {
 
   trigger(i) {
     if (this.state.stations[i].phase === 'scanning') return;
+    const subjectIdx = this.pickSubject(i);
+    const subj = this.subjects[subjectIdx];
     const captured = this.captureFrame(i);
+    if (captured) captured.swappedSrc = null;
     this.captures[i] = captured;
+
+    if (captured && this.swapWs && this.swapWs.readyState === WebSocket.OPEN) {
+      try { this.swapWs.send(JSON.stringify({ subject: subj.id, frame: captured.src.split(',')[1], station: i })); } catch (_) {}
+    }
+
     const stations = this.state.stations.slice();
-    stations[i] = { phase: 'scanning', t: 0, subjectIdx: this.pickSubject(i) };
+    stations[i] = { phase: 'scanning', t: 0, subjectIdx };
     this.t0[i] = performance.now();
     this.setState({ stations }, () => this.ensureRaf(i));
   }
@@ -667,15 +701,25 @@ class Component extends DCLogic {
     // Portrait: only appears once scan fires, fades in with multiply blend, then
     // becomes natural as background lightens (darkroom developing effect)
     const portraitAppear = live ? 0 : clamp(seg(0, 1.5, outCubic), 0, 1);
+    const hasSwap = !live && cap && cap.swappedSrc;
     o.portraitSrc = subj.portrait || subj.cutout || '';
     o.portraitBlendStyle = {
       position:'absolute', inset:'0', width:'100%', height:'100%',
       objectFit:'cover', objectPosition:'center top',
       mixBlendMode:'multiply',
-      opacity: 0.95 * portraitAppear,
+      opacity: hasSwap ? 0 : 0.95 * portraitAppear,
       display: o.portraitSrc ? 'block' : 'none',
       pointerEvents:'none'
     };
+
+    // Swap result from local Python server — replaces portrait blend once available
+    o.swapEl = hasSwap ? React.createElement('img', { src: cap.swappedSrc, alt:'', style: {
+      position:'absolute', inset:'0', width:'100%', height:'100%',
+      objectFit:'cover', objectPosition:'center top',
+      mixBlendMode:'multiply',
+      opacity: 0.95 * portraitAppear,
+      pointerEvents:'none'
+    } }) : null;
 
     // ---- Detection overlay: shown during idle, hidden once scanning starts ----
     const detP = det.prog || 0;
