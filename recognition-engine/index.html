@@ -23,7 +23,7 @@
 <!-- ============================================================= -->
 <div style="position:fixed;inset:0;background:#050506;display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:'Archivo',sans-serif;">
  <div style="{{ stageStyle }}">
-  <div style="position:relative;width:3840px;height:2160px;display:flex;gap:20px;background:#0a0a0b;">
+  <div style="{{ stageInnerStyle }}">
 
    <sc-for list="{{ panels }}" as="p" hint-placeholder-count="4">
     <div style="{{ p.panelStyle }}">
@@ -289,7 +289,7 @@ class Component extends DCLogic {
 
   STAMP = { key: '#141009', a: '#FFD400', b: '#00B7D4', c: '#EC1E79' };
 
-  STATIONS = 4;
+  STATIONS = 1;   // set to 4 for the full installation
 
   // instance fields initialised before first render (refs attach pre-mount)
   videos = [];
@@ -337,7 +337,10 @@ class Component extends DCLogic {
   }
 
   // The whole 3840x2160 stage scales to fit the screen (landscape 43" = 4K).
-  fit() { this.setState({ scale: Math.min(window.innerWidth / 3840, window.innerHeight / 2160) }); }
+  fit() {
+    const stageW = this.STATIONS * 945 + Math.max(0, this.STATIONS - 1) * 20;
+    this.setState({ scale: Math.min(window.innerWidth / stageW, window.innerHeight / 2160) });
+  }
 
   async startCamera() {
     try {
@@ -704,8 +707,10 @@ class Component extends DCLogic {
   }
 
   renderVals() {
+    const stageW = this.STATIONS * 945 + Math.max(0, this.STATIONS - 1) * 20;
     return {
       stageStyle: { transform: `scale(${this.state.scale})`, transformOrigin: 'center center' },
+      stageInnerStyle: { position: 'relative', width: `${stageW}px`, height: '2160px', display: 'flex', gap: '20px', background: '#0a0a0b' },
       panels: this.state.stations.map((s, i) => this.panel(s, i))
     };
   }
