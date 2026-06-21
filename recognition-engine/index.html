@@ -778,10 +778,10 @@ class Component extends DCLogic {
             if (station === null) return;
 
             if (msg.result) {
-              const cap = this.captures[station];
               const expected = this._scanSubjects[station];
-              if (cap && (!expected || !msg.subject || msg.subject === expected)) {
-                cap.swappedSrc = 'data:image/jpeg;base64,' + msg.result;
+              if (!expected || !msg.subject || msg.subject === expected) {
+                if (!this.captures[station]) this.captures[station] = {};
+                this.captures[station].swappedSrc = 'data:image/jpeg;base64,' + msg.result;
                 this.forceUpdate();
               }
             }
@@ -1251,6 +1251,7 @@ class Component extends DCLogic {
       position: 'absolute', inset: '0', width: '100%', height: '100%',
       objectFit: 'cover', objectPosition: 'center top',
       opacity: (!live && swapSrc) ? 1 : 0,
+      zIndex: 10,
       pointerEvents: 'none',
     };
 
