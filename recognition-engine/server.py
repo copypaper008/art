@@ -155,7 +155,7 @@ async def handle(ws):
             # Swap: visitor's face → portrait body
             result = swapper.get(portrait_img.copy(), portrait_face, visitor_face, paste_back=True)
 
-            _, buf = cv2.imencode('.jpg', result, [cv2.IMWRITE_JPEG_QUALITY, 92])
+            _, buf = cv2.imencode('.jpg', result, [cv2.IMWRITE_JPEG_QUALITY, 97])
             result_b64 = base64.b64encode(buf).decode('utf-8')
 
             await ws.send(json.dumps({'result': result_b64, 'station': station}))
