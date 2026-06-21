@@ -202,7 +202,17 @@ async def handle(ws):
             _, buf = cv2.imencode('.jpg', result, [cv2.IMWRITE_JPEG_QUALITY, 97])
             result_b64 = base64.b64encode(buf).decode('utf-8')
 
-            await ws.send(json.dumps({'result': result_b64, 'station': station}))
+            h_img, w_img = portrait_img.shape[:2]
+            kps = portrait_face.kps  # [[rx,ry],[lx,ly],[nx,ny],[rmx,rmy],[lmx,lmy]]
+            left_eye_norm = [float(kps[1][0]) / w_img, float(kps[1][1]) / h_img]
+
+            await ws.send(json.dumps({
+                'result': result_b64,
+                'station': station,
+                'imgW': w_img,
+                'imgH': h_img,
+                'leftEye': left_eye_norm,
+            }))
             print(f"  swapped station={station} subject={subj_id}")
 
         except Exception as e:
