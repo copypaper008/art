@@ -254,35 +254,41 @@ def _infer_frame(p, driving_rgb, is_first, station, station_refs):
     x_d_0_info = station_refs[station]
 
     # Compute RELATIVE motion delta from neutral pose and add to portrait keypoints.
-    # Scale > 1 amplifies subtle movements so they read clearly on a slow CPU stream.
-    MOTION_SCALE = 1.5
+    # Use separate scales per component: expressions read best at high amplitude (CPU
+    # frame rate is too slow for subtlety); head rotation kept more moderate to avoid
+    # unnatural-looking artifacts on portrait photos.
+    EXP_SCALE   = 4.0   # mouth open/close, brows — most readable on a portrait face
+    POSE_SCALE  = 2.0   # yaw / pitch (head turn / nod) — dramatic but plausible
+    ROLL_SCALE  = 1.0   # head tilt — keep moderate
+    T_SCALE     = 0.5   # translation — minimal, avoid drifting off-centre
 
     x_d_i_new = copy.deepcopy(p['x_s_info'])
     x_d_i_new['exp'] = (
         p['x_s_info']['exp']
-        + MOTION_SCALE * (x_d_i_info['exp'] - x_d_0_info['exp'])
+        + EXP_SCALE * (x_d_i_info['exp'] - x_d_0_info['exp'])
     )
     x_d_i_new['t'] = (
         p['x_s_info']['t']
-        + MOTION_SCALE * (x_d_i_info['t'] - x_d_0_info['t'])
+        + T_SCALE * (x_d_i_info['t'] - x_d_0_info['t'])
     )
     x_d_i_new['pitch'] = (
         p['x_s_info']['pitch']
-        + MOTION_SCALE * (x_d_i_info['pitch'] - x_d_0_info['pitch'])
+        + POSE_SCALE * (x_d_i_info['pitch'] - x_d_0_info['pitch'])
     )
     x_d_i_new['yaw'] = (
         p['x_s_info']['yaw']
-        + MOTION_SCALE * (x_d_i_info['yaw'] - x_d_0_info['yaw'])
+        + POSE_SCALE * (x_d_i_info['yaw'] - x_d_0_info['yaw'])
     )
     x_d_i_new['roll'] = (
         p['x_s_info']['roll']
-        + MOTION_SCALE * (x_d_i_info['roll'] - x_d_0_info['roll'])
+        + ROLL_SCALE * (x_d_i_info['roll'] - x_d_0_info['roll'])
     )
 
     if not is_first:
-        exp_d = float((x_d_i_info['exp'] - x_d_0_info['exp']).abs().mean())
-        yaw_d = float((x_d_i_info['yaw'] - x_d_0_info['yaw']).abs().mean())
-        print(f"    delta: exp={exp_d:.4f} yaw={yaw_d:.4f}")
+        exp_d  = float((x_d_i_info['exp']   - x_d_0_info['exp']).abs().mean())
+        yaw_d  = float((x_d_i_info['yaw']   - x_d_0_info['yaw']).abs().mean())
+        pitch_d = float((x_d_i_info['pitch'] - x_d_0_info['pitch']).abs().mean())
+        print(f"    delta: exp={exp_d:.4f} yaw={yaw_d:.4f} pitch={pitch_d:.4f}")
 
     x_d_i_new = wrapper.transform_keypoint(x_d_i_new)
 

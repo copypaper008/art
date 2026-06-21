@@ -1253,6 +1253,7 @@ class Component extends DCLogic {
       opacity: (!live && swapSrc) ? 1 : 0,
       zIndex: 10,
       pointerEvents: 'none',
+      transition: 'opacity 0.3s',
     };
 
     const oRingW = lerp(22, 26, detP);
