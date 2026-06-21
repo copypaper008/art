@@ -626,7 +626,7 @@ class Component extends DCLogic {
     {
       id: 'nathan', enabled: true,
       line: 'LANE, NATHAN', fileId: 'NL-1956-0203', date: '05.06.2024', footer: 'NATHAN LANE',
-      portrait: 'assets/nathan-portrait.jpeg',
+      portrait: 'assets/peterallen-portrait.jpeg',
       confidence: 99.58, reflection: 97.8,
       characteristics: ['Demonstrates theatrical affect at amplitude exceeding regulation masculine norms','Deploys comic persona to render prohibited lifestyle accessible to mainstream audience','Functions simultaneously as entertainment product and classification-disclosure mechanism','Broadway presence disproportionate to assigned demographic','Association with [REDACTED] constitutes long-term co-dependent professional relationship','Inner life cannot be independently verified'],
       classification: 'PERFORMING ARTIST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
@@ -635,7 +635,7 @@ class Component extends DCLogic {
     {
       id: 'peterallen', enabled: true,
       line: 'ALLEN, PETER', fileId: 'PA-1944-0210', date: '05.06.2024', footer: 'PETER ALLEN',
-      portrait: 'assets/peterallen-portrait.jpeg',
+      portrait: 'assets/nathan-portrait.jpeg',
       confidence: 99.69, reflection: 98.0,
       characteristics: ['Demonstrates sequin and rhinestone deployment beyond civilian authorisation','Maintains romantic and creative associations across multiple prohibited categories','Channels grief over prohibited loss into internationally distributed musical commodity','Connects Judy Garland\'s son-in-law to prohibited classification via marriage of convenience','Conducts life across three countries without establishing heteronormative domestic arrangement','Intentions at Tenterfield cannot be independently verified'],
       classification: 'PERFORMING ARTIST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
@@ -849,6 +849,7 @@ class Component extends DCLogic {
   streamTimers = [null, null, null, null];
   _scanSubjects = [null, null, null, null];
   _streamActive = [false, false, false, false];
+  facePos = [null, null, null, null];
   stampHtmlCache = {};
 
   state = {
@@ -1026,9 +1027,10 @@ class Component extends DCLogic {
       const now = performance.now();
       let changed = false;
       for (let i = 0; i < this.STATIONS; i++) {
-        const present = this.sampleZone(i);
+        const zone = this.sampleZone(i);
+        const present = zone.present;
         const live = this.state.stations[i].phase === 'live';
-        if (present) { if (!this.presentSince[i]) this.presentSince[i] = now; this.absentSince[i] = 0; }
+        if (present) { this.facePos[i] = { cx: zone.cx, cy: zone.cy }; if (!this.presentSince[i]) this.presentSince[i] = now; this.absentSince[i] = 0; }
         else { this.presentSince[i] = 0; if (!this.absentSince[i]) this.absentSince[i] = now; }
         if (!this.detectArmed[i] && this.absentSince[i] && now - this.absentSince[i] > CLEAR) this.detectArmed[i] = true;
         let prog = 0;
@@ -1047,22 +1049,29 @@ class Component extends DCLogic {
 
   sampleZone(i) {
     const v = this.sampleVideo();
-    if (!v || !v.videoWidth || this.state.camError) return false;
+    if (!v || !v.videoWidth || this.state.camError) return { present: false, cx: 0.5, cy: 0.35 };
     const ctx = this.dCanvas.getContext('2d', { willReadFrequently: true });
     const vw = v.videoWidth, vh = v.videoHeight;
     const reverse = this.props.reverseZones ?? false;
     const zone = reverse ? (this.STATIONS - 1 - i) : i;
     const zw = vw / this.STATIONS;
     const sx = zone * zw, sw = zw, sh = vh * 0.6, sy = vh * 0.08;
-    try { ctx.drawImage(v, sx, sy, sw, sh, 0, 0, 48, 48); } catch (e) { return false; }
-    let data; try { data = ctx.getImageData(0, 0, 48, 48).data; } catch (e) { return false; }
-    let skin = 0, n = 0;
+    try { ctx.drawImage(v, sx, sy, sw, sh, 0, 0, 48, 48); } catch (e) { return { present: false, cx: 0.5, cy: 0.35 }; }
+    let data; try { data = ctx.getImageData(0, 0, 48, 48).data; } catch (e) { return { present: false, cx: 0.5, cy: 0.35 }; }
+    let skin = 0, n = 0, skinSumX = 0, skinSumY = 0;
     for (let j = 0; j < data.length; j += 4) {
       const r = data[j], g = data[j+1], b = data[j+2]; n++;
       const mx = Math.max(r,g,b), mn = Math.min(r,g,b);
-      if (r > 50 && g > 30 && b > 18 && r >= g && g >= b && (r-b) > 14 && (mx-mn) > 12 && (mx-mn) < 130) skin++;
+      if (r > 50 && g > 30 && b > 18 && r >= g && g >= b && (r-b) > 14 && (mx-mn) > 12 && (mx-mn) < 130) {
+        skin++;
+        skinSumX += (j / 4) % 48;
+        skinSumY += Math.floor((j / 4) / 48);
+      }
     }
-    return (skin / n) > 0.28;
+    const present = (skin / n) > 0.28;
+    const cx = skin > 0 ? skinSumX / skin / 48 : 0.5;
+    const cy = skin > 0 ? skinSumY / skin / 48 : 0.35;
+    return { present, cx, cy };
   }
 
   pickSubject(i) {
@@ -1566,13 +1575,21 @@ class Component extends DCLogic {
     const template = this.positionTemplates[(subjectIdx + i * 3) % this.positionTemplates.length];
     const dotFadeIn = live ? 0 : clamp(seg(0.5, 1.3), 0, 1);
 
+    // Face centroid: maps zone skin detection position to overlay % coordinates.
+    // The sample covers the zone horizontally (0→1) and vh*8%→68% vertically (so cy*60+8 → display%).
+    const fp = this.facePos[i];
+    const faceCX = fp ? ((mirror ? (1 - fp.cx) : fp.cx) * 100) : 50;
+    const faceCY = fp ? (fp.cy * 60 + 8) : 35;
+    const faceOffX = faceCX - 50; // offset from template centre (assumed at x=50)
+    const faceOffY = faceCY - 35; // offset from template centre (assumed at y=35)
+
     const faceLinks = [], faceDots = [], leftCallouts = [], rightCallouts = [];
     if (template) {
       const dotCount = Math.min(template.length, Math.max(markers.length, template.length));
       for (let j = 0; j < dotCount; j++) {
         const pos = template[j];
-        const X = pos.fx + Math.sin(t * 0.85 + i * 1.7 + j) * 0.5;
-        const Y = pos.fy + Math.cos(t * 1.1  + i * 1.3 + j) * 0.4;
+        const X = clamp(pos.fx + faceOffX + Math.sin(t * 0.85 + i * 1.7 + j) * 0.5, 4, 96);
+        const Y = clamp(pos.fy + faceOffY + Math.cos(t * 1.1  + i * 1.3 + j) * 0.4, 4, 96);
         const ax = pos.side === 'L' ? 4 : 96;
         faceLinks.push({ x1: ax, y1: pos.ay, x2: X.toFixed(2), y2: Y.toFixed(2) });
         faceDots.push({
@@ -1693,8 +1710,10 @@ class Component extends DCLogic {
     o.explStyle = { display:'inline-block', opacity:explP, transform:`scale(${lerp(1.18,1,explP).toFixed(3)})`, transformOrigin:'left center' };
     o.dispoStyle = { display:'inline-block', opacity:dispoOp, transform:`translateY(${lerp(4,0,dispoIn).toFixed(1)}px)` };
 
-    // ---- Stamp: full-card absolute layer, z=30 (above overlay) ----
-    o.stampLayerStyle = { position:'absolute', inset:'0', zIndex:30, pointerEvents:'none', overflow:'visible' };
+    // ---- Stamp: positioned over the document/tables area below the face photo ----
+    // Starting at ~840px keeps the stamp on the light paper area (mix-blend-mode:multiply
+    // needs a light background — the dark face window above would make it invisible).
+    o.stampLayerStyle = { position:'absolute', top:'840px', bottom:'0', left:'0', right:'0', zIndex:30, pointerEvents:'none', overflow:'visible' };
     o.bandStampEl = locked ? this.buildStamp(subj, stampIn, stampOp) : null;
 
     // ---- Card content wrapper: snap to invisible when returning to idle ----
