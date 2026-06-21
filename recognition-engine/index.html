@@ -712,6 +712,7 @@ class Component extends DCLogic {
   captures = [null, null, null, null];
   streamTimers = [null, null, null, null];
   _scanSubjects = [null, null, null, null];
+  _streamActive = [false, false, false, false];
   stampHtmlCache = {};
 
   state = {
@@ -758,14 +759,22 @@ class Component extends DCLogic {
         ws.onmessage = (e) => {
           try {
             const msg = JSON.parse(e.data);
-            if (msg.result && typeof msg.station === 'number') {
-              const cap = this.captures[msg.station];
-              const expected = this._scanSubjects[msg.station];
-              // Reject stale responses from a previous scan's subject
+            const station = typeof msg.station === 'number' ? msg.station : null;
+            if (station === null) return;
+
+            if (msg.result) {
+              const cap = this.captures[station];
+              const expected = this._scanSubjects[station];
               if (cap && (!expected || !msg.subject || msg.subject === expected)) {
                 cap.swappedSrc = 'data:image/jpeg;base64,' + msg.result;
                 this.forceUpdate();
               }
+            }
+
+            // Flow control: only send the next frame after the server responds,
+            // so we never queue frames faster than the server can process them.
+            if (this._streamActive[station]) {
+              this._sendNextFrame(station);
             }
           } catch (_) {}
         };
@@ -776,9 +785,24 @@ class Component extends DCLogic {
     tryConnect();
   }
 
+  _sendNextFrame(i) {
+    if (!this._streamActive[i]) return;
+    if (!this.swapWs || this.swapWs.readyState !== WebSocket.OPEN) return;
+    const st = this.state.stations[i];
+    if (!st) return;
+    const subj = this.subjects[st.subjectIdx];
+    if (!subj) return;
+    const frame = this.captureFrame(i);
+    if (!frame) return;
+    try {
+      this.swapWs.send(JSON.stringify({ subject: subj.id, frame: frame.src.split(',')[1], station: i, first: false }));
+    } catch (_) {}
+  }
+
   componentWillUnmount() {
     cancelAnimationFrame(this._mainRaf);
     this._rafs.forEach(r => r && cancelAnimationFrame(r));
+    this._streamActive = [false, false, false, false];
     this.streamTimers.forEach((t, i) => { if (t) { clearInterval(t); this.streamTimers[i] = null; } });
     clearInterval(this.detectTimer);
     clearTimeout(this._swapReconnect);
@@ -926,7 +950,8 @@ class Component extends DCLogic {
   trigger(i) {
     if (this.state.stations[i].phase === 'scanning') return;
 
-    // Stop any existing stream for this station before starting new one
+    // Stop any existing stream for this station
+    this._streamActive[i] = false;
     if (this.streamTimers[i]) { clearInterval(this.streamTimers[i]); this.streamTimers[i] = null; }
 
     const subjectIdx = this.pickSubject(i);
@@ -943,21 +968,18 @@ class Component extends DCLogic {
     this.captures[i] = captured;
     this._scanSubjects[i] = subj.id;
 
-    // Send a live frame to the swap server, flagging the first as the neutral reference
-    const sendLiveFrame = (first = false) => {
-      if (!this.swapWs || this.swapWs.readyState !== WebSocket.OPEN) return;
+    // Send the first frame (neutral reference for LivePortrait) and mark active.
+    // Subsequent frames are sent in onmessage after each server response so we
+    // never queue frames faster than the server can process them (flow control).
+    this._streamActive[i] = true;
+    if (this.swapWs && this.swapWs.readyState === WebSocket.OPEN) {
       const frame = this.captureFrame(i);
-      if (!frame) return;
-      try {
-        this.swapWs.send(JSON.stringify({ subject: subj.id, frame: frame.src.split(',')[1], station: i, first }));
-      } catch (_) {}
-    };
-
-    // Send first frame immediately (neutral reference for LivePortrait)
-    sendLiveFrame(true);
-
-    // Stream subsequent frames every 150 ms for live reenactment
-    this.streamTimers[i] = setInterval(() => sendLiveFrame(false), 150);
+      if (frame) {
+        try {
+          this.swapWs.send(JSON.stringify({ subject: subj.id, frame: frame.src.split(',')[1], station: i, first: true }));
+        } catch (_) {}
+      }
+    }
 
     const stations = this.state.stations.slice();
     stations[i] = { phase: 'scanning', t: 0, subjectIdx };
@@ -973,6 +995,7 @@ class Component extends DCLogic {
       const t = (now - this.t0[i]) / 1000;
       if (t >= TOTAL) {
         // Stop live streaming when the scan cycle ends
+        this._streamActive[i] = false;
         if (this.streamTimers[i]) { clearInterval(this.streamTimers[i]); this.streamTimers[i] = null; }
         this._scanSubjects[i] = null;
         const stations = this.state.stations.slice();
