@@ -23,6 +23,10 @@
     75% {transform:scale(1.004) translate(0px,0.5px) rotate(0.06deg);}
     100%{transform:scale(1.000) translate(0px,0px) rotate(0deg);}
   }
+  @keyframes winkEyelid {
+    0%, 78%, 100% { transform: scaleY(0); }
+    83%, 93%      { transform: scaleY(1); }
+  }
 </style>
 </helmet>
 
@@ -90,6 +94,7 @@
             {{ p.captureEl }}
             <img src="{{ p.portraitSrc }}" alt="" style="{{ p.portraitBlendStyle }}" />
             {{ p.swapEl }}
+            {{ p.winkEl }}
             <div style="{{ p.detectOverlayStyle }}">
              <div style="position:absolute;bottom:0;left:0;right:0;height:3px;overflow:hidden;"><div style="{{ p.detectBarStyle }}"></div></div>
              <div style="position:absolute;bottom:10px;left:0;right:0;text-align:center;font-family:'Space Mono',monospace;font-size:8px;letter-spacing:1.5px;color:rgba(236,234,227,0.55);">{{ p.detectLabel }}</div>
@@ -155,11 +160,11 @@
            <span></span>
           </div>
           <div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;"><span style="font-size:15px;">Cultural Association</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">24.3%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:92%;height:100%;background:#14130F;"></div></div></div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;background:#E8E4DA;"><span style="font-size:15px;">Public Visibility</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">21.3%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:82%;height:100%;background:#14130F;"></div></div></div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;"><span style="font-size:15px;">Historical Reference</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">18.7%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:72%;height:100%;background:#14130F;"></div></div></div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;background:#E8E4DA;"><span style="font-size:15px;">Community Attribution</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">14.2%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:55%;height:100%;background:#14130F;"></div></div></div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;"><span style="font-size:15px;">Behavioural Signals</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">11.6%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:44%;height:100%;background:#14130F;"></div></div></div>
+           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;"><span style="font-size:15px;">Cultural Association</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">24.3%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw92 }};height:100%;background:#14130F;"></div></div></div>
+           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;background:#E8E4DA;"><span style="font-size:15px;">Public Visibility</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">21.3%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw82 }};height:100%;background:#14130F;"></div></div></div>
+           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;"><span style="font-size:15px;">Historical Reference</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">18.7%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw72 }};height:100%;background:#14130F;"></div></div></div>
+           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;background:#E8E4DA;"><span style="font-size:15px;">Community Attribution</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">14.2%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw55 }};height:100%;background:#14130F;"></div></div></div>
+           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;"><span style="font-size:15px;">Behavioural Signals</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">11.6%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw44 }};height:100%;background:#14130F;"></div></div></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 60px 160px;padding:14px 20px;border-top:1px solid #14130F;"><span style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;">TOTAL</span><span style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;text-align:right;">100%</span><span></span></div>
          </div>
@@ -173,11 +178,11 @@
            <span></span>
           </div>
           <div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;"><span style="font-size:15px;">▧ Historical Records</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">42%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:95%;height:100%;background:#14130F;"></div></div></div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;background:#E8E4DA;"><span style="font-size:15px;">▸ Public Reputation</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">28%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:67%;height:100%;background:#14130F;"></div></div></div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;"><span style="font-size:15px;">● Cultural Memory</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">17%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:43%;height:100%;background:#14130F;"></div></div></div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;background:#E8E4DA;"><span style="font-size:15px;">⌘ Community Data</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">9%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:22%;height:100%;background:#14130F;"></div></div></div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;"><span style="font-size:15px;">? Unknown</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">4%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:11%;height:100%;background:#14130F;"></div></div></div>
+           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;"><span style="font-size:15px;">▧ Historical Records</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">42%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw95 }};height:100%;background:#14130F;"></div></div></div>
+           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;background:#E8E4DA;"><span style="font-size:15px;">▸ Public Reputation</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">28%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw67 }};height:100%;background:#14130F;"></div></div></div>
+           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;"><span style="font-size:15px;">● Cultural Memory</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">17%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw43 }};height:100%;background:#14130F;"></div></div></div>
+           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;background:#E8E4DA;"><span style="font-size:15px;">⌘ Community Data</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">9%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw22 }};height:100%;background:#14130F;"></div></div></div>
+           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;"><span style="font-size:15px;">? Unknown</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">4%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw11 }};height:100%;background:#14130F;"></div></div></div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 60px 160px;padding:14px 20px;border-top:1px solid #14130F;"><span style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;">TOTAL</span><span style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;text-align:right;">100%</span><span></span></div>
          </div>
@@ -1219,9 +1224,30 @@ class Component extends DCLogic {
           transformOrigin:'center 30%',
         }
       });
+      // Eyelid that winks once the viewer has had a moment to appreciate the swap.
+      // Positioned over the subject's left eye (viewer's right, ~28% from top).
+      o.winkEl = h('div', {
+        key: 'wink',
+        style: {
+          position:'absolute', top:'26%', left:'52%', width:'22%', height:'8%',
+          background:'linear-gradient(to bottom, #c8bfb0 0%, #b0a090 100%)',
+          borderRadius:'0 0 55% 55%',
+          pointerEvents:'none',
+          transformOrigin:'center top',
+          animation:'winkEyelid 5s 2.5s infinite',
+          zIndex:4,
+        }
+      });
     } else {
       o.swapEl = null;
+      o.winkEl = null;
     }
+
+    // ---- Bar animation: fills from 0→target as the card is revealed ----
+    const barProg = live ? 0 : clamp(seg(18.0, 20.0, outCubic), 0, 1);
+    const bw = (pct) => `${(pct * barProg).toFixed(1)}%`;
+    o.bw92 = bw(92); o.bw82 = bw(82); o.bw72 = bw(72); o.bw55 = bw(55); o.bw44 = bw(44);
+    o.bw95 = bw(95); o.bw67 = bw(67); o.bw43 = bw(43); o.bw22 = bw(22); o.bw11 = bw(11);
 
     // ---- Detection overlay: shown during idle, hidden once scanning starts ----
     const detP = det.prog || 0;
