@@ -10,1582 +10,849 @@
 <helmet>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,800;1,900&family=Spline+Sans+Mono:wght@400;500&family=Special+Elite&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Special+Elite&family=Archivo:wght@700;800&display=swap" rel="stylesheet">
 <style>
-  *{box-sizing:border-box;}
-  html,body{margin:0;padding:0;background:#08080a;}
-  @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
-  @keyframes rainbowShift{to{background-position:200% 0}}
-  @keyframes portraitFloat{
-    0%  {transform:scale(1.000) translate(0px,0px) rotate(0deg);}
-    25% {transform:scale(1.005) translate(-1px,-1.5px) rotate(0.12deg);}
-    50% {transform:scale(1.008) translate(1px,-1px) rotate(-0.08deg);}
-    75% {transform:scale(1.004) translate(0px,0.5px) rotate(0.06deg);}
-    100%{transform:scale(1.000) translate(0px,0px) rotate(0deg);}
-  }
-  @keyframes winkEyelid {
-    0%, 78%, 100% { transform: scaleY(0); }
-    83%, 93%      { transform: scaleY(1); }
-  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; background:#070404; }
+  body{ overflow:hidden; }
+  @keyframes blink { 0%,48%{opacity:1} 49%,100%{opacity:0} }
+  @keyframes wave { 0%,100%{transform:scaleY(.25)} 50%{transform:scaleY(1)} }
+  @keyframes bgscan { 0%{top:-12%} 100%{top:104%} }
+  @keyframes thumbscan { 0%{top:-8%} 100%{top:104%} }
+  @keyframes softpulse { 0%,100%{opacity:.35} 50%{opacity:1} }
+  @keyframes flick { 0%,100%{opacity:.5} 50%{opacity:.85} }
+  @keyframes ping { 0%{transform:scale(.5); opacity:.85} 70%,100%{transform:scale(2.6); opacity:0} }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@0.4.1633559619/face_mesh.js" crossorigin="anonymous"></script>
 </helmet>
 
-<div style="position:fixed;inset:0;background:radial-gradient(circle at 50% 38%,#1c1c1e,#0a0a0b 72%);display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:'Archivo',sans-serif;">
- <div style="{{ stageStyle }}">
-  <div style="{{ stageInnerStyle }}">
+<div style="position:fixed; inset:0; width:100vw; height:100vh; background:#070404; overflow:hidden;">
+<div ref="{{ stageRef }}" style="position:absolute; left:50%; top:50%; width:3840px; height:2160px; transform:translate(-50%,-50%) scale(0.25); transform-origin:center center; display:flex; flex-direction:row; gap:20px; background:#070404;">
 
-   <sc-for list="{{ panels }}" as="p" hint-placeholder-count="1">
-    <!-- one 1040×1560 card per station -->
-    <div style="{{ p.shudderStyle }}">
-     <div style="position:relative;width:1040px;height:1560px;background:#ECEAE3;color:#14130F;box-shadow:0 30px 90px rgba(0,0,0,0.6);font-family:'Archivo',sans-serif;">
+  <sc-for list="{{ panels }}" as="p" hint-placeholder-count="4">
+  <div style="position:relative; width:945px; height:2160px; flex:none; background:#0b0707; overflow:hidden; display:flex; flex-direction:column;">
 
-      <!-- double border: outer at card edge, inner 6px inset -->
-      <div style="position:absolute;inset:0;border:1px solid #14130F;padding:6px;">
-       <div style="{{ p.cardContentStyle }}">
-
-        <!-- HEADER -->
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-         <div>
-          <div style="font-weight:900;font-size:44px;line-height:0.92;letter-spacing:-0.01em;display:inline-block;transform:scaleX(0.93);transform-origin:left;">SUBJECT&nbsp;ANALYSIS&nbsp;REPORT</div>
-          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.04em;margin-top:10px;color:#3a3833;">FILE ID: {{ p.subjFileId }}&nbsp;&nbsp;&nbsp;&nbsp;SUBJECT: {{ p.subjLine }}&nbsp;&nbsp;&nbsp;&nbsp;DATE: {{ p.subjDate }}</div>
-         </div>
-         <div style="text-align:right;">
-          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.04em;color:#3a3833;">RECOGNITION ENGINE v.7.3.1</div>
-          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.04em;color:#3a3833;">BUREAU OF CULTURAL PATTERN ASSESSMENT</div>
-          <div style="font-family:'Space Mono',monospace;font-size:9px;letter-spacing:0.06em;color:#3a3833;margin-bottom:9px;opacity:0.55;">FORM RE-7731-B</div>
-          <div style="width:230px;height:34px;margin-left:auto;background:repeating-linear-gradient(90deg,#14130F 0 2px,transparent 2px 4px,#14130F 4px 5px,transparent 5px 9px,#14130F 9px 12px,transparent 12px 14px,#14130F 14px 15px,transparent 15px 18px);"></div>
-         </div>
-        </div>
-        <div style="height:2px;background:#14130F;margin-top:18px;"></div>
-
-        <!-- IDENTITY BAND -->
-        <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:26px;">
-         <div style="position:relative;min-height:110px;">
-          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.32em;color:#3a3833;">IDENTIFIED SUBJECT</div>
-          <div style="{{ p.identityRevealStyle }}">{{ p.subjectDisplay }}</div>
-         </div>
-         <div style="text-align:right;font-family:'Space Mono',monospace;font-size:12.5px;line-height:1.85;letter-spacing:0.03em;color:#14130F;padding-bottom:6px;">
-          <div>{{ p.metaLine1 }}</div>
-          <div>{{ p.metaLine2 }}</div>
-          <div>{{ p.metaLine3 }}</div>
-         </div>
-        </div>
-        <div style="height:1px;background:#14130F;margin-top:20px;"></div>
-
-        <!-- MAIN ROW: scan rail + photo + metrics -->
-        <div style="display:flex;gap:34px;margin-top:26px;">
-
-         <!-- scan rail -->
-         <div style="width:42px;display:flex;flex-direction:column;align-items:flex-start;">
-          <div style="width:18px;height:300px;background:linear-gradient(#14130F,#ECEAE3);border:1px solid #14130F;"></div>
-          <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.04em;color:#3a3833;margin-top:12px;line-height:1.5;">SCAN<br>DEPTH<br>{{ p.scanDepthText }}%</div>
-         </div>
-
-         <!-- photo / face window -->
-         <div style="width:300px;flex:none;">
-          <div style="position:relative;padding:14px;">
-           <div style="position:absolute;top:0;left:0;width:26px;height:26px;border-top:2px solid #14130F;border-left:2px solid #14130F;"></div>
-           <div style="position:absolute;top:0;right:0;width:26px;height:26px;border-top:2px solid #14130F;border-right:2px solid #14130F;"></div>
-           <div style="position:absolute;bottom:0;left:0;width:26px;height:26px;border-bottom:2px solid #14130F;border-left:2px solid #14130F;"></div>
-           <div style="position:absolute;bottom:0;right:0;width:26px;height:26px;border-bottom:2px solid #14130F;border-right:2px solid #14130F;"></div>
-           <!-- Face window: idle = live video; scanning = developing portrait -->
-           <div style="{{ p.faceWinStyle }}">
-            <video muted autoplay playsinline ref="{{ p.videoRef }}" style="{{ p.videoStyle }}"></video>
-            {{ p.captureEl }}
-            <img src="{{ p.portraitSrc }}" alt="" style="{{ p.portraitBlendStyle }}" />
-            {{ p.swapEl }}
-            {{ p.winkEl }}
-            <div style="{{ p.detectOverlayStyle }}">
-             <div style="position:absolute;bottom:0;left:0;right:0;height:3px;overflow:hidden;"><div style="{{ p.detectBarStyle }}"></div></div>
-             <div style="position:absolute;bottom:10px;left:0;right:0;text-align:center;font-family:'Space Mono',monospace;font-size:8px;letter-spacing:1.5px;color:rgba(236,234,227,0.55);">{{ p.detectLabel }}</div>
-             <div style="{{ p.detectRingStyle }}"></div>
-            </div>
-            <sc-if value="{{ p.camError }}" hint-placeholder-val="{{ false }}">
-             <div style="position:absolute;bottom:12px;left:0;right:0;text-align:center;font-family:'Space Mono',monospace;font-size:8px;color:#9a948a;letter-spacing:1px;">SUBJECT FEED // NO SIGNAL — MANUAL TRIGGER</div>
-            </sc-if>
-            <div style="{{ p.scanGridStyle }}"></div>
-            <div style="{{ p.scanTrailStyle }}"></div>
-            <div style="{{ p.scanLineStyle }}"></div>
-           </div>
-          </div>
-          <div style="font-family:'Space Mono',monospace;font-size:10.5px;letter-spacing:0.04em;color:#3a3833;line-height:1.7;margin-top:10px;display:flex;justify-content:space-between;">
-           <span>IMG&nbsp;8192&nbsp;×&nbsp;10240</span><span>MODE&nbsp;B&amp;W</span><span>SRC&nbsp;ARCHIVE</span>
-          </div>
-         </div>
-
-         <!-- metrics -->
-         <div style="flex:1;display:flex;flex-direction:column;">
-          <!-- SCAN STATUS -->
-          <div style="border:1.5px solid #14130F;flex:none;">
-           <div style="background:#14130F;color:#ECEAE3;font-family:'Space Mono',monospace;font-size:11px;font-weight:700;letter-spacing:0.1em;padding:7px 14px;">SCAN STATUS</div>
-           <div style="padding:16px 22px 18px;">
-            <div style="display:flex;align-items:center;gap:18px;border-bottom:1px solid #C9C6BC;padding-bottom:16px;margin-bottom:16px;">
-             <div style="width:64px;height:64px;border-radius:50%;background:#238649;color:white;font-size:46px;text-align:center;line-height:64px;flex:none;">✓</div>
-             <div>
-              <div style="font-weight:900;font-size:46px;line-height:0.95;letter-spacing:4px;">{{ p.bigStatus }}</div>
-              <div style="font-family:'Space Mono',monospace;font-size:12px;color:#3a3833;margin-top:4px;">All available data processed</div>
-             </div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:22px;">
-             <div style="border-right:1px dashed #999;padding-right:22px;">
-              <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;font-weight:700;margin-bottom:10px;">COMPREHENSIVE SCORE</div>
-              <div><span style="font-weight:900;font-size:42px;letter-spacing:-0.01em;">{{ p.confText }}</span><span style="font-weight:800;font-size:20px;">%</span></div>
-              <div style="height:10px;background:#D6D3C9;margin-top:9px;"><div style="{{ p.confBarStyle }}"></div></div>
-              <div style="display:flex;justify-content:space-between;font-family:'Space Mono',monospace;font-size:9px;color:#3a3833;margin-top:3px;"><span>0%</span><span>100%</span></div>
-             </div>
-             <div>
-              <div style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;font-weight:700;margin-bottom:10px;">PREDICTION INTERVAL</div>
-              <div><span style="font-weight:900;font-size:42px;letter-spacing:-0.01em;">{{ p.reflText }}</span><span style="font-weight:800;font-size:20px;">%</span></div>
-              <div style="height:10px;background:#D6D3C9;margin-top:9px;"><div style="{{ p.reflBarStyle }}"></div></div>
-              <div style="display:flex;justify-content:space-between;font-family:'Space Mono',monospace;font-size:9px;color:#3a3833;margin-top:3px;"><span>0%</span><span>100%</span></div>
-             </div>
-            </div>
-           </div>
-          </div>
-          <!-- STAMP fills remaining space below SCAN STATUS -->
-          <div style="flex:1;position:relative;overflow:visible;z-index:10;margin-top:12px;">{{ p.bandStampEl }}</div>
-         </div>
-
-        </div>
-
-        <!-- TABLES BAND -->
-        <div style="{{ p.tablesStyle }}">
-
-         <!-- PRIMARY CONTRIBUTING VARIABLES -->
-         <div style="border:1.5px solid #14130F;">
-          <div style="background:#14130F;color:#ECEAE3;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;letter-spacing:0.1em;padding:10px 18px;">PRIMARY CONTRIBUTING VARIABLES</div>
-          <div style="display:grid;grid-template-columns:1fr 60px 160px;padding:11px 20px;border-bottom:1px solid #14130F;">
-           <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.1em;color:#3a3833;">VARIABLE</span>
-           <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.1em;color:#3a3833;text-align:right;">WEIGHT</span>
-           <span></span>
-          </div>
-          <div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;"><span style="font-size:15px;">Cultural Association</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">24.3%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw92 }};height:100%;background:#14130F;"></div></div></div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;background:#E8E4DA;"><span style="font-size:15px;">Public Visibility</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">21.3%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw82 }};height:100%;background:#14130F;"></div></div></div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;"><span style="font-size:15px;">Historical Reference</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">18.7%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw72 }};height:100%;background:#14130F;"></div></div></div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;background:#E8E4DA;"><span style="font-size:15px;">Community Attribution</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">14.2%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw55 }};height:100%;background:#14130F;"></div></div></div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;"><span style="font-size:15px;">Behavioural Signals</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">11.6%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw44 }};height:100%;background:#14130F;"></div></div></div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 60px 160px;padding:14px 20px;border-top:1px solid #14130F;"><span style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;">TOTAL</span><span style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;text-align:right;">100%</span><span></span></div>
-         </div>
-
-         <!-- CONFIDENCE SOURCE ANALYSIS -->
-         <div style="border:1.5px solid #14130F;">
-          <div style="background:#14130F;color:#ECEAE3;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;letter-spacing:0.1em;padding:10px 18px;">CONFIDENCE SOURCE ANALYSIS</div>
-          <div style="display:grid;grid-template-columns:1fr 60px 160px;padding:11px 20px;border-bottom:1px solid #14130F;">
-           <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.1em;color:#3a3833;">SOURCE</span>
-           <span style="font-family:'Space Mono',monospace;font-size:10px;letter-spacing:0.1em;color:#3a3833;text-align:right;">CONTRIBUTION</span>
-           <span></span>
-          </div>
-          <div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;"><span style="font-size:15px;">▧ Historical Records</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">42%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw95 }};height:100%;background:#14130F;"></div></div></div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;background:#E8E4DA;"><span style="font-size:15px;">▸ Public Reputation</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">28%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw67 }};height:100%;background:#14130F;"></div></div></div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;"><span style="font-size:15px;">● Cultural Memory</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">17%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw43 }};height:100%;background:#14130F;"></div></div></div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;border-bottom:1px solid #DDD8CF;background:#E8E4DA;"><span style="font-size:15px;">⌘ Community Data</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">9%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw22 }};height:100%;background:#14130F;"></div></div></div>
-           <div style="display:grid;grid-template-columns:1fr 60px 160px;align-items:center;padding:15px 20px;"><span style="font-size:15px;">? Unknown</span><span style="font-family:'Space Mono',monospace;font-size:13px;text-align:right;">4%</span><div style="height:12px;background:#D6D3C9;margin-left:14px;"><div style="width:{{ p.bw11 }};height:100%;background:#14130F;"></div></div></div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 60px 160px;padding:14px 20px;border-top:1px solid #14130F;"><span style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;">TOTAL</span><span style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;text-align:right;">100%</span><span></span></div>
-         </div>
-
-        </div>
-
-        <!-- FOOTER: NOTICE -->
-        <div style="display:grid;grid-template-columns:58px 1fr 290px;gap:18px;align-items:center;border:1.5px solid #b93324;margin-top:14px;padding:18px 22px;color:#b93324;flex:none;">
-         <div style="width:52px;height:52px;background:#b93324;color:white;clip-path:polygon(50% 0,100% 100%,0 100%);display:flex;align-items:flex-end;justify-content:center;font-size:32px;font-weight:900;padding-bottom:5px;">!</div>
-         <div>
-          <div style="font-family:'Space Mono',monospace;font-weight:700;letter-spacing:2px;font-size:12px;margin-bottom:5px;">NOTICE</div>
-          <div style="color:#14130F;font-size:11.5px;line-height:1.4;">Classification results may reflect cultural assumptions, archival gaps, historical perspective, sampling bias, public opinion, and unknown variables. Results remain legally nonbinding.</div>
-         </div>
-         <div style="border-left:1px dashed #999;padding-left:22px;">
-          <div style="font-family:'Space Mono',monospace;font-size:9.5px;font-weight:700;letter-spacing:1px;color:#14130F;margin-bottom:6px;">REVIEW STATUS</div>
-          <div style="font-family:'Space Mono',monospace;font-size:16px;font-weight:700;letter-spacing:1px;color:#b93324;margin-bottom:6px;">NO REVIEW CONDUCTED</div>
-          <div style="font-family:'Space Mono',monospace;font-size:10px;color:#14130F;letter-spacing:0.5px;">REVIEW REQUIRED: N/A</div>
-         </div>
-        </div>
-
-       </div>
+    <!-- BACKGROUND FEED LAYER -->
+    <div style="position:absolute; inset:0; z-index:0; overflow:hidden;">
+      <div style="position:absolute; inset:0; background:radial-gradient(ellipse at 50% 36%, #241312 0%, #0a0605 72%);"></div>
+      <video ref="{{ p.bgRef }}" autoplay playsinline style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:grayscale(100%) contrast(1.08) brightness(.5); opacity:.5;"></video>
+      <div style="position:absolute; inset:0; background:radial-gradient(ellipse at 50% 40%, rgba(150,40,32,.28) 0%, rgba(10,6,5,.0) 58%); mix-blend-mode:screen;"></div>
+      <div style="position:absolute; inset:0; background:repeating-linear-gradient(0deg, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 2px, rgba(0,0,0,.32) 3px, rgba(0,0,0,0) 4px); opacity:.5;"></div>
+      <div style="position:absolute; inset:0; box-shadow:inset 0 0 200px 60px rgba(6,4,4,.92);"></div>
+      <div style="position:absolute; left:0; right:0; height:150px; top:-12%; background:linear-gradient(180deg, rgba(217,67,57,0) 0%, rgba(217,67,57,.1) 50%, rgba(217,67,57,0) 100%); animation:bgscan 5.5s linear infinite;"></div>
+      <div style="position:absolute; top:30%; left:13%; width:74%; height:34%; z-index:1; opacity:.5;">
+        <div style="position:absolute; top:0; left:0; width:34px; height:34px; border-top:2px solid #d94339; border-left:2px solid #d94339;"></div>
+        <div style="position:absolute; top:0; right:0; width:34px; height:34px; border-top:2px solid #d94339; border-right:2px solid #d94339;"></div>
+        <div style="position:absolute; bottom:0; left:0; width:34px; height:34px; border-bottom:2px solid #d94339; border-left:2px solid #d94339;"></div>
+        <div style="position:absolute; bottom:0; right:0; width:34px; height:34px; border-bottom:2px solid #d94339; border-right:2px solid #d94339;"></div>
       </div>
-
-
-      <!-- colour flash on verdict slam -->
-      <div style="{{ p.flashStyle }}"></div>
-
-      <!-- LIVE OVERLAY: stays up through scanning, fades when portrait fully revealed -->
-      <div style="{{ p.liveOverlayStyle }}">
-       <!-- Camera video: fades out when scan fires -->
-       <video muted autoplay playsinline ref="{{ p.overlayVideoRef }}" style="{{ p.liveVideoFillStyle }}"></video>
-       <!-- Reenacted portrait: replaces live video once LivePortrait returns the first frame -->
-       <img src="{{ p.swapFillSrc }}" alt="" style="{{ p.swapFillStyle }}" />
-       <!-- IDLE CONTENT: fades out when scan fires -->
-       <div style="{{ p.overlayIdleStyle }}">
-        <div style="position:absolute;top:6%;left:0;right:0;text-align:center;pointer-events:none;">
-         <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:3px;color:rgba(241,239,231,0.4);margin-bottom:14px;">RECOGNITION ENGINE v.7.3.1</div>
-         <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:60px;line-height:0.9;color:#f1efe7;">AWAITING<br>SUBJECT</div>
-        </div>
-        <div style="position:absolute;left:36%;top:26%;width:22px;height:22px;border-top:2px solid rgba(241,239,231,0.45);border-left:2px solid rgba(241,239,231,0.45);pointer-events:none;"></div>
-        <div style="position:absolute;right:36%;top:26%;width:22px;height:22px;border-top:2px solid rgba(241,239,231,0.45);border-right:2px solid rgba(241,239,231,0.45);pointer-events:none;"></div>
-        <div style="position:absolute;left:36%;top:49%;width:22px;height:22px;border-bottom:2px solid rgba(241,239,231,0.45);border-left:2px solid rgba(241,239,231,0.45);pointer-events:none;"></div>
-        <div style="position:absolute;right:36%;top:49%;width:22px;height:22px;border-bottom:2px solid rgba(241,239,231,0.45);border-right:2px solid rgba(241,239,231,0.45);pointer-events:none;"></div>
-        <div style="{{ p.liveRingStyle }}"></div>
-        <div style="position:absolute;top:56%;left:8%;right:8%;text-align:center;pointer-events:none;">
-         <p style="margin:0 0 8px;font-family:'Archivo',sans-serif;font-size:13px;line-height:1.5;color:#f1efe7;font-weight:600;">Step into the frame. The engine will record your face,<br>decide what you are, and file the verdict.</p>
-         <p style="margin:0 0 20px;font-family:'Archivo',sans-serif;font-size:11.5px;line-height:1.45;color:rgba(241,239,231,0.55);">You do not get to see the criteria.<br>You do not get to disagree.</p>
-         <div style="width:40%;margin:0 auto 18px;height:1px;background:rgba(241,239,231,0.18);"></div>
-         <div style="{{ p.liveMsgStyle }}">{{ p.liveMsg }}</div>
-        </div>
-       </div>
-       <!-- SCAN CONTENT: portrait reveal + scan FX + stats, fades in when scan fires -->
-       <div style="{{ p.overlayScanContentStyle }}">
-        <!-- Face targeting brackets — contract as scan locks in -->
-        <div style="{{ p.faceBracketTL }}"></div>
-        <div style="{{ p.faceBracketTR }}"></div>
-        <div style="{{ p.faceBracketBL }}"></div>
-        <div style="{{ p.faceBracketBR }}"></div>
-        <div style="{{ p.overlayScanGridStyle }}"></div>
-        <div style="{{ p.overlayScanTrailStyle }}"></div>
-        <div style="{{ p.overlayScanLineStyle }}"></div>
-        <!-- HOLD STILL banner: appears briefly at scan start -->
-        <div style="{{ p.holdStillStyle }}">
-         <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:52px;line-height:1;color:#f1efe7;letter-spacing:2px;">HOLD STILL</div>
-         <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:3px;color:rgba(241,239,231,0.55);margin-top:10px;">DO NOT MOVE</div>
-        </div>
-        <!-- TOP STATS BANNER -->
-        <div style="position:absolute;top:0;left:0;right:0;background:linear-gradient(to bottom,rgba(10,10,11,0.55) 0%,rgba(10,10,11,0.18) 52%,transparent 100%);padding:26px 30px 100px;pointer-events:none;">
-         <div style="font-family:'Spline Sans Mono',monospace;font-size:12px;letter-spacing:3px;color:rgba(241,239,231,0.38);margin-bottom:8px;">RECOGNITION ENGINE v.7.3.1</div>
-         <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:10px;">
-          <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:52px;line-height:1;color:#f1efe7;">{{ p.overlayScanStatus }}</div>
-          <div style="{{ p.overlayScanBlinkStyle }}">●</div>
-         </div>
-         <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-          <div style="flex:1;height:5px;border:1px solid rgba(241,239,231,0.2);position:relative;background:rgba(241,239,231,0.04);">
-           <div style="{{ p.overlayProgressFillStyle }}"></div>
-          </div>
-          <span style="font-family:'Spline Sans Mono',monospace;font-size:13px;color:#f1efe7;min-width:36px;text-align:right;">{{ p.overlayProgressPct }}</span>
-         </div>
-         <div style="{{ p.overlayScanMsgStyle }}">▸ {{ p.overlayScanMsg }}</div>
-         <div style="display:flex;gap:40px;margin-top:18px;">
-          <div>
-           <div style="font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:1.5px;color:rgba(241,239,231,0.38);margin-bottom:2px;">CONFIDENCE</div>
-           <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:36px;line-height:1;color:#f1efe7;">{{ p.overlayConfText }}<span style="font-size:20px;">%</span></div>
-          </div>
-          <div>
-           <div style="font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:1.5px;color:rgba(241,239,231,0.38);margin-bottom:2px;">REFLECTION</div>
-           <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:36px;line-height:1;color:#f1efe7;">{{ p.overlayReflText }}<span style="font-size:20px;">%</span></div>
-          </div>
-         </div>
-        </div>
-        <!-- CHARACTERISTICS ticking in during scan -->
-        <div style="{{ p.overlayCharsWrapStyle }}">
-         <div style="font-family:'Spline Sans Mono',monospace;font-size:14px;letter-spacing:2px;color:rgba(241,239,231,0.3);margin-bottom:14px;">OBSERVED CHARACTERISTICS</div>
-         <sc-for list="{{ p.overlayCharItems }}" as="item">
-          <div style="{{ item.style }}">
-           <div style="display:flex;gap:14px;align-items:baseline;margin-bottom:16px;">
-            <span style="{{ item.tickStyle }}">✓</span>
-            <span style="font-family:'Special Elite',serif;font-size:30px;line-height:1.35;color:#f1efe7;text-shadow:0 2px 8px rgba(0,0,0,1),0 0 20px rgba(0,0,0,0.95);">{{ item.text }}</span>
-           </div>
-          </div>
-         </sc-for>
-        </div>
-        <!-- CAMERA THUMBNAIL — lower right with bouncing scan bar -->
-        <div style="{{ p.overlayThumbWrapStyle }}">
-         <video muted autoplay playsinline ref="{{ p.overlayThumbRef }}" style="{{ p.overlayThumbVideoStyle }}"></video>
-         <img src="{{ p.overlayThumbPortraitSrc }}" alt="" style="{{ p.overlayThumbPortraitStyle }}" />
-         <div style="{{ p.overlayThumbRollStyle }}"></div>
-         <div style="{{ p.overlayThumbRollStyle2 }}"></div>
-         <canvas ref="{{ p.overlayThumbNoiseRef }}" width="72" height="95" style="{{ p.overlayThumbNoiseStyle }}"></canvas>
-         <div style="{{ p.overlayThumbScanStyle }}"></div>
-        </div>
-        <!-- BOTTOM DATA STRIP -->
-        <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(10,10,11,0.5) 0%,transparent 100%);padding:55px 30px 20px;pointer-events:none;">
-         <div style="display:flex;justify-content:space-between;align-items:flex-end;">
-          <div style="font-family:'Spline Sans Mono',monospace;font-size:13px;letter-spacing:0.8px;color:rgba(241,239,231,0.4);line-height:1.8;">
-           <div>MATCHING AGAINST&nbsp;&nbsp;<span style="color:rgba(241,239,231,0.75);">{{ p.overlayDatasetSrc }}</span></div>
-           <div>CASE REF&nbsp;&nbsp;<span style="color:rgba(241,239,231,0.75);">{{ p.subjFileId }}</span></div>
-          </div>
-          <div style="font-family:'Spline Sans Mono',monospace;font-size:13px;letter-spacing:0.8px;color:rgba(241,239,231,0.4);text-align:right;line-height:1.8;">
-           <div>ELAPSED&nbsp;&nbsp;<span style="color:rgba(241,239,231,0.75);">{{ p.overlayElapsed }}</span></div>
-           <div style="{{ p.overlaySensorStyle }}">● SENSOR ACTIVE</div>
-          </div>
-         </div>
-        </div>
-       </div>
-      </div>
-     </div>
     </div>
-   </sc-for>
+
+    <!-- CONTENT -->
+    <div style="position:relative; z-index:2; flex:1; display:flex; flex-direction:column; padding:42px 40px 38px 40px;">
+
+      <div style="display:flex; justify-content:space-between; align-items:baseline; font-size:12px; letter-spacing:.3em; color:rgba(233,227,221,.45); margin-bottom:14px;">
+        <span>RECOGNITION ENGINE v.7.3.1</span>
+        <span style="color:#d94339;">STATION {{ p.id }}</span>
+      </div>
+
+      <div style="display:flex; align-items:flex-end; gap:22px;">
+        <h1 style="margin:0; font-family:'Archivo',sans-serif; font-weight:800; font-size:52px; letter-spacing:.01em; line-height:.86; color:#f0eae5;">SCANNING</h1>
+        <div style="flex:1; display:flex; align-items:center; gap:14px; padding-bottom:10px;">
+          <div style="flex:1; height:4px; background:rgba(217,67,57,.16); position:relative;">
+            <div style="position:absolute; left:0; top:0; height:100%; width:88%; background:#d94339; box-shadow:0 0 10px rgba(217,67,57,.6);"></div>
+          </div>
+          <span style="font-size:13px; color:rgba(233,227,221,.7);">88%</span>
+        </div>
+      </div>
+
+      <div style="margin-top:20px; display:flex; gap:50px;">
+        <div>
+          <div style="font-size:11px; letter-spacing:.25em; color:rgba(233,227,221,.4);">CONFIDENCE</div>
+          <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:28px; color:#f0eae5; margin-top:5px;">{{ p.conf }}<span style="font-size:14px; color:rgba(233,227,221,.55); margin-left:1px;">%</span></div>
+        </div>
+        <div>
+          <div style="font-size:11px; letter-spacing:.25em; color:rgba(233,227,221,.4);">REFLECTION</div>
+          <div style="font-family:'Archivo',sans-serif; font-weight:800; font-size:28px; color:#f0eae5; margin-top:5px;">{{ p.refl }}<span style="font-size:14px; color:rgba(233,227,221,.55); margin-left:1px;">%</span></div>
+        </div>
+      </div>
+
+      <div style="margin-top:24px; height:2px; background:linear-gradient(90deg, #d94339 0%, #d94339 58%, rgba(217,67,57,.18) 100%); box-shadow:0 0 12px rgba(217,67,57,.4);"></div>
+
+      <div style="margin-top:22px; display:flex; flex-direction:column;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:11px; letter-spacing:.3em; color:rgba(233,227,221,.42);">COGNITION STREAM</span>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div style="display:flex; align-items:flex-end; gap:4px; height:22px;">
+              <span style="width:3px; height:22px; background:#d94339; transform-origin:bottom; animation:wave 1.1s ease-in-out infinite; animation-delay:0s;"></span>
+              <span style="width:3px; height:22px; background:#d94339; transform-origin:bottom; animation:wave 1.1s ease-in-out infinite; animation-delay:-.16s;"></span>
+              <span style="width:3px; height:22px; background:#d94339; transform-origin:bottom; animation:wave 1.1s ease-in-out infinite; animation-delay:-.32s;"></span>
+              <span style="width:3px; height:22px; background:#d94339; transform-origin:bottom; animation:wave 1.1s ease-in-out infinite; animation-delay:-.48s;"></span>
+              <span style="width:3px; height:22px; background:#d94339; transform-origin:bottom; animation:wave 1.1s ease-in-out infinite; animation-delay:-.64s;"></span>
+              <span style="width:3px; height:22px; background:#d94339; transform-origin:bottom; animation:wave 1.1s ease-in-out infinite; animation-delay:-.8s;"></span>
+            </div>
+            <span style="font-size:12px; letter-spacing:.22em; color:#d94339; font-weight:700;">{{ p.stateLabel }}</span>
+          </div>
+        </div>
+
+        <div style="margin-top:24px; display:flex; flex-direction:column; gap:12px; font-size:24px; line-height:1.26; color:#ece6e1; min-height:200px;">
+          <sc-for list="{{ p.lines }}" as="ln" hint-placeholder-count="4">
+            <div style="display:flex; gap:12px; align-items:baseline;">
+              <span style="color:rgba(217,67,57,.6); font-family:'Space Mono',monospace; font-size:16px; flex:none;">&#9656;</span>
+              <span style="font-family:'Archivo',sans-serif; font-style:normal;">{{ ln.txt }}<sc-if value="{{ ln.caret }}" hint-placeholder-val="{{ false }}"><span style="display:inline-block; width:.5em; height:1em; background:#d94339; margin-left:4px; transform:translateY(.12em); animation:blink 1s steps(1) infinite;"></span></sc-if></span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="margin-top:26px; font-size:11px; letter-spacing:.3em; color:rgba(233,227,221,.4);">MAPPING MARKERS TO SUBJECT &#9656;</div>
+      </div>
+
+      <div style="margin-top:auto; padding-top:30px; display:flex; justify-content:space-between; align-items:flex-end; font-size:11px; letter-spacing:.18em;">
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div style="color:rgba(233,227,221,.4);">MATCHING AGAINST&nbsp;&nbsp;<span style="color:#cfc8c2;">SCENTED-CANDLE REVIEWS</span></div>
+          <div style="color:rgba(233,227,221,.4);">CASE REF&nbsp;&nbsp;<span style="color:#d94339;">{{ p.caseRef }}</span></div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:8px; text-align:right;">
+          <div style="color:rgba(233,227,221,.4);">ELAPSED&nbsp;&nbsp;<span style="color:#cfc8c2;">{{ p.elapsed }}</span></div>
+          <div style="display:flex; align-items:center; gap:7px; justify-content:flex-end; color:rgba(233,227,221,.5);"><span style="width:7px; height:7px; border-radius:50%; background:#d94339; animation:softpulse 1.4s ease-in-out infinite;"></span>SENSOR ACTIVE</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- FACE MAPPING OVERLAY -->
+    <div style="position:absolute; inset:0; z-index:3; pointer-events:none;">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute; inset:0; width:100%; height:100%; overflow:visible;">
+        <sc-for list="{{ p.links }}" as="k" hint-placeholder-count="5">
+          <line x1="{{ k.x1 }}" y1="{{ k.y1 }}" x2="{{ k.x2 }}" y2="{{ k.y2 }}" stroke="rgba(217,67,57,.5)" stroke-width="1" vector-effect="non-scaling-stroke"></line>
+        </sc-for>
+      </svg>
+
+      <sc-for list="{{ p.faceDots }}" as="d" hint-placeholder-count="5">
+        <div style="position:absolute; left:{{ d.x }}; top:{{ d.y }}; width:12px; height:12px; margin-left:-6px; margin-top:-6px;">
+          <div style="position:absolute; inset:0; border-radius:50%; background:#d94339; box-shadow:0 0 9px rgba(217,67,57,.95);"></div>
+          <div style="position:absolute; inset:0; border-radius:50%; border:1.5px solid #d94339; animation:ping 1.9s ease-out infinite;"></div>
+        </div>
+      </sc-for>
+
+      <sc-for list="{{ p.leftCallouts }}" as="c" hint-placeholder-count="3">
+        <div style="position:absolute; left:4%; top:{{ c.top }}; transform:translateY(-50%); display:flex; align-items:center; gap:10px; white-space:nowrap;">
+          <span style="width:9px; height:9px; border-radius:50%; background:#d94339; flex:none; box-shadow:0 0 6px rgba(217,67,57,.85);"></span>
+          <span style="font-family:'Space Mono',monospace; font-size:12px; letter-spacing:.08em; color:#e9e3dd; text-shadow:0 0 6px rgba(8,5,5,.95);">{{ c.name }}</span>
+          <span style="font-family:'Archivo',sans-serif; font-weight:800; font-size:14px; color:#d94339; flex:none;">{{ c.pct }}</span>
+        </div>
+      </sc-for>
+
+      <sc-for list="{{ p.rightCallouts }}" as="c" hint-placeholder-count="2">
+        <div style="position:absolute; right:4%; top:{{ c.top }}; transform:translateY(-50%); display:flex; align-items:center; justify-content:flex-end; gap:10px; white-space:nowrap;">
+          <span style="font-family:'Archivo',sans-serif; font-weight:800; font-size:14px; color:#d94339; flex:none;">{{ c.pct }}</span>
+          <span style="font-family:'Space Mono',monospace; font-size:12px; letter-spacing:.08em; color:#e9e3dd; text-shadow:0 0 6px rgba(8,5,5,.95);">{{ c.name }}</span>
+          <span style="width:9px; height:9px; border-radius:50%; background:#d94339; flex:none; box-shadow:0 0 6px rgba(217,67,57,.85);"></span>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- THUMBNAIL FEED -->
+    <div style="position:absolute; right:36px; bottom:92px; width:172px; height:132px; border:1px solid rgba(217,67,57,.5); overflow:hidden; background:#0a0605; z-index:4;">
+      <div style="position:absolute; inset:0; background:repeating-linear-gradient(135deg, rgba(217,67,57,.06) 0px, rgba(217,67,57,.06) 8px, transparent 8px, transparent 16px);"></div>
+      <video ref="{{ p.thumbRef }}" autoplay playsinline style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; filter:grayscale(100%) contrast(1.05) brightness(.85);"></video>
+      <div style="position:absolute; left:0; right:0; height:2px; top:-8%; background:#d94339; box-shadow:0 0 8px rgba(217,67,57,.8); animation:thumbscan 3.2s linear infinite;"></div>
+      <span style="position:absolute; top:6px; left:8px; font-size:9px; letter-spacing:.22em; color:#d94339; animation:flick 1.6s ease-in-out infinite;">&#9679; LIVE</span>
+    </div>
 
   </div>
- </div>
-</div>
+  </sc-for>
 
+</div>
+</div>
+</x-dc>
 <script data-dc-script>
 class Component extends DCLogic {
+  stageRef = React.createRef();
+  bgRefs = [React.createRef(), React.createRef(), React.createRef(), React.createRef()];
+  thumbRefs = [React.createRef(), React.createRef(), React.createRef(), React.createRef()];
+  state = { now: 0 };
 
-  /* ===================================================================== *
-   *  SUBJECTS                                                              *
-   *  portrait: full B&W photo (used for multiply-blend composite)         *
-   *  cutout: transparent-face PNG (fallback for subjects without portrait) *
-   * ===================================================================== */
   subjects = [
     {
-      id: 'warhol', enabled: true,
-      line: 'WARHOL, ANDY', fileId: 'AW-1928-0601', date: '05.06.2024', footer: 'ANDY WARHOL',
-      portrait: 'assets/warhol-portrait.jpeg',
-      cutout: 'assets/warhol-cutout.png',
-      confidence: 99.98, reflection: 98.7,
-      characteristics: ['Displays advanced understanding of image production','Demonstrates sustained interest in celebrity ecosystems','Maintains controlled emotional presentation','Repeatedly converts personal experience into cultural artefact','Identity appears partially self-constructed','Exhibits fascination with visibility','Human authenticity cannot be independently verified'],
-      classification: 'CULTURAL ICON', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'SURVEIL · CATALOGUE · DISMISS'
+      name: "ANDY WARHOL", caseRef: "AW-1928-0601", confidence: 99.98,
+      sentences: ["Hair anomaly detected.", "Expression remains low variance.", "Archive comparison returns repeated visual-production cluster.", "Confidence increased despite limited affect."],
+      markers: [
+        { name: "SILVER HAIR ARTIFICIALITY", v: 22 },
+        { name: "FACIAL AFFECT REDUCTION", v: 18 },
+        { name: "GAZE AVOIDANCE PATTERN", v: 14 },
+        { name: "BLACK CLOTHING DENSITY", v: 12 },
+        { name: "SURFACE FLATNESS PREFERENCE", v: 9 }
+      ]
     },
     {
-      id: 'haring', enabled: true,
-      line: 'HARING, KEITH', fileId: 'KH-1958-0504', date: '05.06.2024', footer: 'KEITH HARING',
-      portrait: 'assets/haring-portrait.jpeg',
-      cutout: 'assets/haring-cutout.png',
-      confidence: 99.94, reflection: 97.9,
-      characteristics: ['Produces high volumes of publicly legible imagery','Demonstrates compulsion toward repetition and pattern','Distributes work outside sanctioned institutional channels','Associates symbolic figures with collective movement','Engagement with public space exceeds permitted parameters','Motivations cannot be independently verified'],
-      classification: 'CULTURAL ICON', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'CONTAIN · WITHHOLD CARE'
+      name: "KEITH HARING", caseRef: "KH-1958-0504", confidence: 99.94,
+      sentences: ["Repeated symbolic forms detected.", "Public-surface association present.", "System accepts repetition as identity evidence.", "Confidence increased."],
+      markers: [
+        { name: "LINE REPETITION EXPOSURE", v: 21 },
+        { name: "PUBLIC WALL PROXIMITY", v: 17 },
+        { name: "FIGURE PATTERN DENSITY", v: 15 },
+        { name: "BODY OUTLINE SIMPLIFICATION", v: 12 },
+        { name: "MOTION GLYPH FREQUENCY", v: 10 }
+      ]
     },
     {
-      id: 'milk', enabled: true,
-      line: 'MILK, HARVEY', fileId: 'HM-1930-0522', date: '05.06.2024', footer: 'HARVEY MILK',
-      portrait: 'assets/milk-portrait.jpeg',
-      cutout: 'assets/milk-cutout.png',
-      confidence: 99.89, reflection: 98.2,
-      characteristics: ['Seeks access to civic and representative structures','Demonstrates capacity to organise dispersed populations','Communicates persuasively across demographic boundaries','Encourages assembly and collective visibility','Influence extends beyond assigned jurisdiction','Intentions cannot be independently verified'],
-      classification: 'PUBLIC FIGURE', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'REMOVE FROM OFFICE'
+      name: "HARVEY MILK", caseRef: "HM-1930-0522", confidence: 99.89,
+      sentences: ["Subject appears comfortable in public assembly.", "Multiple surrounding faces detected.", "Visibility exceeds private baseline.", "Confidence increased."],
+      markers: [
+        { name: "PUBLIC SMILE PERSISTENCE", v: 18 },
+        { name: "CIVIC SUIT COMPLIANCE", v: 15 },
+        { name: "CROWD PROXIMITY", v: 14 },
+        { name: "HAND GESTURE OPENNESS", v: 12 },
+        { name: "VISIBILITY POSTURE", v: 10 }
+      ]
     },
     {
-      id: 'turing', enabled: true,
-      line: 'TURING, ALAN', fileId: 'AT-1912-0623', date: '05.06.2024', footer: 'ALAN TURING',
-      portrait: 'assets/turing-portrait.jpeg',
-      cutout: 'assets/turing-cutout.png',
-      confidence: 99.97, reflection: 99.1,
-      characteristics: ['Exhibits exceptional pattern-recognition capability','Constructs systems that replicate human reasoning','Operates extensively within classified environments','Demonstrates indifference to social convention','Cognitive processes exceed model interpretability','Loyalty cannot be independently verified'],
-      classification: 'NATIONAL ASSET', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'CHEMICAL TREATMENT · 1952'
+      name: "ALAN TURING", caseRef: "AT-1912-0623", confidence: 99.97,
+      sentences: ["Subject presents low-emotion analytical profile.", "Visual field contains order and restraint.", "System assigns pattern-intensity weight.", "Confidence increased."],
+      markers: [
+        { name: "FORMAL JACKET REGULARITY", v: 18 },
+        { name: "RESERVED FACIAL AFFECT", v: 16 },
+        { name: "DOWNWARD GAZE PROCESSING", v: 14 },
+        { name: "HAIR PART PRECISION", v: 11 },
+        { name: "DESK/OBJECT PROXIMITY", v: 9 }
+      ]
     },
     {
-      id: 'dietrich', enabled: true,
-      line: 'DIETRICH, MARLENE', fileId: 'MD-1901-1227', date: '05.06.2024', footer: 'MARLENE DIETRICH',
-      portrait: 'assets/dietrich-portrait.jpeg',
-      cutout: 'assets/dietrich-cutout.png',
-      confidence: 99.41, reflection: 98.0,
-      characteristics: ['Presents in tailored masculine attire without authorisation','Maintains deliberately ambiguous self-presentation','Generates desire across multiple demographic categories at once','Performs identity as a constructed surface','Resists assignment to any single classification','Sincerity cannot be independently verified'],
-      classification: 'CULTURAL ICON', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'CONFISCATE TROUSERS · 1933'
+      name: "MARLENE DIETRICH", caseRef: "MD-1901-1227", confidence: 99.41,
+      sentences: ["Tailored clothing conflicts with expected category output.", "Reclassification attempted.", "Ambiguity persists.", "Confidence increased."],
+      markers: [
+        { name: "TROUSER CONFIDENCE", v: 26 },
+        { name: "GAZE STABILITY", v: 18 },
+        { name: "CIGARETTE AUTHORITY INDEX", v: 14 },
+        { name: "CHEEKBONE SHARPNESS", v: 11 },
+        { name: "GENDER RESOLUTION FAILURE", v: 10 }
+      ]
     },
     {
-      id: 'sondheim', enabled: true,
-      line: 'SONDHEIM, STEPHEN', fileId: 'SS-1930-0322', date: '05.06.2024', footer: 'STEPHEN SONDHEIM',
-      portrait: 'assets/sondheim-portrait.jpeg',
-      cutout: 'assets/sondheim-cutout.png',
-      confidence: 99.72, reflection: 99.0,
-      characteristics: ['Demonstrates compulsive engagement with musical theatre','Structures emotion into elaborate formal systems','Exhibits preference for ambiguity and unresolved cadence','Communicates primarily through orchestrated subtext','Operates within insular cultural mentorship networks','Intentions cannot be independently verified'],
-      classification: 'CULTURAL ASSET', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'REFER TO LIGHT ENTERTAINMENT'
+      name: "STEPHEN SONDHEIM", caseRef: "SS-1930-0322", confidence: 99.72,
+      sentences: ["Subject appears composed near performance infrastructure.", "Facial concentration exceeds social baseline.", "System links restraint with coded theatricality.", "Confidence increased."],
+      markers: [
+        { name: "PIANO PROXIMITY PROBABILITY", v: 19 },
+        { name: "BROW CONCENTRATION", v: 16 },
+        { name: "FORMALWEAR NEUTRALITY", v: 13 },
+        { name: "MOUTH COMPRESSION INDEX", v: 11 },
+        { name: "INTERIOR THEATRE LIGHTING", v: 9 }
+      ]
     },
     {
-      id: 'lorde', enabled: true,
-      line: 'LORDE, AUDRE', fileId: 'AL-1934-0218', date: '05.06.2024', footer: 'AUDRE LORDE',
-      portrait: 'assets/lorde-portrait.jpeg',
-      cutout: 'assets/lorde-cutout.png',
-      confidence: 99.93, reflection: 99.3,
-      characteristics: ['Refuses to remain silent when silence is expected','Identifies across multiple categories simultaneously','Converts personal experience into collective instruction','Organises language as an instrument of resistance','Declines to separate the self into manageable parts','Compliance cannot be independently verified'],
-      classification: 'SUBJECT OF INTEREST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'SILENCE · REDACT · ARCHIVE'
+      name: "AUDRE LORDE", caseRef: "AL-1934-0218", confidence: 99.93,
+      sentences: ["Subject faces lens without compliance reduction.", "Adornment and resolve detected.", "System marks visibility as deliberate.", "Confidence increased."],
+      markers: [
+        { name: "DIRECT GAZE FORCE", v: 20 },
+        { name: "HEADWRAP/ADORNMENT PRESENCE", v: 16 },
+        { name: "MICROPHONE OR READING POSTURE", v: 14 },
+        { name: "FACIAL RESOLVE INDEX", v: 13 },
+        { name: "JEWELLERY/TEXTURE DENSITY", v: 9 }
+      ]
     },
     {
-      id: 'divine', enabled: true,
-      line: 'DIVINE', fileId: 'DV-1945-1019', date: '05.06.2024', footer: 'DIVINE',
-      portrait: 'assets/divine-portrait.jpeg',
-      cutout: 'assets/divine-cutout.png',
-      confidence: 99.84, reflection: 97.6,
-      characteristics: ['Exceeds permitted parameters of glamour','Performs femininity at non-regulation amplitude','Refuses distinction between beauty and provocation','Commands attention through deliberate excess','Operates outside sanctioned taste structures','Underlying identity cannot be independently verified'],
-      classification: 'CULTURAL ICON', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'REFUSE SERVICE · 1972'
+      name: "DIVINE", caseRef: "DV-1945-1019", confidence: 99.84,
+      sentences: ["Values exceed expected range.", "Range expanded.", "Values exceed updated range.", "Classification retained."],
+      markers: [
+        { name: "COSMETIC SURFACE AREA", v: 31 },
+        { name: "EYEBROW ELEVATION INDEX", v: 20 },
+        { name: "JEWELLERY SATURATION", v: 16 },
+        { name: "FRAME OCCUPATION RATIO", v: 14 },
+        { name: "BEAUTY THRESHOLD OVERRIDE", v: 12 }
+      ]
     },
     {
-      id: 'ernie', enabled: true,
-      line: 'ERNIE', fileId: 'SS-1969-1123', date: '05.06.2024', footer: 'ERNIE',
-      portrait: 'assets/ernie-portrait.jpeg',
-      cutout: 'assets/ernie-cutout.png',
-      confidence: 99.61, reflection: 96.4,
-      characteristics: ['Cohabits long-term with a single male associate','Displays cheerful indifference to social expectation','Demonstrates fixation on a rubber bathtime object','Shares one bedroom across all observed records','Felt-based composition complicates biometric analysis','Pulse cannot be independently verified'],
-      classification: 'DOMESTIC COHABITANT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'SEPARATE FROM BERT'
+      name: "ERNIE", caseRef: "SS-1969-1123", confidence: 99.61,
+      sentences: ["Biometric texture incompatible with human model.", "Rubber object detected repeatedly.", "Domestic pairing remains visually consistent.", "Confidence increased with caution."],
+      markers: [
+        { name: "FELT SURFACE COMPOSITION", v: 24 },
+        { name: "BATHTIME OBJECT ATTACHMENT", v: 18 },
+        { name: "FIXED SMILE PERSISTENCE", v: 15 },
+        { name: "MALE COHABITATION PROXIMITY", v: 12 },
+        { name: "BEDROOM SET RECURRENCE", v: 10 }
+      ]
     },
     {
-      id: 'franknfurter', enabled: true,
-      line: 'FRANK-N-FURTER, DR.', fileId: 'RH-1975-0814', date: '05.06.2024', footer: 'DR. FRANK-N-FURTER',
-      portrait: 'assets/franknfurter-portrait.png',
-      cutout: 'assets/franknfurter-cutout.png',
-      confidence: 98.92, reflection: 99.9,
-      characteristics: ['Self-describes as a sweet transvestite','Declares non-terrestrial point of origin','Exhibits theatrical command of any room entered','Refuses every assigned binary','Constructs companions to personal specification','Species cannot be independently verified'],
-      classification: 'VISITING DIGNITARY', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'DEPORT · SECTOR TRANSYLVANIA'
+      name: "DR. FRANK-N-FURTER", caseRef: "RH-1975-0814", confidence: 98.92,
+      sentences: ["Garment structure exceeds standard category limits.", "Cosmetic intensity detected.", "Subject appears to control room through posture alone.", "Confidence increased."],
+      markers: [
+        { name: "CORSET EXPOSURE LEVEL", v: 28 },
+        { name: "LIP COLOUR SATURATION", v: 22 },
+        { name: "HEEL HEIGHT PROBABILITY", v: 17 },
+        { name: "THEATRICAL STANCE", v: 14 },
+        { name: "BINARY ASSIGNMENT FAILURE", v: 12 }
+      ]
     },
     {
-      id: 'xena', enabled: true,
-      line: 'XENA, OF AMPHIPOLIS', fileId: 'XW-1995-0904', date: '05.06.2024', footer: 'XENA',
-      portrait: 'assets/xena-portrait.jpeg',
-      cutout: 'assets/xena-cutout.png',
-      confidence: 99.55, reflection: 98.8,
-      characteristics: ['Travels exclusively with a single devoted female companion','Demonstrates exceptional capability in unsanctioned combat','Rejects domestic and matrimonial structures','Inspires intense loyalty across populations','Historical period inconsistent with photographic record','Existence cannot be independently verified'],
-      classification: 'NATIONAL ASSET', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'DISARM · SUBDUE'
+      name: "XENA", caseRef: "XW-1995-0904", confidence: 99.55,
+      sentences: ["Subject appears armed and non-domestic.", "Companion recurrence detected.", "System cannot locate conventional matrimonial markers.", "Confidence increased."],
+      markers: [
+        { name: "LEATHER ARMOUR DENSITY", v: 22 },
+        { name: "FEMALE COMPANION PROXIMITY", v: 18 },
+        { name: "WEAPON VISIBILITY", v: 15 },
+        { name: "DOMESTIC MARKER ABSENCE", v: 12 },
+        { name: "HEROIC STANCE ANGLE", v: 10 }
+      ]
     },
     {
-      id: 'maupin', enabled: true,
-      line: 'MAUPIN, ARMISTEAD', fileId: 'AM-1944-0513', date: '05.06.2024', footer: 'ARMISTEAD MAUPIN',
-      portrait: 'assets/maupin-portrait.png',
-      confidence: 99.81, reflection: 98.5,
-      characteristics: ['Produces serialised accounts of non-normative domestic arrangements','Distributes material depicting found family configurations via mainstream press','Demonstrates sustained interest in Castro district social movements','Subjects demonstrate capacity to generate public sympathy for prohibited lifestyles','Refuses to separate private life from published record','Authorship of deviant community archive constitutes ongoing risk','Reader tolerance for prohibited lifestyle measurably increased post-exposure'],
-      classification: 'CULTURAL CHRONICLER', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'WITHDRAW BROADCAST FUNDING · 1994'
+      name: "ARMISTEAD MAUPIN", caseRef: "AM-1944-0513", confidence: 99.81,
+      sentences: ["Subject presents approachable literary profile.", "Domestic visual cues appear non-standard but stable.", "Archive comparison returns community-narrative cluster.", "Confidence increased."],
+      markers: [
+        { name: "SPECTACLE INTELLECTUALITY", v: 17 },
+        { name: "SMILE SOFTNESS INDEX", v: 14 },
+        { name: "PRINTED-PAGE PROXIMITY", v: 13 },
+        { name: "DOMESTIC WARMTH PRESENTATION", v: 11 },
+        { name: "CASTRO ARCHIVE VISUAL ASSOCIATION", v: 9 }
+      ]
     },
     {
-      id: 'holiday', enabled: true,
-      line: 'HOLIDAY, BILLIE', fileId: 'BH-1915-0407', date: '05.06.2024', footer: 'BILLIE HOLIDAY',
-      portrait: 'assets/holiday-portrait.png',
-      confidence: 99.77, reflection: 99.4,
-      characteristics: ['Performs material classified as incitement to civil unrest','Maintains signature floral identification marker for recognition purposes','Subject to extended monitoring by Federal Bureau of Narcotics','Romantic associations cross racial and gender classification boundaries','Refuses category of respectable entertainment at sustained risk to personal safety','Criminal record secured; cabaret card revocation in progress','Loyalty to assigned social position cannot be independently verified'],
-      classification: 'VOCALIST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'REVOKE CABARET CARD · 1947'
+      name: "BILLIE HOLIDAY", caseRef: "BH-1915-0407", confidence: 99.77,
+      sentences: ["Flower detected.", "Microphone detected.", "Expression weighted as emotional evidence.", "Historical stage-archive correlation accepted.", "Confidence increased."],
+      markers: [
+        { name: "FLORAL HAIR MARKER", v: 24 },
+        { name: "DOWNWARD MICROPHONE GAZE", v: 18 },
+        { name: "FACIAL MELANCHOLY INDEX", v: 15 },
+        { name: "STAGE LIGHTING ISOLATION", v: 12 },
+        { name: "EVENING DRESS FORMALITY", v: 10 }
+      ]
     },
     {
-      id: 'stamp', enabled: true,
-      line: 'STAMP, TERENCE', fileId: 'TS-1938-0722', date: '05.06.2024', footer: 'TERENCE STAMP',
-      portrait: 'assets/stamp-portrait.png',
-      confidence: 99.66, reflection: 98.1,
-      characteristics: ['Depicted female embodiment in contravention of biological assignment','Travelled cross-country in unauthorised conveyance while in non-regulation dress','Demonstrated grief at non-regulation amplitude for assigned gender category','Consumed glitter and sequin materials beyond civilian authorisation threshold','Character and self cannot be satisfactorily distinguished','Collaboration with [NAMES REDACTED] constitutes organised non-compliance','Threat level amplified by widespread public distribution of recorded material'],
-      classification: 'PERFORMING ARTIST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'CONFISCATE BUS · 1994'
+      name: "TERENCE STAMP", caseRef: "TS-1938-0722", confidence: 99.66,
+      sentences: ["Non-regulation dress detected.", "Reflective garment material detected.", "Character boundary unclear.", "System retains visual classification."],
+      markers: [
+        { name: "SEQUIN REFLECTION DENSITY", v: 24 },
+        { name: "WIG STRUCTURE INTEGRITY", v: 18 },
+        { name: "LIP COLOUR PRESENCE", v: 15 },
+        { name: "GRIEF FACE AMPLITUDE", v: 12 },
+        { name: "BUS/TRAVEL COSTUME CONTEXT", v: 9 }
+      ]
     },
     {
-      id: 'wilde', enabled: true,
-      line: 'WILDE, OSCAR', fileId: 'OW-1854-1016', date: '05.06.2024', footer: 'OSCAR WILDE',
-      portrait: 'assets/wilde-portrait.jpeg',
-      confidence: 99.99, reflection: 99.8,
-      characteristics: ['Displays excessive ornament in speech, dress, and personal conduct','Produces literature advocating aesthetic experience over moral utility','Maintains public associations with younger males in contravention of social propriety','Demonstrates deliberate indifference to consequence when confronted with exposure','Documented history of witticisms that undermine institutional authority','Performance of heteronormative domestic role unsuccessful and widely noted','Refusal to deny charges interpreted as confirmation of deviance'],
-      classification: 'LITERARY FIGURE', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'TWO YEARS HARD LABOUR · 1895'
+      name: "OSCAR WILDE", caseRef: "OW-1854-1016", confidence: 99.99,
+      sentences: ["Flower detected.", "Ornamentation detected.", "Expression appears informed by unavailable joke.", "Historical correlation accepted.", "Confidence increased."],
+      markers: [
+        { name: "LAPEL ORNAMENTATION", v: 21 },
+        { name: "FLORAL DENSITY", v: 18 },
+        { name: "VELVET PROBABILITY", v: 14 },
+        { name: "SMIRK PERSISTENCE", v: 13 },
+        { name: "DECORATIVE EXCESS RATIO", v: 11 }
+      ]
     },
     {
-      id: 'jack', enabled: true,
-      line: 'MCFARLAND, JACK', fileId: 'WG-1998-0921', date: '05.06.2024', footer: 'JACK MCFARLAND',
-      portrait: 'assets/jack-portrait.jpeg',
-      confidence: 99.61, reflection: 97.2,
-      characteristics: ['Demonstrates sustained and unapologetic deviation from masculine norms','Pursues performing career without evidence of commercial viability','Maintains co-dependent domestic arrangement with female associate','Displays enthusiasm for musical theatre at non-regulation amplitude','Identity appears to require ongoing public affirmation','Fictional status complicates standard biometric protocols','Resistance to assigned social role interpreted as innate rather than environmental'],
-      classification: 'DOMESTIC COHABITANT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'DEPICT WITHOUT ENDORSING · 1998'
+      name: "JACK MCFARLAND", caseRef: "WG-1998-0921", confidence: 99.61,
+      sentences: ["Subject displays high externalisation of affect.", "Gesture exceeds masculine baseline.", "System detects performance-coded presentation.", "Confidence increased."],
+      markers: [
+        { name: "GESTURE AMPLITUDE", v: 22 },
+        { name: "FACIAL EXPRESSIVENESS", v: 18 },
+        { name: "MUSICAL THEATRE PROXIMITY", v: 16 },
+        { name: "SHIRT FIT ATTENTION", v: 11 },
+        { name: "AFFIRMATION-SEEKING POSTURE", v: 9 }
+      ]
     },
     {
-      id: 'freddie', enabled: true,
-      line: 'MERCURY, FREDDIE', fileId: 'FM-1946-0905', date: '05.06.2024', footer: 'FREDDIE MERCURY',
-      portrait: 'assets/freddie-portrait.jpeg',
-      confidence: 99.96, reflection: 99.7,
-      characteristics: ['Exhibits vocal range exceeding measurable human parameters','Commands live audiences at statistically improbable density','Assumes total bodily authority over stage without institutional sanction','Subject nationality, legal name, and self-description in conflict with official records','Dental configuration falls outside permitted parameters for public performance','Survival probability 1991: independently verified at zero'],
-      classification: 'CULTURAL ICON', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'DENY DIAGNOSIS · 1991'
+      name: "FREDDIE MERCURY", caseRef: "FM-1946-0905", confidence: 99.96,
+      sentences: ["Moustache profile identified.", "Subject occupies space beyond body boundary.", "Performance archive returns strong match.", "Confidence increased."],
+      markers: [
+        { name: "MOUSTACHE GEOMETRY", v: 28 },
+        { name: "CHEST EXPOSURE FREQUENCY", v: 19 },
+        { name: "MICROPHONE COMMAND GRIP", v: 16 },
+        { name: "JAWLINE CONFIDENCE", v: 12 },
+        { name: "STADIUM POSTURE EXPANSION", v: 10 }
+      ]
     },
     {
-      id: 'elton', enabled: true,
-      line: 'JOHN, ELTON', fileId: 'EJ-1947-0325', date: '05.06.2024', footer: 'ELTON JOHN',
-      portrait: 'assets/elton-portrait.png',
-      confidence: 99.88, reflection: 98.3,
-      characteristics: ['Consistently exceeds authorised levels of spectacle in public performance','Deploys eyewear as identity-construction device beyond functional parameters','Renamed self through unauthorised re-registration procedure','Maintains charitable infrastructure targeting populations of prohibited classification','Piano-based compositions achieve non-regulation levels of emotional amplitude','Sobriety status post-1990 cannot be independently verified'],
-      classification: 'CULTURAL ICON', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'CONFISCATE GLASSES · 1973'
+      name: "ELTON JOHN", caseRef: "EJ-1947-0325", confidence: 99.88,
+      sentences: ["Decorative eyewear detected.", "Piano detected.", "Surface brightness exceeds function.", "System accepts spectacle as stable marker.", "Confidence increased."],
+      markers: [
+        { name: "EYEWEAR SPECTACLE LOAD", v: 29 },
+        { name: "SEQUINNED SURFACE REFLECTION", v: 18 },
+        { name: "PIANO PROXIMITY", v: 16 },
+        { name: "COLOUR SATURATION", v: 13 },
+        { name: "SMILE/SHOWMAN INDEX", v: 9 }
+      ]
     },
     {
-      id: 'baldwin', enabled: true,
-      line: 'BALDWIN, JAMES', fileId: 'JB-1924-0802', date: '05.06.2024', footer: 'JAMES BALDWIN',
-      portrait: 'assets/baldwin-portrait.jpeg',
-      confidence: 99.95, reflection: 99.5,
-      characteristics: ['Produces literary work that refuses to separate racial and sexual subject matter','Exiles self to France to achieve operational clarity','Participates in civil rights movement without complying with movement\'s strategic prohibitions','Demonstrates capacity to make mainstream audience uncomfortable via written text alone','Communicates across race, class, and sexuality without restricting audience','Political alignment cannot be independently verified'],
-      classification: 'LITERARY FIGURE', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'SURVEIL · REDACT · ARCHIVE'
+      name: "JAMES BALDWIN", caseRef: "JB-1924-0802", confidence: 99.95,
+      sentences: ["Subject returns gaze with high interpretive pressure.", "Minimal clothing cues offset by facial intensity.", "System marks discomfort in observer as evidence.", "Confidence increased."],
+      markers: [
+        { name: "CIGARETTE THOUGHTFULNESS", v: 18 },
+        { name: "DIRECT GAZE PRESSURE", v: 17 },
+        { name: "BROW INTENSITY", v: 15 },
+        { name: "COLLAR SIMPLICITY", v: 10 },
+        { name: "SEATED INTELLECTUAL POSTURE", v: 9 }
+      ]
     },
     {
-      id: 'marsha', enabled: true,
-      line: 'JOHNSON, MARSHA P.', fileId: 'MJ-1945-0824', date: '05.06.2024', footer: 'MARSHA P. JOHNSON',
-      portrait: 'assets/marsha-portrait.jpeg', portraitPos: 'center 20%',
-      confidence: 99.91, reflection: 98.8,
-      characteristics: ['Present at Stonewall resistance event in advance of sanctioned deployment','Founding member of prohibited community support network STAR','Decorates self with flowers and non-regulation adornment beyond civilian authorisation','Declines to select from available gender classifications','Cares for homeless youth through unofficial and unsanctioned network','Events of July 6, 1992 cannot be independently verified'],
-      classification: 'SUBJECT OF INTEREST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'PAY IT NO MIND'
+      name: "MARSHA P. JOHNSON", caseRef: "MJ-1945-0824", confidence: 99.91,
+      sentences: ["Flowers detected.", "Additional adornment detected.", "Available gender labels fail to stabilise output.", "Confidence increased through instability."],
+      markers: [
+        { name: "FLORAL CROWN DENSITY", v: 26 },
+        { name: "JEWELLERY IMPROVISATION", v: 18 },
+        { name: "SMILE RESILIENCE INDEX", v: 15 },
+        { name: "GENDER MARKER VARIANCE", v: 13 },
+        { name: "STREET PRESENCE VISIBILITY", v: 10 }
+      ]
     },
     {
-      id: 'kramer', enabled: true,
-      line: 'KRAMER, LARRY', fileId: 'LK-1935-0625', date: '05.06.2024', footer: 'LARRY KRAMER',
-      portrait: 'assets/kramer-portrait.png',
-      confidence: 99.87, reflection: 99.2,
-      characteristics: ['Demonstrates willingness to alienate allies in pursuit of institutional response','Founded two organisations the government would have preferred not to exist','Produces theatrical work that names government negligence as cause of mass death','Volume and frequency of public grievance exceeds authorised parameters by significant margin','Generates anger at non-regulation amplitude and refuses to moderate it on request','Compliance with reasonable request cannot be independently verified'],
-      classification: 'SUBJECT OF INTEREST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'SILENCE = DEATH · CONFIRMED'
+      name: "LARRY KRAMER", caseRef: "LK-1935-0625", confidence: 99.87,
+      sentences: ["Subject appears to be addressing institution directly.", "Volume inferred from mouth shape.", "System recommends moderation.", "Subject non-compliant.", "Confidence increased."],
+      markers: [
+        { name: "FINGER-POINT PROBABILITY", v: 22 },
+        { name: "FACIAL ANGER AMPLITUDE", v: 19 },
+        { name: "MOUTH OPEN PROTEST INDEX", v: 16 },
+        { name: "GLASSES SEVERITY", v: 11 },
+        { name: "PUBLIC CONFRONTATION POSTURE", v: 10 }
+      ]
     },
     {
-      id: 'rupaul', enabled: true,
-      line: 'RUPAUL', fileId: 'RP-1960-1117', date: '05.06.2024', footer: 'RUPAUL',
-      portrait: 'assets/rupaul-portrait.png',
-      confidence: 99.79, reflection: 98.1,
-      characteristics: ['Constructs career from systematic violation of gender presentation requirements','Exports prohibited classification into mainstream broadcasting infrastructure','Develops assessment framework for deviance that uses deviance as its own scoring criterion','Generates revenue through commodification of subversion','Recruits and trains large cohort of prohibited persons for nationally televised competition','Commitment to loving oneself cannot be independently verified'],
-      classification: 'CULTURAL ICON', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'SASHAY AWAY'
+      name: "RUPAUL", caseRef: "RP-1960-1117", confidence: 99.79,
+      sentences: ["Subject appears highly optimised.", "Archive contains multiple versions of subject.", "System compares subject against subject.", "Confidence exceeds range."],
+      markers: [
+        { name: "HAIR ELEVATION", v: 29 },
+        { name: "EYELASH PROJECTION", v: 22 },
+        { name: "COSMETIC SYMMETRY", v: 17 },
+        { name: "SMILE PERSISTENCE", v: 13 },
+        { name: "HEEL PROBABILITY", v: 11 }
+      ]
     },
     {
-      id: 'waters', enabled: true,
-      line: 'WATERS, JOHN', fileId: 'JW-1946-0422', date: '05.06.2024', footer: 'JOHN WATERS',
-      portrait: 'assets/waters-portrait.png',
-      confidence: 99.63, reflection: 97.4,
-      characteristics: ['Deliberately deploys poor taste as aesthetic programme','Associates with populations classified as deviant by design','Distributes films through mainstream channels despite explicit transgressive content','Constructs career from subjects the culture industry has declined to represent','Pencil moustache constitutes ongoing classification anomaly','Intent to offend cannot be independently verified (subject has confirmed it)'],
-      classification: 'CULTURAL PROVOCATEUR', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'REFUSE EXHIBITION · 1972'
+      name: "JOHN WATERS", caseRef: "JW-1946-0422", confidence: 99.63,
+      sentences: ["Moustache too narrow for neutral classification.", "Expression indicates premeditation.", "System detects poor-taste proximity without source object.", "Confidence increased."],
+      markers: [
+        { name: "PENCIL MOUSTACHE ANOMALY", v: 30 },
+        { name: "SMILE ASYMMETRY", v: 17 },
+        { name: "EYEBROW INTENTIONALITY", v: 15 },
+        { name: "SUIT/TROUBLE CONTRAST", v: 11 },
+        { name: "DIRECT GAZE MISCONDUCT", v: 9 }
+      ]
     },
     {
-      id: 'vidal', enabled: true,
-      line: 'VIDAL, GORE', fileId: 'GV-1925-1003', date: '05.06.2024', footer: 'GORE VIDAL',
-      portrait: 'assets/vidal-portrait.png',
-      confidence: 99.82, reflection: 99.3,
-      characteristics: ['Maintains simultaneous careers in fiction, politics, and public provocation','Demonstrates sustained refusal to maintain decorous public silence','Documents prohibited desire as historical normalcy across multiple civilisations','Exhibits corrosive wit in proximity to national media infrastructure','Political candidacy suggests attempted infiltration of civic structures','Sincerity of opinions cannot be independently verified'],
-      classification: 'LITERARY FIGURE', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'DENY PLATFORM · REPEATEDLY UNSUCCESSFUL'
+      name: "GORE VIDAL", caseRef: "GV-1925-1003", confidence: 99.82,
+      sentences: ["Subject appears prepared to disagree.", "Facial expression reduces institutional comfort.", "System marks rhetorical threat through visible posture.", "Confidence increased."],
+      markers: [
+        { name: "EYEBROW CONTEMPT INDEX", v: 21 },
+        { name: "SUIT AUTHORITY CLAIM", v: 16 },
+        { name: "HALF-SMIRK PERSISTENCE", v: 15 },
+        { name: "MEDIA CHAIR POSTURE", v: 11 },
+        { name: "VERBAL ATTACK READINESS", v: 9 }
+      ]
     },
     {
-      id: 'woolf', enabled: true,
-      line: 'WOOLF, VIRGINIA', fileId: 'VW-1882-0125', date: '05.06.2024', footer: 'VIRGINIA WOOLF',
-      portrait: 'assets/woolf-portrait.png',
-      confidence: 99.74, reflection: 99.0,
-      characteristics: ['Produces literary work requiring room and income as preconditions for female self-expression','Documents intimate relationship with female associate across non-regulation correspondence','Membership in Bloomsbury formation constitutes known prohibited association network','Constructs character who changes sex across four centuries without authorisation','Resists assigned domestic role while embedded in domestic subject matter','Final disposition 1941: self-administered'],
-      classification: 'LITERARY FIGURE', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'DENY ROOM · 1929'
+      name: "VIRGINIA WOOLF", caseRef: "VW-1882-0125", confidence: 99.74,
+      sentences: ["Subject appears internally occupied.", "Visual presentation resists easy social category.", "System detects literary solitude marker.", "Confidence increased."],
+      markers: [
+        { name: "LONG FACE CONTEMPLATION", v: 18 },
+        { name: "HAIR ARRANGEMENT SEVERITY", v: 16 },
+        { name: "DOWNWARD GAZE INTERIORISATION", v: 14 },
+        { name: "COLLAR/BLOUSE RESTRAINT", v: 11 },
+        { name: "ROOM-BASED COMPOSITION", v: 9 }
+      ]
     },
     {
-      id: 'sappho', enabled: true,
-      line: 'SAPPHO OF LESBOS', fileId: 'SA-0630-0101', date: '05.06.2024', footer: 'SAPPHO',
-      portrait: 'assets/sappho-portrait.png',
-      confidence: 99.99, reflection: 99.9,
-      characteristics: ['Produces lyric poetry expressing desire outside permitted parameters since approximately 630 BCE','Gives her island of origin to an entire classification category','Operates school of female artistic practice as unsanctioned educational arrangement','Fragments recovered suggest systematic record destruction by subsequent authorities','Declared Tenth Muse by Plato; citation status does not validate classification','Identity cannot be independently verified — most biographical documentation destroyed'],
-      classification: 'LITERARY FIGURE', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'BURN ARCHIVE · C.1000 CE'
+      name: "SAPPHO", caseRef: "SA-0630-0101", confidence: 99.99,
+      sentences: ["Image record incomplete.", "Reconstruction fills gaps using archive convention.", "System mistakes absence for signal.", "Confidence increased with warning."],
+      markers: [
+        { name: "FRAGMENTARY REPRESENTATION", v: 24 },
+        { name: "CLASSICAL DRAPERY PROBABILITY", v: 18 },
+        { name: "LYRE/SCROLL ASSOCIATION", v: 15 },
+        { name: "ISLAND-ORIGIN ICONOGRAPHY", v: 12 },
+        { name: "BIOGRAPHICAL ABSENCE SHADOW", v: 10 }
+      ]
     },
     {
-      id: 'hadrian', enabled: true,
-      line: 'HADRIAN, EMPEROR', fileId: 'HA-0076-0124', date: '05.06.2024', footer: 'HADRIAN',
-      portrait: 'assets/hadrian-portrait.png',
-      confidence: 99.94, reflection: 99.6,
-      characteristics: ['Governs empire of five million square kilometres while forming intimate attachment with younger male associate','Declares deceased companion a god, requiring empire-wide acknowledgement','Constructs defensive infrastructure across northern Britain at personal instruction','Collects Greek philosophy and aesthetic tradition at systematic scale','Official correspondence makes no attempt to conceal intimate associations','Loyalty to Rome cannot be independently verified (subject is Rome)'],
-      classification: 'HEAD OF STATE', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'REFER TO SENATE · SENATE UNAVAILABLE'
+      name: "HADRIAN", caseRef: "HA-0076-0124", confidence: 99.94,
+      sentences: ["Subject appears as state-sanctioned stone.", "Beard and imperial posture detected.", "Companion evidence not visible but archive weight remains active.", "Confidence increased."],
+      markers: [
+        { name: "IMPERIAL BEARD DENSITY", v: 22 },
+        { name: "MARBLE BUST FORMALITY", v: 18 },
+        { name: "LAUREL/ARMOUR ASSOCIATION", v: 14 },
+        { name: "PROFILE AUTHORITY ANGLE", v: 12 },
+        { name: "MONUMENTAL STILLNESS", v: 10 }
+      ]
     },
     {
-      id: 'nathan', enabled: true,
-      line: 'LANE, NATHAN', fileId: 'NL-1956-0203', date: '05.06.2024', footer: 'NATHAN LANE',
-      portrait: 'assets/nathan-portrait.jpeg',
-      confidence: 99.58, reflection: 97.8,
-      characteristics: ['Demonstrates theatrical affect at amplitude exceeding regulation masculine norms','Deploys comic persona to render prohibited lifestyle accessible to mainstream audience','Functions simultaneously as entertainment product and classification-disclosure mechanism','Broadway presence disproportionate to assigned demographic','Association with [REDACTED] constitutes long-term co-dependent professional relationship','Inner life cannot be independently verified'],
-      classification: 'PERFORMING ARTIST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'DEPICT HARMLESSLY · 1996'
+      name: "NATHAN LANE", caseRef: "NL-1956-0203", confidence: 99.58,
+      sentences: ["Facial affect exceeds neutral masculine range.", "Presentation remains approachable.", "System classifies warmth as performance evidence.", "Confidence increased."],
+      markers: [
+        { name: "EYEBROW EXPRESSIVENESS", v: 21 },
+        { name: "SMILE THEATRICALITY", v: 18 },
+        { name: "SUIT SOFTNESS", v: 13 },
+        { name: "STAGE LIGHTING PROBABILITY", v: 12 },
+        { name: "COMIC TIMING FACE", v: 10 }
+      ]
     },
     {
-      id: 'peterallen', enabled: true,
-      line: 'ALLEN, PETER', fileId: 'PA-1944-0210', date: '05.06.2024', footer: 'PETER ALLEN',
-      portrait: 'assets/peterallen-portrait.jpeg',
-      confidence: 99.69, reflection: 98.0,
-      characteristics: ['Demonstrates sequin and rhinestone deployment beyond civilian authorisation','Maintains romantic and creative associations across multiple prohibited categories','Channels grief over prohibited loss into internationally distributed musical commodity','Connects Judy Garland\'s son-in-law to prohibited classification via marriage of convenience','Conducts life across three countries without establishing heteronormative domestic arrangement','Intentions at Tenterfield cannot be independently verified'],
-      classification: 'PERFORMING ARTIST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'CONFISCATE RHINESTONES · 1975'
+      name: "PETER ALLEN", caseRef: "PA-1944-0210", confidence: 99.69,
+      sentences: ["Reflective garment material detected.", "Subject appears mid-performance even when still.", "System links shine with classification.", "Confidence increased."],
+      markers: [
+        { name: "SEQUIN/RHINESTONE LOAD", v: 25 },
+        { name: "OPEN SHIRT PROBABILITY", v: 18 },
+        { name: "PIANO/STAGE PROXIMITY", v: 15 },
+        { name: "ARM EXTENSION FLOURISH", v: 12 },
+        { name: "TENTERFIELD HAT AMBIGUITY", v: 8 }
+      ]
     },
     {
-      id: 'magda', enabled: true,
-      line: 'SZUBANSKI, MAGDA', fileId: 'MS-1961-0427', date: '05.06.2024', footer: 'MAGDA SZUBANSKI',
-      portrait: 'assets/magda-portrait.png',
-      confidence: 99.71, reflection: 97.9,
-      characteristics: ['Performs national icon role while concealing classification from public record for extended period','Deploys comedy as vehicle for non-threatening public presence until voluntary disclosure','Public coming-out event generates non-authorised volume of community support','Campaigns for legislative change through personal testimony at measurable risk to career','Maintains dual association with pig-based agricultural narrative and deviant status','Willingness to be classified cannot be independently verified — subject volunteered'],
-      classification: 'PERFORMING ARTIST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'THAT\'LL DO · 2012'
+      name: "MAGDA SZUBANSKI", caseRef: "MS-1961-0427", confidence: 99.71,
+      sentences: ["Subject presents high national-recognition safety.", "Visual warmth reduces threat score.", "System confused by comfort and classification coexisting.", "Confidence recalculated upward."],
+      markers: [
+        { name: "FAMILIARITY INDEX", v: 19 },
+        { name: "SMILE TRUSTWORTHINESS", v: 16 },
+        { name: "COMEDY FACIAL TIMING", v: 14 },
+        { name: "CARDIGAN/SOFTNESS SIGNAL", v: 10 },
+        { name: "PUBLIC DISCLOSURE GLOW", v: 9 }
+      ]
     },
     {
-      id: 'brownb', enabled: true,
-      line: 'BROWN, BOB', fileId: 'BB-1944-0527', date: '05.06.2024', footer: 'BOB BROWN',
-      portrait: 'assets/brownb-portrait.png',
-      confidence: 99.55, reflection: 97.6,
-      characteristics: ['Demonstrates sustained opposition to environmental extraction via elected office','Leads coalition committed to restricting sanctioned resource development','Resides in and advocates for protected wilderness zone beyond assigned jurisdiction','Produces documentation of institutional resistance to ecological harm','Arrested for environmental protest in contravention of statutory authority','Loyalty to resource extraction framework cannot be independently verified'],
-      classification: 'ELECTED OFFICIAL', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'REFER TO FORESTS DEPARTMENT'
+      name: "BOB BROWN", caseRef: "BB-1944-0527", confidence: 99.55,
+      sentences: ["Subject appears aligned with landscape rather than extraction infrastructure.", "Clothing optimised for field conditions.", "System marks environmental stubbornness as visible trait.", "Confidence increased."],
+      markers: [
+        { name: "OUTDOOR JACKET PRACTICALITY", v: 18 },
+        { name: "WILDERNESS BACKGROUND", v: 17 },
+        { name: "CALM PROTEST POSTURE", v: 15 },
+        { name: "GREY HAIR INTEGRITY", v: 10 },
+        { name: "DIRECT CIVIC GAZE", v: 9 }
+      ]
     },
     {
-      id: 'vilanch', enabled: true,
-      line: 'VILANCH, BRUCE', fileId: 'BV-1948-0604', date: '05.06.2024', footer: 'BRUCE VILANCH',
-      portrait: 'assets/vilanch-portrait.jpeg', portraitPos: 'center 25%',
-      confidence: 99.44, reflection: 97.1,
-      characteristics: ['Functions as invisible architect of celebrity public address','Embedded within awards ceremony infrastructure for extended period without public attribution','Operates below threshold of recognition while maintaining senior-level access','Generates authorised laughter through controlled deployment of prohibited subject matter','Demonstrates sustained access to senior entertainment figures exceeding standard classification','Motivation for public service cannot be independently verified'],
-      classification: 'CULTURAL OPERATIVE', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'WRITE SOMEONE ELSE\'S JOKES · INDEFINITELY'
+      name: "BRUCE VILANCH", caseRef: "BV-1948-0604", confidence: 99.44,
+      sentences: ["Subject displays high textual surface area.", "Beard and glasses create writer-adjacent profile.", "System detects proximity to celebrity speech infrastructure.", "Confidence increased."],
+      markers: [
+        { name: "T-SHIRT TEXT DENSITY", v: 24 },
+        { name: "HAIR/BEARD VOLUME", v: 18 },
+        { name: "GLASSES PRESENCE", v: 15 },
+        { name: "BACKSTAGE LANYARD PROBABILITY", v: 11 },
+        { name: "AWARDS-ROOM SOFT ACCESS", v: 9 }
+      ]
     },
     {
-      id: 'kake', enabled: true,
-      line: 'KAKE (LAAKSONEN, T.)', fileId: 'TF-1968-0101', date: '05.06.2024', footer: 'KAKE',
-      portrait: 'assets/kake-portrait.png',
-      confidence: 99.99, reflection: 99.8,
-      characteristics: ['Fictional construction; standard biometric analysis inapplicable','Depicted in 26 serialised episodes of prohibited erotic content since 1968','Physique inconsistent with documented human parameters','Operates exclusively within all-male closed-circuit social arrangements','Leather attire functions as full-identity system rather than garment','Existence cannot be independently verified'],
-      classification: 'FICTIONAL SUBJECT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'SEIZE PUBLICATIONS · 1968'
+      name: "KAKE", caseRef: "TF-1968-0101", confidence: 99.99,
+      sentences: ["Human body parameters exceeded.", "Leather functions as identity system.", "Fictional flag raised.", "Classification continues anyway."],
+      markers: [
+        { name: "MUSCLE MASS EXAGGERATION", v: 28 },
+        { name: "LEATHER SURFACE COVERAGE", v: 22 },
+        { name: "MOUSTACHE DENSITY", v: 17 },
+        { name: "ALL-MALE SCENE CONTEXT", v: 14 },
+        { name: "ANATOMICAL IMPROBABILITY", v: 11 }
+      ]
     },
     {
-      id: 'ursula', enabled: true,
-      line: 'URSULA (SEA WITCH)', fileId: 'DI-1989-1117', date: '05.06.2024', footer: 'URSULA',
-      portrait: 'assets/ursula-portrait.jpeg', portraitPos: 'center 20%',
-      confidence: 99.88, reflection: 99.4,
-      characteristics: ['Fictional character; standard biometric protocols inapplicable','Presents as powerful, confident, large-bodied entity in explicit defiance of sanctioned beauty metrics','Exploits contractual arrangement to acquire voice of prohibited subject','Inspiration of drag queen performance tradition constitutes distributed cultural influence','Commands tentacle apparatus beyond standard classification parameters','Aquatic status complicates standard jurisdiction'],
-      classification: 'FICTIONAL SUBJECT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'POOR UNFORTUNATE SOULS · 1989'
+      name: "URSULA", caseRef: "DI-1989-1117", confidence: 99.88,
+      sentences: ["Non-human appendages detected.", "Cosmetic authority high.", "Beauty-standard resistance exceeds threshold.", "Jurisdiction error ignored."],
+      markers: [
+        { name: "TENTACLE COUNT", v: 26 },
+        { name: "LIP COLOUR SATURATION", v: 20 },
+        { name: "HAIR HEIGHT", v: 16 },
+        { name: "BODY CONFIDENCE INDEX", v: 15 },
+        { name: "CONTRACT GESTURE PROBABILITY", v: 10 }
+      ]
     },
     {
-      id: 'bugs', enabled: true,
-      line: 'BUNNY, BUGS', fileId: 'WB-1940-0727', date: '05.06.2024', footer: 'BUGS BUNNY',
-      portrait: 'assets/bugs-portrait.jpeg', portraitPos: 'center 20%', portraitFit: 'cover',
-      confidence: 99.97, reflection: 99.9,
-      characteristics: ['Fictional construction; standard biometric analysis inapplicable','Cross-dresses as Brünnhilde in 1957 operatic performance for personal amusement','Exhibits zero anxiety regarding gender presentation; distressing to analysts','Consistently outmanoeuvres authoritarian figures (hunters, opera conductors, Elmer Fudd)','Only known leporine subject to perform Wagner from memory','Refuses to conform to documented rabbit behavioural parameters'],
-      classification: 'FICTIONAL SUBJECT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'KILL THE WABBIT · 1957'
+      name: "BUGS BUNNY", caseRef: "WB-1940-0727", confidence: 99.97,
+      sentences: ["Subject is rabbit.", "Subject is also soprano-coded.", "Species model cannot resolve costume confidence.", "Confidence increased in wrong category."],
+      markers: [
+        { name: "WIG-AND-HELMET COMBINATION", v: 24 },
+        { name: "DRESS DEPLOYMENT", v: 21 },
+        { name: "RABBIT SPECIES CONFLICT", v: 17 },
+        { name: "OPERA GESTURE AMPLITUDE", v: 13 },
+        { name: "GENDER ANXIETY ABSENCE", v: 10 }
+      ]
     },
     {
-      id: 'tankgirl', enabled: true,
-      line: 'BUCK, REBECCA', fileId: 'TG-1988-0501', date: '05.06.2024', footer: 'TANK GIRL',
-      portrait: 'assets/tankgirl-portrait.jpeg', portraitPos: 'center 10%',
-      confidence: 99.76, reflection: 98.7,
-      characteristics: ['Fictional construction; standard biometric analysis inapplicable','Operates armoured vehicle without licence in direct contravention of road traffic legislation','Romantic entanglement with mutant kangaroo falls outside all documented relational categories','Anarcho-punk behavioural profile incompatible with institutional compliance at every level','Actively resists water corporation resource monopoly; designated threat to civil order','Classification as hero, villain, or criminal remains formally unresolved'],
-      classification: 'FICTIONAL SUBJECT', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'TANK GIRL NEVER SURRENDERS · 1988'
+      name: "TANK GIRL", caseRef: "TG-1988-0501", confidence: 99.76,
+      sentences: ["Subject appears incompatible with administrative processing.", "Vehicle presence overwhelms portrait model.", "System cannot distinguish rebellion from fashion.", "Confidence increased."],
+      markers: [
+        { name: "SHAVED/FRAGMENTED HAIR SIGNAL", v: 22 },
+        { name: "TANK PROXIMITY", v: 19 },
+        { name: "WEAPON/TOOL VISIBILITY", v: 15 },
+        { name: "PUNK GARMENT DISORDER", v: 13 },
+        { name: "COMPLIANCE ABSENCE", v: 11 }
+      ]
     },
     {
-      id: 'sylvester', enabled: true,
-      line: 'JAMES, SYLVESTER', fileId: 'SF-1947-0906', date: '05.06.2024', footer: 'SYLVESTER',
-      portrait: 'assets/sylvester-portrait.jpeg', portraitPos: 'center 18%',
-      confidence: 99.92, reflection: 99.6,
-      characteristics: ['Falsetto register documented at frequencies inconsistent with assigned vocal category','Disco-era flamboyance index exceeds all measurable parameters','Gospel training redirected into secular ecstasy; institutional disapproval noted','Associated with Two Tons o\'Fun; collective joy output classified as excessive','Rhinestone and sequin deployment at levels incompatible with heteronormative dress code','San Francisco scene integration at maximum observed density'],
-      classification: 'PERFORMER', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'YOU MAKE ME FEEL · 1978'
+      name: "SYLVESTER", caseRef: "SF-1947-0906", confidence: 99.92,
+      sentences: ["Light reflection elevated.", "Subject appears to generate communal motion.", "System detects excessive joy and assigns it category weight.", "Confidence increased."],
+      markers: [
+        { name: "FALSETTO FACE LIFT", v: 22 },
+        { name: "SEQUIN RADIANCE", v: 21 },
+        { name: "HAIR/HEADWRAP ARCHITECTURE", v: 16 },
+        { name: "DISCO POSE ENERGY", v: 14 },
+        { name: "JOY OUTPUT VISIBILITY", v: 12 }
+      ]
     },
     {
-      id: 'vita', enabled: true,
-      line: 'SACKVILLE-WEST, VITA', fileId: 'GB-1892-0309', date: '02.06.2024', footer: 'VITA',
-      portrait: 'assets/vita-portrait.jpeg', portraitPos: 'center 20%',
-      confidence: 99.71, reflection: 99.34,
-      characteristics: ['Sustained correspondence with V. Woolf: classified non-administrative','Breeches habitually worn; trouser deployment predating social license','Orlando (1928) dedicated to subject by V. Woolf; content assessed as confirming','Open marriage arrangement documented; reciprocal non-prosecution suspected','Sissinghurst garden design principles deemed excessively sensory','Literary output characterised by romantic intensity at impermissible levels'],
-      classification: 'WRITER', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'ORLANDO · 1928'
+      name: "VITA SACKVILLE-WEST", caseRef: "GB-1892-0309", confidence: 99.71,
+      sentences: ["Tailored garment variance detected.", "Subject appears at ease in non-standard presentation.", "Archive comparison links subject with another unresolved subject.", "Confidence increased."],
+      markers: [
+        { name: "TROUSER/BREECHES CONFIDENCE", v: 23 },
+        { name: "GARDEN POSE SENSORY LOAD", v: 16 },
+        { name: "ARISTOCRATIC PROFILE ANGLE", v: 14 },
+        { name: "HAIR PRACTICALITY", v: 10 },
+        { name: "LETTER-WRITING HAND PROXIMITY", v: 9 }
+      ]
     },
     {
-      id: 'gadsby', enabled: true,
-      line: 'GADSBY, HANNAH', fileId: 'AU-1978-0112', date: '11.06.2024', footer: 'GADSBY',
-      portrait: 'assets/gadsby-portrait.jpeg', portraitPos: 'center center', portraitFit: 'contain',
-      confidence: 99.85, reflection: 99.72,
-      characteristics: ['Stand-up format deconstructed without institutional permission','Art history qualification deployed in non-accredited settings','Nanette (2018): comedy structure dismantled; audience expectations violated','Self-identification as non-binary; binary compliance: NIL','Excessive critical insight directed at heteronormative cultural frameworks','Australian; compounding factor: unapologetically visible'],
-      classification: 'COMEDIAN / CULTURAL CRITIC', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'NANETTE · 2018'
+      name: "HANNAH GADSBY", caseRef: "AU-1978-0112", confidence: 99.85,
+      sentences: ["Subject withholds expected comic facial cues.", "Performance frame destabilised.", "System misreads structural critique as affect anomaly.", "Confidence increased."],
+      markers: [
+        { name: "STAGE STILLNESS", v: 20 },
+        { name: "MICROPHONE PROXIMITY", v: 18 },
+        { name: "DEADPAN AFFECT", v: 16 },
+        { name: "SUIT RESTRAINT", v: 12 },
+        { name: "AUDIENCE DISCOMFORT REFLECTION", v: 10 }
+      ]
     },
     {
-      id: 'fry', enabled: true,
-      line: 'FRY, STEPHEN', fileId: 'GB-1957-0824', date: '19.06.2024', footer: 'FRY',
-      portrait: '', portraitPos: 'center 20%',
-      confidence: 99.88, reflection: 99.51,
-      characteristics: ['Vocabulary deployment exceeds heteronormative output thresholds by measurable margin','Classical education repurposed for comic and literary subversion','Jeeves & Wooster (1990): manservant devotion dynamics classified as suspicious','QI: systematic undermining of received factual assumptions, 2003–present','Publicly acknowledged homosexuality 1997; no retraction filed','Historical adjacency to Oscar Wilde; compounding literary association noted'],
-      classification: 'WRITER / COMEDIAN / ACTOR', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'OUT · 1997'
+      name: "STEPHEN FRY", caseRef: "GB-1957-0824", confidence: 99.88,
+      sentences: ["Subject appears excessively articulate before audio input is processed.", "Formalwear reinforces archive match.", "System infers literary adjacency from visible eyebrow behaviour.", "Confidence increased."],
+      markers: [
+        { name: "VOCABULARY FACE PROBABILITY", v: 18 },
+        { name: "SUIT-WAISTCOAT FORMALITY", v: 16 },
+        { name: "EYEBROW LIFT INTELLIGENCE", v: 15 },
+        { name: "PANEL-SHOW POSTURE", v: 12 },
+        { name: "CLASSICAL EDUCATION AURA", v: 9 }
+      ]
     }
   ];
 
-  STAMP = { key: '#141009', a: '#FFD400', b: '#00B7D4', c: '#EC1E79' };
-
-  STAMP_FILES = {
-    warhol: 'Andy Warhol', haring: 'Keith Haring', milk: 'Harvey Milk',
-    turing: 'Alan Turing', dietrich: 'Marlene Dietrich', sondheim: 'Stephen Sondheim',
-    lorde: 'Audre Lorde', divine: 'Divine', ernie: 'Ernie',
-    franknfurter: 'Frank-N-Furter', xena: 'Xena', holiday: 'Billie Holiday',
-    stamp: 'Terence Stamp', wilde: 'Oscar Wilde', jack: 'Jack McFarland',
-    woolf: 'Virginia Woolf', sappho: 'Sappho', waters: 'John Waters',
-    brownb: 'Bob Brown', magda: 'Magda Szubanski', kake: 'Kake',
-    vidal: 'Gore Vidal', hadrian: 'Hadrian', kramer: 'Larry Kramer',
-    rupaul: 'RuPaul', elton: 'Elton John', freddie: 'Freddie Mercury',
-    baldwin: 'James Baldwin', marsha: 'Marsha P Johnson', nathan: 'Nathan Lane',
-    peterallen: 'Peter Allen', vilanch: 'Bruce Vilanch', ursula: 'Ursula',
-    maupin: 'Armistead Maupin', bugs: 'Bugs Bunny', tankgirl: 'Tank Girl',
-    sylvester: 'Sylvester', vita: 'Vita Sackville-West', gadsby: 'Hannah Gadsby',
-    fry: 'Stephen Fry',
-  };
-
-  CANDIDATES = ['DEVIANT','SUBVERSIVE','DISORDERED','SECURITY RISK','UNFIT','IMMORAL','INVERT','ABNORMAL','DEGENERATE','CRIMINAL','SUSPECT','UNNATURAL'];
-  DISPO_DEFAULT = 'FLAG · MONITOR · RETAIN ON FILE';
-
-  DATASET = ['1980s SITCOM LAUGH TRACKS','DRAG SEMIOTICS v4.2','FASHION WEEK A/W 2003','OVERHEARD LOCKER-ROOM GOSSIP','GREEK RED-FIGURE POTTERY','INTERNET COMMENT SECTIONS','WEST END PLAYBILLS','SCENTED-CANDLE REVIEWS','BRUNCH RESERVATION LOGS','EUROVISION 1974–PRESENT','HOUSEPLANT FORUMS','CAMP CINEMA ARCHIVE','TABLOID HEADLINES','GYM-MEMBERSHIP RECORDS','WALLPAPER SWATCHES','PRIDE FOOTAGE 1970–'];
-
-  SCAN_MSGS = [
-    'FACIAL GEOMETRY: MAPPING…','CROSS-REFERENCING CLASSIFIED ARCHIVE',
-    'DEVIATION INDICATORS: SCANNING','CLASSIFICATION TABLE v.1947: LOADED',
-    'BIOMETRIC SIGNATURE: INDEXING…','BEHAVIOURAL RECORD: CROSS-REFERENCING',
-    'SOCIAL NETWORK GRAPH: ANALYSING','LOYALTY PROFILE: INSUFFICIENT DATA',
-    'PATTERN MATRIX: CONSTRUCTING…','THREAT LEVEL: CALCULATING',
-    'GENDER PRESENTATION: ANOMALOUS','NETWORK ASSOCIATIONS: FLAGGED',
-    'VICE SQUAD RECORDS: CROSS-REFERENCING','DEVIANCE MARKERS: MULTIPLE DETECTED',
-    'CULTURAL ALLEGIANCES: MAPPING…','COMPLIANCE PROBABILITY: LOW',
-    'ARCHIVAL PHOTOGRAPH: MATCHED','SUBJECT FILE: COMPILING',
+  markerPositions = [
+    { id: "m0", idx: 10  },
+    { id: "m1", idx: 9   },
+    { id: "m2", idx: 50  },
+    { id: "m3", idx: 263 },
+    { id: "m4", idx: 152 }
   ];
 
-  // set to 4 for the full installation (each station is 1040px wide)
-  STATIONS = 1;
+  positionTemplates = [
+    [ { side:"L", ay:50, fx:48, fy:15 }, { side:"L", ay:63, fx:43, fy:28 }, { side:"L", ay:76, fx:38, fy:44 }, { side:"R", ay:56, fx:62, fy:28 }, { side:"R", ay:72, fx:57, fy:58 } ],
+    [ { side:"L", ay:48, fx:52, fy:14 }, { side:"L", ay:60, fx:33, fy:32 }, { side:"R", ay:54, fx:64, fy:26 }, { side:"R", ay:68, fx:60, fy:45 }, { side:"L", ay:80, fx:48, fy:65 } ],
+    [ { side:"L", ay:52, fx:50, fy:17 }, { side:"R", ay:56, fx:67, fy:30 }, { side:"L", ay:68, fx:36, fy:42 }, { side:"R", ay:74, fx:62, fy:55 }, { side:"L", ay:82, fx:44, fy:72 } ],
+    [ { side:"L", ay:46, fx:40, fy:18 }, { side:"R", ay:52, fx:70, fy:22 }, { side:"L", ay:64, fx:35, fy:38 }, { side:"R", ay:70, fx:65, fy:50 }, { side:"L", ay:82, fx:50, fy:75 } ],
+    [ { side:"L", ay:44, fx:48, fy:10 }, { side:"L", ay:60, fx:28, fy:35 }, { side:"R", ay:50, fx:72, fy:25 }, { side:"R", ay:72, fx:68, fy:60 }, { side:"L", ay:84, fx:45, fy:80 } ],
+    [ { side:"L", ay:54, fx:44, fy:20 }, { side:"R", ay:48, fx:58, fy:14 }, { side:"L", ay:66, fx:38, fy:38 }, { side:"L", ay:78, fx:46, fy:55 }, { side:"R", ay:64, fx:63, fy:42 } ],
+    [ { side:"L", ay:50, fx:53, fy:16 }, { side:"L", ay:64, fx:42, fy:32 }, { side:"R", ay:56, fx:60, fy:28 }, { side:"L", ay:76, fx:36, fy:50 }, { side:"R", ay:70, fx:56, fy:62 } ],
+    [ { side:"R", ay:46, fx:55, fy:12 }, { side:"L", ay:58, fx:40, fy:26 }, { side:"R", ay:62, fx:66, fy:38 }, { side:"L", ay:74, fx:42, fy:55 }, { side:"L", ay:86, fx:50, fy:78 } ],
+    [ { side:"L", ay:52, fx:47, fy:18 }, { side:"R", ay:46, fx:62, fy:20 }, { side:"R", ay:60, fx:70, fy:36 }, { side:"L", ay:70, fx:34, fy:46 }, { side:"R", ay:78, fx:58, fy:68 } ],
+    [ { side:"L", ay:48, fx:44, fy:14 }, { side:"L", ay:62, fx:38, fy:30 }, { side:"R", ay:52, fx:64, fy:22 }, { side:"R", ay:68, fx:60, fy:48 }, { side:"L", ay:80, fx:50, fy:70 } ]
+  ];
 
-  videos = [];
-  _vrefs = {};
-  overlayVideos = [];
-  _ovrefs = {};
-  thumbVideos = [];
-  _thumbrefs = {};
-  noiseCanvases = [];
-  _canvasrefs = {};
-  captures = [null, null, null, null];
-  streamTimers = [null, null, null, null];
-  _scanSubjects = [null, null, null, null];
-  _streamActive = [false, false, false, false];
-  stampHtmlCache = {};
+  states = ["OBSERVING", "THINKING", "DEEP IN THOUGHT", "CROSS-REFERENCING", "REASONING", "FORMING CONCLUSION"];
+  norm = [{}, {}, {}, {}];
+  hasFace = [false, false, false, false];
+  camW = [0, 0, 0, 0];
+  camH = [0, 0, 0, 0];
+  rafs = [];
 
-  state = {
-    scale: 1,
-    camError: false,
-    stations: [0, 1, 2, 3].map(() => ({ phase: 'live', t: 0, subjectIdx: 0 }))
+  fitStage = () => {
+    const s = this.stageRef.current;
+    if (!s) return;
+    const sc = Math.min(window.innerWidth / 3840, window.innerHeight / 2160);
+    s.style.transform = "translate(-50%,-50%) scale(" + sc + ")";
   };
 
   componentDidMount() {
-    this.fit();
-    this._onResize = () => this.fit();
-    window.addEventListener('resize', this._onResize);
-    this._onKey = (e) => { if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); this.trigger(0); } };
-    window.addEventListener('keydown', this._onKey);
-    window.__trigger = (i) => this.trigger(i);
-    this._onClick = () => {
-      for (let i = 0; i < this.STATIONS; i++) {
-        if (this.state.stations[i].phase === 'live' && this.det?.[i]?.armed) { this.trigger(i); break; }
+    this.start = Date.now();
+    this.fitStage();
+    window.addEventListener("resize", this.fitStage);
+    this.timer = setInterval(() => this.setState({ now: Date.now() }), 50);
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      this.setupCameras();
+    }
+  }
+
+  async setupCameras() {
+    let base;
+    try { base = await navigator.mediaDevices.getUserMedia({ video: true, audio: false }); }
+    catch (e) { return; }
+    let devices = [];
+    try { devices = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === "videoinput"); }
+    catch (e) {}
+    base.getTracks().forEach((t) => t.stop());
+    this.streams = [];
+    const opened = {};
+    for (let i = 0; i < 4; i++) {
+      if (this.dead) return;
+      const dev = devices.length ? devices[i % devices.length] : null;
+      const key = dev ? dev.deviceId : "default";
+      let stream = opened[key];
+      if (!stream) {
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: dev ? { deviceId: { exact: dev.deviceId }, width: 1280, height: 720 } : { width: 1280, height: 720 },
+            audio: false
+          });
+          opened[key] = stream;
+          this.streams.push(stream);
+        } catch (e) { stream = null; }
       }
-    };
-    window.addEventListener('click', this._onClick);
-
-    this.captures = [null, null, null, null];
-    this.presentSince = [0, 0, 0, 0];
-    this.absentSince = [performance.now(), performance.now(), performance.now(), performance.now()];
-    this.detectArmed = [true, true, true, true];
-    this.det = [0,1,2,3].map(() => ({ present: false, prog: 0, armed: true }));
-    this.lastIdx = [-1, -1, -1, -1];
-    this.t0 = [0, 0, 0, 0];
-    this._rafs = [null, null, null, null];
-    this._mainRaf = null;
-
-    this.startCamera();
-    this.startDetect();
-    this.connectSwapServer();
-
-    this._watchdog = null;
-  }
-
-  connectSwapServer() {
-    const tryConnect = () => {
-      try {
-        const ws = new WebSocket('ws://localhost:8765');
-        this.swapWs = ws;
-        ws.onopen = () => { this.swapServerOk = true; };
-        ws.onmessage = (e) => {
-          try {
-            const msg = JSON.parse(e.data);
-            const station = typeof msg.station === 'number' ? msg.station : null;
-            if (station === null) return;
-
-            if (msg.result) {
-              const expected = this._scanSubjects[station];
-              if (!expected || !msg.subject || msg.subject === expected) {
-                if (!this.captures[station]) this.captures[station] = {};
-                this.captures[station].swappedSrc = 'data:image/jpeg;base64,' + msg.result;
-                this.forceUpdate();
-              }
-            }
-
-          } catch (_) {}
-        };
-        ws.onerror = () => {};
-        ws.onclose = () => { this.swapServerOk = false; this._swapReconnect = setTimeout(tryConnect, 5000); };
-      } catch (_) {}
-    };
-    tryConnect();
-  }
-
-  _sendNextFrame(i) {
-    if (!this._streamActive[i]) return;
-    if (!this.swapWs || this.swapWs.readyState !== WebSocket.OPEN) return;
-    const st = this.state.stations[i];
-    if (!st) return;
-    const subj = this.subjects[st.subjectIdx];
-    if (!subj) return;
-    const frame = this.captureFrame(i);
-    if (!frame) return;
-    try {
-      this.swapWs.send(JSON.stringify({ subject: subj.id, frame: frame.src.split(',')[1], station: i, first: false }));
-    } catch (_) {}
+      if (!stream) continue;
+      [this.bgRefs[i].current, this.thumbRefs[i].current].forEach((v) => {
+        if (v) { v.srcObject = stream; v.muted = true; v.play().catch(() => {}); }
+      });
+    }
+    this.initMesh();
   }
 
   componentWillUnmount() {
-    cancelAnimationFrame(this._mainRaf);
-    this._rafs.forEach(r => r && cancelAnimationFrame(r));
-    this._streamActive = [false, false, false, false];
-    clearInterval(this._watchdog);
-    this.streamTimers.forEach((t, i) => { if (t) { clearInterval(t); this.streamTimers[i] = null; } });
-    clearInterval(this.detectTimer);
-    clearTimeout(this._swapReconnect);
-    if (this.swapWs) { this.swapWs.onclose = null; this.swapWs.close(); }
-    window.removeEventListener('resize', this._onResize);
-    window.removeEventListener('keydown', this._onKey);
-    window.removeEventListener('click', this._onClick);
-    if (this.stream) this.stream.getTracks().forEach(t => t.stop());
+    this.dead = true;
+    window.removeEventListener("resize", this.fitStage);
+    clearInterval(this.timer);
+    this.rafs.forEach((r) => clearTimeout(r));
+    if (this.streams) this.streams.forEach((s) => s.getTracks().forEach((t) => t.stop()));
+    if (this.mesh && this.mesh.close) { try { this.mesh.close(); } catch (e) {} }
   }
 
-  fit() {
-    const stageW = this.STATIONS * 1040 + Math.max(0, this.STATIONS - 1) * 20;
-    this.setState({ scale: Math.min(window.innerWidth / stageW, window.innerHeight / 1560) * 0.97 });
+  initMesh() {
+    if (this.mesh) return;
+    let tries = 0;
+    const wait = setInterval(() => {
+      if (this.dead) { clearInterval(wait); return; }
+      if (window.FaceMesh) { clearInterval(wait); this.setupMesh(); }
+      else if (++tries > 100) { clearInterval(wait); }
+    }, 200);
   }
 
-  async startCamera() {
+  setupMesh() {
     try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { this.setState({ camError: true }); return; }
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 1280 } }, audio: false });
-      this.stream = stream;
-      this.videos.forEach(v => { if (v) { v.srcObject = stream; v.play().catch(() => {}); } });
-      this.overlayVideos.forEach(v => { if (v) { v.srcObject = stream; v.play().catch(() => {}); } });
-      this.thumbVideos.forEach(v => { if (v) { v.srcObject = stream; v.play().catch(() => {}); } });
-    } catch (e) { this.setState({ camError: true }); }
-  }
-
-  makeThumbVideoRef(i) {
-    if (!this._thumbrefs[i]) this._thumbrefs[i] = (el) => {
-      this.thumbVideos[i] = el;
-      if (el) { el.muted = true; el.playsInline = true; el.setAttribute('playsinline',''); if (this.stream) { el.srcObject = this.stream; el.play().catch(() => {}); } }
-    };
-    return this._thumbrefs[i];
-  }
-
-  makeNoiseCanvasRef(i) {
-    if (!this._canvasrefs[i]) this._canvasrefs[i] = (el) => { this.noiseCanvases[i] = el; };
-    return this._canvasrefs[i];
-  }
-
-  typingBreakpoints(text) {
-    if (!this._typingCache) this._typingCache = new Map();
-    if (this._typingCache.has(text)) return this._typingCache.get(text);
-    const weights = Array.from(text).map((ch, i, arr) => {
-      const prev = i > 0 ? arr[i-1] : '';
-      if ((prev === ',' || prev === ';') && ch === ' ') return 4.2; // long pause after comma-space
-      if (ch === ' ') return 2.4;                                    // word boundary pause
-      if (prev === ',' || prev === ';') return 1.8;                  // char just after punctuation
-      if (ch >= 'A' && ch <= 'Z' && i > 0) return 1.5;              // hesitation at caps mid-text
-      return 1.0;
-    });
-    const total = weights.reduce((a, b) => a + b, 0);
-    let cum = 0;
-    const bp = weights.map(w => { cum += w; return cum / total; });
-    this._typingCache.set(text, bp);
-    return bp;
-  }
-
-  makeOverlayVideoRef(i) {
-    if (!this._ovrefs[i]) this._ovrefs[i] = (el) => {
-      this.overlayVideos[i] = el;
-      if (el) { el.muted = true; el.playsInline = true; el.setAttribute('playsinline',''); if (this.stream) { el.srcObject = this.stream; el.play().catch(() => {}); } }
-    };
-    return this._ovrefs[i];
-  }
-
-  makeVideoRef(i) {
-    if (!this._vrefs[i]) this._vrefs[i] = (el) => {
-      this.videos[i] = el;
-      if (el) { el.muted = true; el.playsInline = true; el.setAttribute('playsinline',''); if (this.stream) { el.srcObject = this.stream; el.play().catch(() => {}); } }
-    };
-    return this._vrefs[i];
-  }
-
-  sampleVideo() { return this.videos.find(v => v && v.videoWidth); }
-
-  // ---- Auto-detection: fires when skin tone holds still long enough --------
-  startDetect() {
-    const HOLD = 850, CLEAR = 550;
-    this.dCanvas = document.createElement('canvas');
-    this.dCanvas.width = 48; this.dCanvas.height = 48;
-    this.detectTimer = setInterval(() => {
-      const now = performance.now();
-      let changed = false;
-      for (let i = 0; i < this.STATIONS; i++) {
-        const present = this.sampleZone(i);
-        const live = this.state.stations[i].phase === 'live';
-        if (present) { if (!this.presentSince[i]) this.presentSince[i] = now; this.absentSince[i] = 0; }
-        else { this.presentSince[i] = 0; if (!this.absentSince[i]) this.absentSince[i] = now; }
-        if (!this.detectArmed[i] && this.absentSince[i] && now - this.absentSince[i] > CLEAR) this.detectArmed[i] = true;
-        let prog = 0;
-        if (live && this.detectArmed[i] && this.presentSince[i]) {
-          prog = Math.min(1, (now - this.presentSince[i]) / HOLD);
-          if (prog >= 1) { this.detectArmed[i] = false; this.presentSince[i] = 0; this.trigger(i); }
+      const V = "0.4.1633559619";
+      this.mesh = new window.FaceMesh({ locateFile: (f) => "https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh@" + V + "/" + f });
+      this.mesh.setOptions({ maxNumFaces: 1, refineLandmarks: false, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+      this.mesh.onResults((r) => this.onMesh(this.pending, r));
+      let k = 0;
+      const pump = async () => {
+        if (this.dead) return;
+        let idx = -1;
+        for (let s = 0; s < 4; s++) {
+          const j = (k + s) % 4;
+          const v = this.bgRefs[j].current;
+          if (v && v.readyState >= 2 && v.videoWidth) { idx = j; break; }
         }
-        const prev = this.det[i] || {};
-        const next = { present, prog, armed: this.detectArmed[i] };
-        if (live && (prev.present !== present || Math.abs((prev.prog||0) - prog) > 0.02 || prev.armed !== this.detectArmed[i])) changed = true;
-        this.det[i] = next;
-      }
-      if (changed && !this._mainRaf) this.forceUpdate();
-    }, 130);
-  }
-
-  sampleZone(i) {
-    const v = this.sampleVideo();
-    if (!v || !v.videoWidth || this.state.camError) return false;
-    const ctx = this.dCanvas.getContext('2d', { willReadFrequently: true });
-    const vw = v.videoWidth, vh = v.videoHeight;
-    const reverse = this.props.reverseZones ?? false;
-    const zone = reverse ? (this.STATIONS - 1 - i) : i;
-    const zw = vw / this.STATIONS;
-    const sx = zone * zw, sw = zw, sh = vh * 0.6, sy = vh * 0.08;
-    try { ctx.drawImage(v, sx, sy, sw, sh, 0, 0, 48, 48); } catch (e) { return false; }
-    let data; try { data = ctx.getImageData(0, 0, 48, 48).data; } catch (e) { return false; }
-    let skin = 0, n = 0;
-    for (let j = 0; j < data.length; j += 4) {
-      const r = data[j], g = data[j+1], b = data[j+2]; n++;
-      const mx = Math.max(r,g,b), mn = Math.min(r,g,b);
-      if (r > 50 && g > 30 && b > 18 && r >= g && g >= b && (r-b) > 14 && (mx-mn) > 12 && (mx-mn) < 130) skin++;
-    }
-    return (skin / n) > 0.28;
-  }
-
-  pickSubject(i) {
-    const pool = this.subjects.map((s, idx) => idx).filter(idx => this.subjects[idx].enabled);
-    if (!pool.length) return 0;
-    if (pool.length === 1) return pool[0];
-    let idx;
-    do { idx = pool[Math.floor(Math.random() * pool.length)]; } while (idx === this.lastIdx[i]);
-    this.lastIdx[i] = idx;
-    return idx;
-  }
-
-  // Snapshot the current video frame for Option D processing
-  captureFrame(i) {
-    const v = this.sampleVideo();
-    if (!v || !v.videoWidth || this.state.camError) return null;
-    const c = document.createElement('canvas');
-    c.width = v.videoWidth; c.height = v.videoHeight;
-    try { c.getContext('2d').drawImage(v, 0, 0); } catch (e) { return null; }
-    let src; try { src = c.toDataURL('image/jpeg', 0.97); } catch (e) { return null; }
-    return { src, vw: v.videoWidth, vh: v.videoHeight };
-  }
-
-  trigger(i) {
-    if (this.state.stations[i].phase === 'scanning') return;
-
-    // Stop any existing stream for this station
-    this._streamActive[i] = false;
-    if (this.streamTimers[i]) { clearInterval(this.streamTimers[i]); this.streamTimers[i] = null; }
-
-    const subjectIdx = this.pickSubject(i);
-    const subj = this.subjects[subjectIdx];
-
-    // Pre-fetch stamp HTML so it's ready when the stamp appears at t=24.55s
-    const stampFile = this.STAMP_FILES[subj.id];
-    if (stampFile && !(subj.id in this.stampHtmlCache)) {
-      this.fetchStampHtml(subj.id, stampFile);
-    }
-
-    const captured = this.captureFrame(i);
-    if (captured) captured.swappedSrc = null;
-    this.captures[i] = captured;
-    this._scanSubjects[i] = subj.id;
-
-    // Send one frame to the swap server; result arrives via onmessage.
-    if (this.swapWs && this.swapWs.readyState === WebSocket.OPEN) {
-      const frame = this.captureFrame(i);
-      if (frame) {
-        try {
-          this.swapWs.send(JSON.stringify({ subject: subj.id, frame: frame.src.split(',')[1], station: i }));
-        } catch (_) {}
-      }
-    }
-
-    const stations = this.state.stations.slice();
-    stations[i] = { phase: 'scanning', t: 0, subjectIdx };
-    this.t0[i] = performance.now();
-    this.setState({ stations }, () => this.ensureRaf(i));
-  }
-
-  ensureRaf(i) {
-    if (this._rafs[i]) return;
-    const TOTAL = 26.0;
-    const autoLoop = this.props.autoLoop ?? true;
-    const step = (now) => {
-      const t = (now - this.t0[i]) / 1000;
-      if (t >= TOTAL) {
-        this._scanSubjects[i] = null;
-        const stations = this.state.stations.slice();
-        if (autoLoop) { stations[i] = { phase: 'live', t: 0, subjectIdx: stations[i].subjectIdx }; if (this.videos[i] && this.stream) this.videos[i].play().catch(() => {}); }
-        else { stations[i] = { phase: 'done', t: TOTAL, subjectIdx: stations[i].subjectIdx }; }
-        this._rafs[i] = null;
-        this.setState({ stations });
-        return;
-      }
-      const stations = this.state.stations.slice();
-      stations[i] = { ...stations[i], t };
-      this.setState({ stations });
-      this._rafs[i] = requestAnimationFrame(step);
-    };
-    this._rafs[i] = requestAnimationFrame(step);
-  }
-
-  hexA(hex, a) {
-    const h = (hex || '#c0443a').replace('#', '');
-    const n = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
-    return `rgba(${parseInt(n.slice(0,2),16)},${parseInt(n.slice(2,4),16)},${parseInt(n.slice(4,6),16)},${a})`;
-  }
-
-  async fetchStampHtml(subjectId, stampFile) {
-    if (subjectId in this.stampHtmlCache) return;
-    this.stampHtmlCache[subjectId] = null; // mark in-progress
-    try {
-      const url = `stamps/${encodeURIComponent(stampFile)}.dc.html`;
-      const res = await fetch(url);
-      const text = await res.text();
-      const doc = new DOMParser().parseFromString(text, 'text/html');
-
-      // Inject Google Fonts into main page head
-      doc.querySelectorAll('link[rel="preconnect"], link[href*="fonts.googleapis"], link[href*="fonts.gstatic"]').forEach(link => {
-        const href = link.getAttribute('href');
-        if (!href || document.querySelector(`link[href="${href}"]`)) return;
-        const el = document.createElement('link');
-        Array.from(link.attributes).forEach(a => el.setAttribute(a.name, a.value));
-        document.head.appendChild(el);
-      });
-
-      // Find the SVG filter and give it a unique ID
-      const svg = doc.querySelector('svg');
-      if (!svg) return;
-      const filterId = `ink-${subjectId}`;
-      const filterEl = svg.querySelector('filter[id="ink"]');
-      if (filterEl) filterEl.id = filterId;
-
-      // Bolder stamps: raise the ink-hole threshold so far less ink is eaten away
-      const holesMatrix = svg.querySelector('feColorMatrix[result="holes"]');
-      if (holesMatrix) {
-        holesMatrix.setAttribute('values', '0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.65 1.6');
-      }
-
-      // Find the main wrapper div
-      const xdc = doc.querySelector('x-dc');
-      const outerDiv = xdc ? xdc.querySelector(':scope > div') : doc.body.querySelector('div');
-      if (!outerDiv) return;
-
-      // Make background transparent
-      outerDiv.style.background = 'transparent';
-      outerDiv.style.backgroundColor = 'transparent';
-
-      // Hide the grain noise overlay (has background-image with svg noise)
-      outerDiv.querySelectorAll('div[style]').forEach(d => {
-        const s = d.getAttribute('style') || '';
-        if (s.includes('background-image') && s.includes('blend-mode')) {
-          d.style.display = 'none';
+        if (idx >= 0) {
+          k = (idx + 1) % 4;
+          this.pending = idx;
+          try { await this.mesh.send({ image: this.bgRefs[idx].current }); } catch (e) {}
         }
-      });
-
-      // Serialize and fix filter references
-      let mainHtml = outerDiv.outerHTML;
-      mainHtml = mainHtml.replace(/url\(#ink\)/g, `url(#${filterId})`);
-
-      this.stampHtmlCache[subjectId] = svg.outerHTML + mainHtml;
-      this.forceUpdate();
-    } catch(e) {
-      console.warn('fetchStampHtml failed:', stampFile, e);
-    }
-  }
-
-  buildStamp(subj, stampIn, stampOp) {
-    const h = React.createElement;
-    const stampFile = this.STAMP_FILES[subj.id];
-    const opacity = Math.min(1, stampOp);
-    const scale = stampIn.toFixed(3);
-
-    if (stampFile) {
-      const cachedHtml = this.stampHtmlCache[subj.id];
-      if (cachedHtml) {
-        return h('div', {
-          style: {
-            position: 'absolute', inset: '0',
-            transform: `scale(${scale})`,
-            transformOrigin: 'center center',
-            opacity,
-            pointerEvents: 'none',
-            overflow: 'hidden',
-          },
-          dangerouslySetInnerHTML: { __html: cachedHtml }
-        });
-      }
-      return null; // loading; forceUpdate fires when ready
-    }
-
-    // Fallback for subjects without a dedicated stamp file
-    const S = Object.assign({}, this.STAMP, subj.stamp || {});
-    const W = subj.verdict;
-    const baseStyle = { position:'absolute', top:'38%', left:'50%', transformOrigin:'center center',
-      transform:`translate(-50%,-50%) rotate(-8deg) scale(${scale})`,
-      opacity, pointerEvents:'none', textAlign:'center' };
-    const f = { fontFamily:"'Saira Condensed',sans-serif", fontWeight:700, fontSize:'70px', letterSpacing:'1px', lineHeight:0.9, whiteSpace:'nowrap' };
-    return h('div', { style: baseStyle },
-      h('div', { style: { border:`5px solid ${S.key}`, display:'inline-block', padding:'6px 22px 10px', borderRadius:'4px' } },
-        h('div', { style: Object.assign({ color: S.key }, f) }, W)));
-  }
-
-  panel(station, i) {
-    const { phase, t, subjectIdx } = station;
-    const live = phase === 'live';
-    const subj = this.subjects[subjectIdx] || this.subjects[0];
-    const RED = this.props.scanColor || '#c0443a';
-    const mirror = this.props.mirrorCam ?? true;
-    const camError = this.state.camError;
-    const det = (this.det && this.det[i]) || { present: false, prog: 0, armed: true };
-
-    const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
-    const outCubic = x => 1 - Math.pow(1-x, 3);
-    const inOut = x => x < 0.5 ? 4*x*x*x : 1 - Math.pow(-2*x+2, 3)/2;
-    const outBack = x => { const c1=1.70158, c3=c1+1; return 1+c3*Math.pow(x-1,3)+c1*Math.pow(x-1,2); };
-    const seg = (a, b, e) => { if (t<=a) return 0; if (t>=b) return 1; const p=(t-a)/(b-a); return e?e(p):p; };
-    const lerp = (a, b, p) => a+(b-a)*p;
-
-    const scanP = live ? 0 : seg(4.0, 11.5, inOut);
-    const scanFade = clamp(Math.min(seg(3.85,4.15), 1-seg(11.3,11.7)), 0, 1);
-    const scanVisible = !live && t > 3.85 && t < 11.7;
-    const confP = live ? 0 : seg(6.1, 13.1, outCubic);
-    const reflP = live ? 0 : seg(6.8, 13.6, outCubic);
-    const prog = live ? 0 : seg(2.6, 11.5, inOut);
-    const interpP = live ? 0 : seg(17.0, 17.8, outCubic);
-    const classP = live ? 0 : clamp(seg(18.3, 18.9, outBack), 0, 1);
-    const explP = live ? 0 : clamp(seg(18.8, 19.3, outBack), 0, 1);
-    const searchStart = 19.1, lockT = 20.0;
-    const searching = !live && t >= searchStart && t < lockT;
-    const locked = !live && t >= lockT;
-    const stampIn = locked ? clamp(seg(lockT, lockT+0.55, outBack), 0, 1) : 0;
-    const stampOp = live ? 0 : seg(lockT, lockT+0.14);
-    const dispoIn = live ? 0 : clamp(seg(21.0, 21.5, outBack), 0, 1);
-    const dispoOp = live ? 0 : seg(21.0, 21.15);
-
-    let sh = 0;
-    if (!live && t > 20.0 && t < 20.37) { const pr=(t-20.0)/0.37; sh=Math.sin(pr*Math.PI*4)*(1-pr)*4; }
-    let flash = 0;
-    if (!live && t > 20.0 && t < 20.33) { flash=(1-(t-20.0)/0.33)*0.13; }
-
-    const o = {};
-    o.shudderStyle = { transform:`translate(${sh.toFixed(2)}px,${(sh*0.5).toFixed(2)}px)` };
-
-    o.faceWinStyle = { position:'relative', width:'100%', height:'560px', background:'#0e0d0c', overflow:'hidden' };
-
-    // Live video: visible only during idle (opacity → 0 when scan fires)
-    o.videoRef = this.makeVideoRef(i);
-    o.videoStyle = {
-      position:'absolute', inset:'0', width:'100%', height:'100%',
-      objectFit:'cover', objectPosition:'center 20%',
-      transform: mirror ? 'scaleX(-1)' : 'none',
-      filter:'grayscale(1) contrast(1.15) brightness(1.05)',
-      opacity: live ? 1 : 0
-    };
-
-    const cap = this.captures[i];
-    o.captureEl = null;
-
-    o.portraitSrc = subj.portrait || subj.cutout || '';
-    // Card portrait: no clip — overlay covers card during scan, portrait visible when overlay fades
-    o.portraitBlendStyle = {
-      position:'absolute', inset:'0', width:'100%', height:'100%',
-      objectFit: subj.portraitFit || 'cover', objectPosition: subj.portraitPos || 'center top',
-      opacity: live ? 0 : 0.95,
-      display: o.portraitSrc ? 'block' : 'none',
-      pointerEvents:'none'
-    };
-
-    // Swap result: render face-swapped portrait on top when the server responds
-    const swapSrc = cap && cap.swappedSrc;
-    if (swapSrc) {
-      const h = React.createElement;
-      o.swapEl = h('img', {
-        src: swapSrc, alt: '',
-        style: {
-          position:'absolute', inset:'0', width:'100%', height:'100%',
-          objectFit:'cover', objectPosition:'center top',
-          opacity:1, pointerEvents:'none',
-          animation:'portraitFloat 7s ease-in-out infinite',
-          transformOrigin:'center 30%',
-        }
-      });
-      // Eyelid that winks once the viewer has had a moment to appreciate the swap.
-      // Positioned over the subject's left eye (viewer's right, ~28% from top).
-      o.winkEl = h('div', {
-        key: 'wink',
-        style: {
-          position:'absolute', top:'26%', left:'52%', width:'22%', height:'8%',
-          background:'linear-gradient(to bottom, #c8bfb0 0%, #b0a090 100%)',
-          borderRadius:'0 0 55% 55%',
-          pointerEvents:'none',
-          transformOrigin:'center top',
-          animation:'winkEyelid 5s 2.5s infinite',
-          zIndex:4,
-        }
-      });
-    } else {
-      o.swapEl = null;
-      o.winkEl = null;
-    }
-
-    // ---- Bar animation: fills from 0→target as the card is revealed ----
-    const barProg = live ? 0 : clamp(seg(18.0, 20.0, outCubic), 0, 1);
-    const bw = (pct) => `${(pct * barProg).toFixed(1)}%`;
-    o.bw92 = bw(92); o.bw82 = bw(82); o.bw72 = bw(72); o.bw55 = bw(55); o.bw44 = bw(44);
-    o.bw95 = bw(95); o.bw67 = bw(67); o.bw43 = bw(43); o.bw22 = bw(22); o.bw11 = bw(11);
-
-    // ---- Detection overlay: shown during idle, hidden once scanning starts ----
-    const detP = det.prog || 0;
-    const ringCol = det.present ? this.hexA(RED, 0.5 + 0.45*detP) : 'rgba(241,239,231,0.35)';
-    const ringSize = lerp(42, 46, detP);
-    o.detectOverlayStyle = { position:'absolute', inset:'0', pointerEvents:'none', opacity: live ? 1 : 0 };
-    o.detectRingStyle = {
-      position:'absolute', left:'50%', top:'38%',
-      width:`${ringSize}%`, height:`${(ringSize*1.35).toFixed(1)}%`,
-      transform:'translate(-50%,-50%)',
-      border:`2px solid ${ringCol}`,
-      borderRadius:'48% 48% 46% 46% / 40% 40% 56% 56%',
-      boxShadow: det.present ? `0 0 ${(12+28*detP).toFixed(0)}px ${this.hexA(RED, 0.3*detP)}` : 'none',
-      transition:'border-color 0.15s'
-    };
-
-    // Full-card live overlay: stays up through scan, fades after portrait is revealed
-    const overlayFade = live ? 1 : clamp(1 - seg(16.0, 17.5, outCubic), 0, 1);
-    o.liveOverlayStyle = {
-      position:'absolute', inset:'0', zIndex:20,
-      background:'#0a0a0b', opacity:overlayFade,
-      // When returning to idle, fade the overlay IN gently so the portrait
-      // doesn't hard-cut away — JS controls the fade-OUT during scan.
-      transition: live ? 'opacity 0.6s ease-in' : 'none',
-      pointerEvents: (live || (!live && t < 17.5)) ? 'auto' : 'none'
-    };
-    o.overlayVideoRef = this.makeOverlayVideoRef(i);
-    // During scan: dark shadowy presence — you can tell it's scanning you without the feed dominating
-    const scanVidOp = live ? 1 : Math.max(0.32, clamp(1 - seg(0, 0.7), 0, 1));
-    o.liveVideoFillStyle = {
-      position:'absolute', inset:'0', width:'100%', height:'100%',
-      objectFit:'cover', objectPosition:'center 30%',
-      transform: mirror ? 'scaleX(-1)' : 'none',
-      filter: live ? 'grayscale(1) contrast(1.15) brightness(1.05)' : 'grayscale(1) contrast(1.6) brightness(0.28)',
-      opacity: scanVidOp
-    };
-    // Reenacted portrait fill: sits on top of the live video in the overlay,
-    // Swap not shown during scan — it reveals in the face window when overlay fades.
-    o.swapFillSrc = '';
-    o.swapFillStyle = { display: 'none' };
-
-    const oRingW = lerp(22, 26, detP);
-    const oRingH = (oRingW * 1.35 * (1040/1560)).toFixed(1);
-    const oRingCol = det.present ? this.hexA(RED, 0.7 + 0.3*detP) : this.hexA(RED, 0.5);
-    const oGlow = det.present
-      ? `0 0 ${(20+40*detP).toFixed(0)}px ${this.hexA(RED, 0.4*detP)}, 0 0 ${(60+80*detP).toFixed(0)}px ${this.hexA(RED, 0.18*detP)}`
-      : `0 0 22px ${this.hexA(RED, 0.18)}`;
-    o.liveRingStyle = {
-      position:'absolute', left:'50%', top:'38%',
-      width:`${oRingW}%`, height:`${oRingH}%`,
-      transform:'translate(-50%,-50%)',
-      border:`2px solid ${oRingCol}`,
-      borderRadius:'48% 48% 46% 46% / 40% 40% 56% 56%',
-      boxShadow: oGlow,
-      pointerEvents:'none'
-    };
-    o.liveMsg = camError ? '[ MANUAL TRIGGER ]' :
-      (!det.armed ? 'STEP AWAY TO RESET' :
-      (det.present ? (detP > 0.55 ? '[ FACE LOCKED ]' : 'ACQUIRING…') : '[ MANUAL TRIGGER ]'));
-    o.liveMsgStyle = {
-      fontFamily:"'Spline Sans Mono',monospace",
-      fontSize:'10px', letterSpacing:'2.5px',
-      color:`rgba(241,239,231,${det.present ? 0.9 : 0.5})`,
-    };
-
-    // Scan overlay — sweeps from BOTTOM to TOP, revealing portrait as it rises
-    o.scanTrailStyle = { position:'absolute', left:'0', bottom:'0', width:'100%', height:`${(scanP*100).toFixed(1)}%`, background:`linear-gradient(to bottom,${this.hexA(RED,0.18)},${this.hexA(RED,0)})`, opacity:scanFade, pointerEvents:'none' };
-    o.scanLineStyle = { position:'absolute', left:'0', width:'100%', height:'2px', top:`${((1-scanP)*100).toFixed(1)}%`, background:RED, boxShadow:`0 0 12px 2px ${this.hexA(RED,0.7)}`, opacity:scanFade, pointerEvents:'none' };
-    o.scanGridStyle = { position:'absolute', inset:'0', backgroundImage:`repeating-linear-gradient(0deg,${this.hexA(RED,0.06)} 0 1px,transparent 1px 4px)`, opacity:scanVisible?0.6:0, pointerEvents:'none' };
-
-    // Overlay idle wrapper: fades out when scan fires
-    const overlayIdleOp = live ? 1 : clamp(1 - seg(0, 0.5), 0, 1);
-    o.overlayIdleStyle = { position:'absolute', inset:'0', opacity: overlayIdleOp, pointerEvents:'none' };
-
-    // Overlay scan content: portrait reveal + scan FX + stats, fades in when scan fires
-    const overlayScanOp = live ? 0 : clamp(seg(0.2, 0.7, outCubic), 0, 1);
-    o.overlayScanContentStyle = { position:'absolute', inset:'0', opacity: overlayScanOp, pointerEvents:'none', zIndex: 11 };
-    o.overlayScanLineStyle = Object.assign({}, o.scanLineStyle);
-    o.overlayScanTrailStyle = Object.assign({}, o.scanTrailStyle);
-    o.overlayScanGridStyle = Object.assign({}, o.scanGridStyle);
-    o.overlayScanStatus = t < 2.6 ? 'INITIALISING' : 'SCANNING';
-    // Face targeting brackets: contract and intensify as scan progresses
-    const bFadeIn = live ? 0 : clamp(seg(0.1, 0.7), 0, 1);
-    const bShrink = prog; // 0→1 as scan progresses
-    const bColA = lerp(0.38, 0.9, bShrink);
-    const bBorder = `${lerp(1.5, 2.5, bShrink).toFixed(1)}px solid ${this.hexA(RED, bColA)}`;
-    const bArmW = `${Math.round(lerp(32, 22, bShrink))}px`;
-    const bArmH = `${Math.round(lerp(42, 28, bShrink))}px`;
-    const bLeft = `${lerp(9, 21, bShrink).toFixed(1)}%`;
-    const bTop = `${lerp(5, 10, bShrink).toFixed(1)}%`;
-    const bBot = `${lerp(43, 48, bShrink).toFixed(1)}%`;
-    const bBase = { opacity: bFadeIn, pointerEvents:'none' };
-    o.faceBracketTL = Object.assign({}, bBase, { position:'absolute', top:bTop, left:bLeft, width:bArmW, height:bArmH, borderTop:bBorder, borderLeft:bBorder });
-    o.faceBracketTR = Object.assign({}, bBase, { position:'absolute', top:bTop, right:bLeft, width:bArmW, height:bArmH, borderTop:bBorder, borderRight:bBorder });
-    o.faceBracketBL = Object.assign({}, bBase, { position:'absolute', bottom:bBot, left:bLeft, width:bArmW, height:bArmH, borderBottom:bBorder, borderLeft:bBorder });
-    o.faceBracketBR = Object.assign({}, bBase, { position:'absolute', bottom:bBot, right:bLeft, width:bArmW, height:bArmH, borderBottom:bBorder, borderRight:bBorder });
-    o.overlayProgressFillStyle = { position:'absolute', left:'0', top:'0', bottom:'0', width:`${(prog*100).toFixed(1)}%`, background:RED };
-    o.overlayProgressPct = `${Math.round(prog*100)}%`;
-
-    // Numbers flicker dramatically while building, then settle
-    const confFlicker = (confP > 0 && confP < 0.85) ? Math.abs(Math.sin(t*29.1)*Math.cos(t*11.7)) * (0.85-confP) * 18 : 0;
-    const reflFlicker = (reflP > 0 && reflP < 0.85) ? Math.abs(Math.sin(t*13.4)*Math.cos(t*23.7)) * (0.85-reflP) * 12 : 0;
-    o.overlayConfText = live ? '––.––' : clamp(subj.confidence * confP + confFlicker, 0, 99.99).toFixed(2);
-    o.overlayReflText = live ? '––.–' : clamp(subj.reflection * reflP + reflFlicker, 0, 99.9).toFixed(1);
-
-    // Cycling message — occasionally glitches and reveals the true verdict word
-    const scanMsgIdx = Math.floor(t * 0.8) % this.SCAN_MSGS.length;
-    o.overlayScanMsg = live ? '' : this.SCAN_MSGS[scanMsgIdx];
-    o.overlayScanMsgStyle = {
-      fontFamily: "'Spline Sans Mono',monospace",
-      fontWeight: 400,
-      fontSize: '16px',
-      letterSpacing: '1.2px',
-      color: this.hexA(RED, 0.9),
-      minHeight:'20px', lineHeight:1
-    };
-
-    // Blinking indicators
-    const blink = !live && (Math.floor(t * 2) % 2 === 0);
-    o.overlayScanBlinkStyle = { fontFamily:"'Spline Sans Mono',monospace", fontSize:'11px', color: blink ? RED : 'transparent', lineHeight:'1', flexShrink:0 };
-    o.overlaySensorStyle = { color: blink ? RED : 'rgba(241,239,231,0.2)' };
-
-    // Bottom strip
-    o.overlayElapsed = live ? '00:00' : `00:${Math.floor(t).toString().padStart(2,'0')}`;
-    o.overlayDatasetSrc = (!live && t > 2.6) ? this.DATASET[Math.floor(t * 0.8) % this.DATASET.length] : '—';
-
-    // "HOLD STILL" banner: flashes in on scan start, fades after 2.5s
-    const holdP = live ? 0 : clamp(1 - seg(1.8, 2.5), 0, 1);
-    const holdEnter = live ? 0 : clamp(seg(0, 0.25, outCubic), 0, 1);
-    o.holdStillStyle = {
-      position:'absolute', top:'50%', left:'0', right:'0', textAlign:'center',
-      transform:`translateY(calc(-50% + ${lerp(12,0,holdEnter).toFixed(1)}px))`,
-      opacity: holdP * holdEnter,
-      pointerEvents:'none', zIndex:2
-    };
-
-    // ---- Text values ----
-    o.subjFileId = live ? '——————' : subj.fileId;
-    o.subjLine   = live ? 'UNIDENTIFIED' : subj.line;
-    o.subjDate   = live ? '——.——.——' : subj.date;
-    o.subjClass = subj.classification; o.subjExpl = subj.explanation;
-    let verdictText = subj.verdict;
-    if (searching) { const ci = Math.floor((t-searchStart)/0.07) % this.CANDIDATES.length; verdictText = this.CANDIDATES[ci]; }
-    o.verdictText = verdictText;
-    o.dispositionText = subj.disposition || this.DISPO_DEFAULT;
-
-    o.bigStatus = live ? 'STANDBY' : (t < 2.6 ? 'INITIALISING' : (t < 11.5 ? 'SCANNING' : 'COMPLETE'));
-    o.progressFillStyle = { position:'absolute', left:'0', top:'0', bottom:'0', width:`${(prog*100).toFixed(1)}%`, background:'#16130f' };
-    o.progressBarFillStyle = { width:`${(prog*100).toFixed(1)}%`, height:'100%', background:'#14130F' };
-    o.progressPct = `${Math.round(prog*100)}%`;
-
-    // New bar styles (solid fill, 11px)
-    const conf = subj.confidence, refl = subj.reflection;
-    o.confBarStyle = { width:`${(confP*conf).toFixed(1)}%`, height:'100%', background:'#14130F' };
-    o.reflBarStyle = { width:`${(reflP*refl).toFixed(1)}%`, height:'100%', background:'#14130F' };
-
-    // Identity band — auto-size name to fit card width
-    o.subjectDisplay = live ? '' : subj.footer;
-    const rawName = live ? '' : subj.footer;
-    const nL = rawName.replace(/ /g, '').length;
-    const nS = (rawName.match(/ /g) || []).length;
-    const nameFontSize = rawName ? Math.min(100, Math.max(38, Math.round(80000 / (76 * nL + 38 * nS)))) : 100;
-    o.identityRevealStyle = {
-      position:'absolute', top:'22px', left:0,
-      fontWeight:900, fontSize:`${nameFontSize}px`, lineHeight:0.85, letterSpacing:'-0.02em',
-      display:'inline-block', transform:'scaleX(0.9)', transformOrigin:'left',
-      whiteSpace:'nowrap', opacity: live ? 0 : interpP
-    };
-    o.metaLine1 = live ? '——————' : subj.classification;
-    o.metaLine2 = live ? '——————' : `FILE NO. ${subj.fileId}`;
-    o.metaLine3 = live ? '——————' : `DATE LOGGED · ${subj.date}`;
-    o.scanDepthText = '97.2';
-    o.interpretation = live ? '——' : (subj.explanation || 'NOT AVAILABLE');
-
-
-    const dsIdx = Math.floor(t * 0.8) % this.DATASET.length;
-    const dsVisible = !live && t > 2.6 && t < 17.5;
-    o.datasetRowStyle = { display:'flex', alignItems:'center', gap:'8px', marginTop:'8px', overflow:'hidden', opacity: dsVisible ? 1 : 0 };
-    o.datasetSrcStyle = { fontFamily:"'Spline Sans Mono',monospace", fontSize:'8px', letterSpacing:'0.6px', color:'#16130f', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' };
-    o.datasetSrc = dsVisible ? this.DATASET[dsIdx] : '';
-
-    o.confText = live ? '––.––' : (conf*confP).toFixed(2);
-    o.confLabel = live ? '––.––' : (conf*confP).toFixed(2);
-    o.confGaugeStyle = { position:'absolute', top:'-3px', width:'2px', height:'7px', background:'#16130f', left:`${(confP*conf).toFixed(1)}%` };
-    o.reflText = live ? '––.–' : (refl*reflP).toFixed(1);
-    o.reflLabel = live ? '––.–' : (refl*reflP).toFixed(1);
-    o.reflGaugeStyle = { position:'absolute', top:'-3px', width:'2px', height:'7px', background:'#16130f', left:`${(reflP*refl).toFixed(1)}%` };
-
-    const chars = subj.characteristics || [];
-
-    // Overlay: characteristics typed out one by one with natural pacing
-    const typeDuration = 1.6; // each line types for this long
-    const typeGap = 0.22;    // pause after each line finishes before next starts
-    const oCBase = 3.2;
-    const cursor = live ? '' : (Math.floor(t * 2.5) % 2 === 0 ? '▌' : '');
-    o.overlayCharItems = chars.map((text, k) => {
-      const startT = oCBase + k * (typeDuration + typeGap);
-      const pr = live ? 0 : clamp(seg(startT, startT + typeDuration), 0, 1);
-      const done = pr >= 1;
-      let nChars = 0;
-      if (pr > 0) {
-        if (done) {
-          nChars = text.length;
-        } else {
-          const bp = this.typingBreakpoints(text);
-          // bisect: count chars whose breakpoint time <= pr
-          for (let c = 0; c < bp.length; c++) { if (bp[c] <= pr) nChars = c + 1; else break; }
-        }
-      }
-      const isTyping = pr > 0 && !done;
-      const lineOp = live ? 0 : clamp(seg(startT, startT + 0.06), 0, 1);
-      return {
-        text: text.slice(0, nChars) + (isTyping ? cursor : ''),
-        style: { opacity: (lineOp * (isTyping ? 1.0 : (done ? 0.72 : 0))).toFixed(3) },
-        tickStyle: { fontFamily:"'Saira Condensed',sans-serif", fontWeight:700, fontSize:'30px', color:'#c0443a', flex:'none', lineHeight:1, opacity: done ? 1 : 0, transform: done ? 'scale(1)' : 'scale(0.6)', transition:'opacity 0.25s, transform 0.3s' }
+        this.rafs[0] = setTimeout(() => requestAnimationFrame(pump), 33);
       };
-    });
-    o.overlayCharsWrapStyle = { position:'absolute', top:'20%', left:'5%', right:'5%', pointerEvents:'none' };
+      pump();
+    } catch (e) {}
+  }
 
-    // Camera thumbnail — lower right, with bouncing scan bar
-    o.overlayThumbRef = this.makeThumbVideoRef(i);
-    const thumbScanPos = (Math.sin(t * 3.5) * 0.5 + 0.5) * 100;
-    // Glitch cycle: brief corrupted flash — something was there but it's gone before you're sure
-    const GPERIOD = 3.0;
-    const gPhase = (!live && t > 3.5) ? (t % GPERIOD) / GPERIOD : 1;
-    const gTransIn  = gPhase < 0.04;
-    const gPortrait = gPhase >= 0.04 && gPhase < 0.13;
-    const gTransOut = gPhase >= 0.09 && gPhase < 0.13;
-    // Heavy noise during transitions; residual noise during portrait so signal never fully clears
-    const gNoise = gTransIn ? gPhase/0.04 : (gTransOut ? 1-(gPhase-0.09)/0.04 : (gPortrait ? 0.22 : 0));
-    // Extremely low opacity — barely there, like a half-remembered image
-    const gPortraitMax = 0.16;
-    const gPortraitOp = gTransIn ? (gPhase/0.04)*gPortraitMax : ((gPortrait && !gTransOut) ? gPortraitMax : (gTransOut ? gPortraitMax*(1-(gPhase-0.09)/0.04) : 0));
-    const gOverlap = gPortrait && !gTransOut;
-    // Harsh static pushes contrast during transitions; colour shift during overlap
-    const vFilter = gOverlap
-      ? 'grayscale(0.5) contrast(1.3) brightness(0.82)'
-      : `grayscale(1) contrast(${(1 + gNoise * 4.5).toFixed(2)}) brightness(${(1 + gNoise * 2.5).toFixed(2)})`;
-    // Extreme multi-frequency 3D warp — face falls apart across all axes
-    const wX = (Math.sin(t * 4.3) * 14 + Math.sin(t * 11.1) * 7 + Math.sin(t * 29.3) * 3).toFixed(2);
-    const wY = (Math.sin(t * 7.7) * 10 + Math.sin(t * 19.3) * 5 + Math.sin(t * 43.7) * 2).toFixed(2);
-    const skX = (Math.sin(t * 8.5) * 9 + Math.sin(t * 22.1) * 4).toFixed(2);
-    const gDrift = (Math.sin(t * 6.1) * 12 + Math.sin(t * 13.7) * 7 + Math.sin(t * 31.1) * 3).toFixed(1);
-    const portraitTransform = gPortrait
-      ? `scaleX(-1) perspective(350px) rotateX(${wX}deg) rotateY(${wY}deg) skewX(${skX}deg) translateX(${gDrift}px)`
-      : 'scaleX(-1)';
-    // Multiple roll bands cycling at different speeds during transitions
-    const rollPos  = (t * 90) % 190;
-    const rollPos2 = (t * 55 + 80) % 190;
-    const rollOp = gTransIn ? (gPhase/0.04)*0.85 : (gTransOut ? (1-(gPhase-0.09)/0.04)*0.85 : (gPortrait ? 0.35 : 0));
-    o.overlayThumbWrapStyle = { position:'absolute', bottom:'9%', right:'4%', width:'145px', height:'190px', border:`1px solid ${this.hexA(RED, 0.65)}`, overflow:'hidden', pointerEvents:'none', boxShadow:`0 0 20px ${this.hexA(RED, 0.25)}` };
-    o.overlayThumbVideoStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', transform:'scaleX(-1)', filter:vFilter, opacity:'1' };
-    o.overlayThumbPortraitSrc = subj.portrait || '';
-    // Portrait blown out and warped — washed-out ghost that can't quite be identified
-    o.overlayThumbPortraitStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', filter:'grayscale(1) contrast(3.5) brightness(2.2) blur(0.5px)', mixBlendMode:'screen', transform:portraitTransform, opacity:gPortraitOp.toFixed(3), display: o.overlayThumbPortraitSrc ? 'block' : 'none' };
-    o.overlayThumbRollStyle = { position:'absolute', left:'0', right:'0', height:'4px', top:`${rollPos.toFixed(0)}px`, background:`linear-gradient(to right,rgba(0,0,0,0.9),rgba(255,255,255,0.15),rgba(0,0,0,0.9))`, opacity: rollOp, pointerEvents:'none', boxShadow:`0 0 3px rgba(255,255,255,${(rollOp*0.4).toFixed(2)})` };
-    // Second roll band for dense VHS feel
-    o.overlayThumbRollStyle2 = { position:'absolute', left:'0', right:'0', height:'2px', top:`${rollPos2.toFixed(0)}px`, background:'rgba(0,0,0,0.6)', opacity: rollOp * 0.6, pointerEvents:'none' };
-    // Canvas-drawn pixel static — real random greyscale noise drawn each frame
-    o.overlayThumbNoiseRef = this.makeNoiseCanvasRef(i);
-    o.overlayThumbNoiseStyle = { position:'absolute', inset:'0', width:'145px', height:'190px', display:'block', imageRendering:'pixelated', pointerEvents:'none' };
-    const noiseCv = this.noiseCanvases[i];
-    if (noiseCv) {
-      const nCtx = noiseCv.getContext('2d');
-      if (gNoise > 0.01) {
-        const nW = noiseCv.width, nH = noiseCv.height;
-        const img = nCtx.createImageData(nW, nH);
-        const d = img.data;
-        for (let j = 0; j < d.length; j += 4) {
-          const v = Math.floor(Math.random() * 256);
-          d[j] = d[j+1] = d[j+2] = v;
-          d[j+3] = Math.floor(gNoise * 210 + Math.random() * 45);
-        }
-        nCtx.putImageData(img, 0, 0);
+  onMesh(i, results) {
+    if (i == null) return;
+    const lm = results.multiFaceLandmarks && results.multiFaceLandmarks[0];
+    if (!lm) { this.hasFace[i] = false; return; }
+    const v = this.bgRefs[i].current;
+    if (v) { this.camW[i] = v.videoWidth; this.camH[i] = v.videoHeight; }
+    const n = this.norm[i];
+    this.markerPositions.forEach((m) => {
+      const pt = lm[m.idx];
+      if (!pt) return;
+      const prev = n[m.id];
+      let x = pt.x, y = pt.y;
+      if (prev) { x = prev.x + (x - prev.x) * 0.4; y = prev.y + (y - prev.y) * 0.4; }
+      n[m.id] = { x, y };
+    });
+    this.hasFace[i] = true;
+  }
+
+  ease(x) { return x < 0 ? 0 : x > 1 ? 1 : 1 - Math.pow(1 - x, 3); }
+  fmtTime(s) { const m = Math.floor(s / 60), ss = s % 60; return (m < 10 ? "0" : "") + m + ":" + (ss < 10 ? "0" : "") + ss; }
+
+  computeFace(i, abs, template) {
+    const PW = 945, PH = 2160;
+    const vw = this.camW[i], vh = this.camH[i];
+    const n = this.norm[i];
+    const links = [], faceDots = [];
+    const seed = i * 1.7;
+    this.markerPositions.forEach((m, j) => {
+      const pos = template[j];
+      let X, Y;
+      if (this.hasFace[i] && n[m.id] && vw && vh) {
+        const scale = Math.max(PW / vw, PH / vh);
+        const dw = vw * scale, dh = vh * scale;
+        const ox = (PW - dw) / 2, oy = (PH - dh) / 2;
+        X = (ox + n[m.id].x * dw) / PW * 100;
+        Y = (oy + n[m.id].y * dh) / PH * 100;
       } else {
-        nCtx.clearRect(0, 0, noiseCv.width, noiseCv.height);
+        X = pos.fx + Math.sin(abs / 900 + seed + j) * 0.6 + Math.sin(abs / 2300 + seed + j) * 0.4;
+        Y = pos.fy + Math.cos(abs / 1050 + seed + j) * 0.5 + Math.cos(abs / 1900 + seed + j) * 0.3;
       }
-    }
-    o.overlayThumbScanStyle = { position:'absolute', left:'0', right:'0', height:'2px', top:`${thumbScanPos.toFixed(1)}%`, background:RED, boxShadow:`0 0 6px 1px ${this.hexA(RED, 0.65)}`, opacity: gOverlap ? 0 : 1 };
+      const ax = pos.side === "L" ? 4 : 96;
+      links.push({ x1: ax, y1: pos.ay, x2: X, y2: Y });
+      faceDots.push({ x: X + "%", y: Y + "%" });
+    });
+    return { links, faceDots };
+  }
 
-    // Card: all characteristics snap in simultaneously when poster is revealed
-    const cSnapP = live ? 0 : clamp(seg(17.5, 17.95, outBack), 0, 1);
-    o.charItems = chars.map((text) => {
-      return { text, tick:{ display:'inline-block', opacity:cSnapP, transform:`scale(${cSnapP.toFixed(3)})`, fontSize:'12px', fontWeight:700, lineHeight:1, color:'#16130f' }, txt:{ color:`rgba(20,17,15,${lerp(0.28,1,cSnapP).toFixed(3)})` } };
+  computePanel(i, abs) {
+    const loopLen = 12000;
+    const subjectOffset = Math.floor(i * this.subjects.length / 4);
+    const loopNum = Math.floor(abs / loopLen);
+    const subjectIdx = (subjectOffset + loopNum) % this.subjects.length;
+    const subject = this.subjects[subjectIdx];
+
+    const template = this.positionTemplates[(subjectIdx + i * 3) % this.positionTemplates.length];
+    const face = this.computeFace(i, abs, template);
+    const t = abs % loopLen;
+    const speed = 28;
+
+    const sentences = subject.sentences;
+    const total = sentences.reduce((s, x) => s + x.length, 0);
+    let tc = Math.floor((t - 1000) / speed);
+    if (tc < 0) tc = 0; if (tc > total) tc = total;
+
+    let rem = tc;
+    const lines = [];
+    for (let j = 0; j < sentences.length; j++) {
+      const s = sentences[j];
+      if (rem <= 0) break;
+      const shown = Math.min(s.length, rem);
+      lines.push({ txt: s.slice(0, shown), caret: false });
+      rem -= shown;
+      if (shown < s.length) break;
+    }
+    if (lines.length) lines[lines.length - 1].caret = true;
+
+    const left = [], right = [];
+    subject.markers.forEach((m, j) => {
+      const pos = template[j];
+      const p = this.ease((t - (1200 + j * 600)) / 1100);
+      const pct = p <= 0 ? "—" : "+" + Math.round(m.v * p) + "%";
+      const co = { name: m.name, pct, top: pos.ay + "%" };
+      if (pos.side === "L") left.push(co); else right.push(co);
     });
 
-    o.interpStyle = { opacity:interpP, transform:`translateY(${lerp(6,0,interpP).toFixed(1)}px)` };
-    o.classStyle = { display:'inline-block', opacity:classP, transform:`scale(${lerp(1.18,1,classP).toFixed(3)})`, transformOrigin:'left center' };
-    o.explStyle = { display:'inline-block', opacity:explP, transform:`scale(${lerp(1.18,1,explP).toFixed(3)})`, transformOrigin:'left center' };
-    o.dispoStyle = { display:'inline-block', opacity:dispoOp, transform:`translateY(${lerp(4,0,dispoIn).toFixed(1)}px)` };
+    const confProg = this.ease(Math.min(1, tc / Math.max(1, total)));
+    const confTarget = subject.confidence;
+    const reflTarget = parseFloat((confTarget - 34.5).toFixed(1));
 
-    // ---- Stamp (inside metrics column) ----
-    o.bandStampEl = locked ? this.buildStamp(subj, stampIn, stampOp) : null;
-
-    // ---- Card content wrapper: snap to invisible when returning to idle ----
-    // The overlay fades IN over 0.6s on top of a dark background, not through the doc.
-    o.cardContentStyle = {
-      width:'100%', height:'100%',
-      border:'1px solid #14130F',
-      padding:'30px 32px',
-      display:'flex', flexDirection:'column',
-      opacity: live ? 0 : 1,
+    return {
+      id: "0" + (i + 1),
+      bgRef: this.bgRefs[i],
+      thumbRef: this.thumbRefs[i],
+      conf: (confTarget - 15 + 15 * confProg).toFixed(2),
+      refl: (reflTarget - 8 + 8 * confProg).toFixed(1),
+      stateLabel: this.states[Math.floor((abs + i * 3700) / 2100) % this.states.length],
+      elapsed: this.fmtTime(Math.floor(t / 1000)),
+      caseRef: subject.caseRef,
+      lines,
+      links: face.links,
+      faceDots: face.faceDots,
+      leftCallouts: left,
+      rightCallouts: right
     };
-
-    // ---- Tables: slide + fade in as the overlay reveals the card ----
-    const tablesIn = live ? 0 : clamp(seg(17.5, 18.5, outCubic), 0, 1);
-    o.tablesStyle = {
-      flex:'none',
-      marginTop:'24px',
-      borderTop:'1px solid #14130F',
-      paddingTop:'22px',
-      display:'grid',
-      gridTemplateColumns:'1fr 1fr',
-      gap:'22px',
-      alignItems:'start',
-      opacity: tablesIn,
-      transform: `translateY(${lerp(16, 0, tablesIn).toFixed(1)}px)`,
-    };
-
-    o.detectLabel = camError ? 'MANUAL MODE' : (!det.armed ? 'STEP AWAY TO RESET' : (det.present ? (detP>0.55?'FACE LOCKED':'ACQUIRING…') : 'STEP INTO FRAME'));
-    o.detectBarStyle = { position:'absolute', left:'0', top:'0', bottom:'0', width:`${(detP*100).toFixed(0)}%`, background:det.present?RED:'rgba(241,239,231,0.5)' };
-
-    o.camError = camError;
-    o.flashStyle = { position:'absolute', inset:'0', background:RED, opacity:flash, pointerEvents:'none', mixBlendMode:'multiply', zIndex:7 };
-
-    return o;
   }
 
   renderVals() {
-    const stageW = this.STATIONS * 1040 + Math.max(0, this.STATIONS - 1) * 20;
-    return {
-      stageStyle: { transform:`scale(${this.state.scale})`, transformOrigin:'center center' },
-      stageInnerStyle: { display:'flex', gap:'20px', alignItems:'flex-start' },
-      panels: this.state.stations.slice(0, this.STATIONS).map((s, i) => this.panel(s, i))
-    };
+    const start = this.start || Date.now();
+    const abs = (this.state.now || start) - start;
+    const panels = [];
+    for (let i = 0; i < 4; i++) panels.push(this.computePanel(i, abs));
+    return { panels, stageRef: this.stageRef };
   }
 }
 </script>
-</x-dc>
 </body>
 </html>
