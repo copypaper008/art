@@ -22,62 +22,43 @@ if %errorlevel% neq 0 (
 for /f "tokens=*" %%v in ('python --version 2^>^&1') do echo  Python: %%v
 echo.
 
-:: ── git (required for LivePortrait clone) ────────────────────────────────────
-where git >nul 2>nul
-if %errorlevel% neq 0 (
-    echo  [ERROR] git not found.
-    echo          Download from https://git-scm.com/download/win
+:: ── inswapper model ──────────────────────────────────────────────────────────
+if not exist "inswapper_128.onnx" (
+    echo  [ERROR] inswapper_128.onnx not found in recognition-engine\
+    echo.
+    echo          Download it from:
+    echo    https://huggingface.co/deepinsight/insightface/resolve/main/models/inswapper_128.onnx
+    echo.
+    echo          Then place it in this folder and run this script again.
     echo.
     pause
     exit /b 1
 )
 
-:: ── LivePortrait repo + dependencies (one-time) ──────────────────────────────
-if not exist ".deps_ok_liveportrait" (
-    echo  [1/2]  Setting up LivePortrait ^(first-time, ~5 min^)...
-    echo.
-
-    if not exist "liveportrait" (
-        echo         Cloning LivePortrait...
-        git clone https://github.com/KwaiVGI/LivePortrait liveportrait
-        if %errorlevel% neq 0 (
-            echo.
-            echo  [ERROR] git clone failed. Check your internet connection.
-            pause
-            exit /b 1
-        )
-    )
-
-    echo         Installing Python dependencies...
-    pip install -r liveportrait\requirements.txt
+:: ── Python dependencies (one-time) ───────────────────────────────────────────
+if not exist ".deps_ok_v2" (
+    echo  [1/2]  Installing Python dependencies ^(first-time, ~2 min^)...
+    pip install insightface onnxruntime websockets opencv-python numpy gfpgan
     if %errorlevel% neq 0 (
         echo.
         echo  [ERROR] pip install failed.
         echo          Try running manually:
-        echo            pip install -r liveportrait\requirements.txt
+        echo            pip install insightface onnxruntime websockets opencv-python numpy gfpgan
         pause
         exit /b 1
     )
-
-    echo         Pre-downloading models from HuggingFace ^(~600 MB^)...
-    python -c "import sys; sys.path.insert(0,'liveportrait'); from src.config.inference_config import InferenceConfig; from src.config.crop_config import CropConfig; from src.live_portrait_pipeline import LivePortraitPipeline; LivePortraitPipeline(inference_cfg=InferenceConfig(), crop_cfg=CropConfig()); print('  Models ready.')"
-    if %errorlevel% neq 0 (
-        echo.
-        echo  [WARN] Model pre-download may have failed. Will retry on first run.
-    )
-
-    echo. > .deps_ok_liveportrait
+    echo. > .deps_ok_v2
     echo         Done.
     echo.
 )
 
-:: ── Start LivePortrait server ─────────────────────────────────────────────────
+:: ── Start swap server ─────────────────────────────────────────────────────────
 echo  [2/2]  Starting servers...
 echo.
-echo         LivePortrait server  ^>  ws://localhost:8765
+echo         Swap server  ^>  ws://localhost:8765
 echo.
 
-start "LivePortrait Server" cmd /k "cd /d "%~dp0" && python server_liveportrait.py"
+start "Swap Server" cmd /k "cd /d "%~dp0" && python server.py"
 
 :: Wait for port 8765 (up to 60 s)
 set WAIT=0
@@ -87,8 +68,8 @@ if %errorlevel% equ 0 goto READY
 timeout /t 2 /nobreak >nul
 set /a WAIT+=2
 if %WAIT% lss 60 goto POLL
-echo  [ERROR] LivePortrait server did not start within 60 seconds.
-echo          Check the LivePortrait Server window for errors.
+echo  [ERROR] Swap server did not start within 60 seconds.
+echo          Check the Swap Server window for errors.
 pause
 exit /b 1
 
@@ -98,7 +79,7 @@ exit /b 1
 start "Web Server" cmd /k "cd /d "%~dp0" && python -m http.server 8080 --bind 127.0.0.1"
 timeout /t 2 /nobreak >nul
 
-echo         Web server          ^>  http://localhost:8080
+echo         Web server   ^>  http://localhost:8080
 echo.
 
 :: ── Open browser ─────────────────────────────────────────────────────────────
