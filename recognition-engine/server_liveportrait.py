@@ -253,14 +253,36 @@ def _infer_frame(p, driving_rgb, is_first, station, station_refs):
 
     x_d_0_info = station_refs[station]
 
-    # Compute RELATIVE expression delta from neutral pose and add to
-    # the portrait's own keypoints — this is what makes the mouth/eyes move
+    # Compute RELATIVE motion delta from neutral pose and add to portrait keypoints.
+    # Scale > 1 amplifies subtle movements so they read clearly on a slow CPU stream.
+    MOTION_SCALE = 1.5
+
     x_d_i_new = copy.deepcopy(p['x_s_info'])
     x_d_i_new['exp'] = (
         p['x_s_info']['exp']
-        + (x_d_i_info['exp'] - x_d_0_info['exp'])
+        + MOTION_SCALE * (x_d_i_info['exp'] - x_d_0_info['exp'])
     )
-    x_d_i_new['t'] = p['x_s_info']['t'] + (x_d_i_info['t'] - x_d_0_info['t'])
+    x_d_i_new['t'] = (
+        p['x_s_info']['t']
+        + MOTION_SCALE * (x_d_i_info['t'] - x_d_0_info['t'])
+    )
+    x_d_i_new['pitch'] = (
+        p['x_s_info']['pitch']
+        + MOTION_SCALE * (x_d_i_info['pitch'] - x_d_0_info['pitch'])
+    )
+    x_d_i_new['yaw'] = (
+        p['x_s_info']['yaw']
+        + MOTION_SCALE * (x_d_i_info['yaw'] - x_d_0_info['yaw'])
+    )
+    x_d_i_new['roll'] = (
+        p['x_s_info']['roll']
+        + MOTION_SCALE * (x_d_i_info['roll'] - x_d_0_info['roll'])
+    )
+
+    if not is_first:
+        exp_d = float((x_d_i_info['exp'] - x_d_0_info['exp']).abs().mean())
+        yaw_d = float((x_d_i_info['yaw'] - x_d_0_info['yaw']).abs().mean())
+        print(f"    delta: exp={exp_d:.4f} yaw={yaw_d:.4f}")
 
     x_d_i_new = wrapper.transform_keypoint(x_d_i_new)
 
