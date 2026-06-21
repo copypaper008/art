@@ -212,7 +212,7 @@
          <div style="font-family:'Spline Sans Mono',monospace;font-size:9px;letter-spacing:3px;color:rgba(241,239,231,0.55);margin-top:10px;">DO NOT MOVE</div>
         </div>
         <!-- TOP STATS BANNER -->
-        <div style="position:absolute;top:0;left:0;right:0;background:linear-gradient(to bottom,rgba(10,10,11,0.97) 0%,rgba(10,10,11,0.80) 52%,transparent 100%);padding:26px 30px 100px;pointer-events:none;">
+        <div style="position:absolute;top:0;left:0;right:0;background:linear-gradient(to bottom,rgba(10,10,11,0.55) 0%,rgba(10,10,11,0.18) 52%,transparent 100%);padding:26px 30px 100px;pointer-events:none;">
          <div style="font-family:'Spline Sans Mono',monospace;font-size:12px;letter-spacing:3px;color:rgba(241,239,231,0.38);margin-bottom:8px;">RECOGNITION ENGINE v.7.3.1</div>
          <div style="display:flex;align-items:baseline;gap:14px;margin-bottom:10px;">
           <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:52px;line-height:1;color:#f1efe7;">{{ p.overlayScanStatus }}</div>
@@ -258,7 +258,7 @@
          <div style="{{ p.overlayThumbScanStyle }}"></div>
         </div>
         <!-- BOTTOM DATA STRIP -->
-        <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(10,10,11,0.9) 0%,transparent 100%);padding:55px 30px 20px;pointer-events:none;">
+        <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(10,10,11,0.5) 0%,transparent 100%);padding:55px 30px 20px;pointer-events:none;">
          <div style="display:flex;justify-content:space-between;align-items:flex-end;">
           <div style="font-family:'Spline Sans Mono',monospace;font-size:13px;letter-spacing:0.8px;color:rgba(241,239,231,0.4);line-height:1.8;">
            <div>MATCHING AGAINST&nbsp;&nbsp;<span style="color:rgba(241,239,231,0.75);">{{ p.overlayDatasetSrc }}</span></div>
@@ -1291,7 +1291,7 @@ class Component extends DCLogic {
 
     // Overlay scan content: portrait reveal + scan FX + stats, fades in when scan fires
     const overlayScanOp = live ? 0 : clamp(seg(0.2, 0.7, outCubic), 0, 1);
-    o.overlayScanContentStyle = { position:'absolute', inset:'0', opacity: overlayScanOp, pointerEvents:'none' };
+    o.overlayScanContentStyle = { position:'absolute', inset:'0', opacity: overlayScanOp, pointerEvents:'none', zIndex: 11 };
     o.overlayScanLineStyle = Object.assign({}, o.scanLineStyle);
     o.overlayScanTrailStyle = Object.assign({}, o.scanTrailStyle);
     o.overlayScanGridStyle = Object.assign({}, o.scanGridStyle);
