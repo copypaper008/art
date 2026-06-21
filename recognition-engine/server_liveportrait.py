@@ -277,6 +277,7 @@ async def handle(ws):
             is_first  = req.get('first', False)
 
             if subj_id not in portraits:
+                print(f"  WARN  no portrait cached for '{subj_id}' (station={station})")
                 await ws.send(json.dumps({'error': f'No portrait: {subj_id}', 'station': station}))
                 continue
 

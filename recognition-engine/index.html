@@ -748,6 +748,15 @@ class Component extends DCLogic {
     this.startCamera();
     this.startDetect();
     this.connectSwapServer();
+
+    // Watchdog: if a stream is active but the flow-control chain is broken
+    // (first send failed, captureFrame returned null, WS reconnected, etc.),
+    // this re-kicks it every 2 seconds.
+    this._watchdog = setInterval(() => {
+      for (let i = 0; i < this.STATIONS; i++) {
+        if (this._streamActive[i]) this._sendNextFrame(i);
+      }
+    }, 2000);
   }
 
   connectSwapServer() {
@@ -755,7 +764,13 @@ class Component extends DCLogic {
       try {
         const ws = new WebSocket('ws://localhost:8765');
         this.swapWs = ws;
-        ws.onopen = () => { this.swapServerOk = true; };
+        ws.onopen = () => {
+          this.swapServerOk = true;
+          // Restart any streams that were active when the WS dropped
+          for (let i = 0; i < this.STATIONS; i++) {
+            if (this._streamActive[i]) this._sendNextFrame(i);
+          }
+        };
         ws.onmessage = (e) => {
           try {
             const msg = JSON.parse(e.data);
@@ -803,6 +818,7 @@ class Component extends DCLogic {
     cancelAnimationFrame(this._mainRaf);
     this._rafs.forEach(r => r && cancelAnimationFrame(r));
     this._streamActive = [false, false, false, false];
+    clearInterval(this._watchdog);
     this.streamTimers.forEach((t, i) => { if (t) { clearInterval(t); this.streamTimers[i] = null; } });
     clearInterval(this.detectTimer);
     clearTimeout(this._swapReconnect);
