@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Yeseva+One&family=Archivo+Narrow:wght@600;700&display=swap" rel="stylesheet">
+<style>html,body{margin:0;height:100%;}</style>
+</helmet>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="ink" x="-25%" y="-25%" width="150%" height="150%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.012 0.016" numOctaves="5" seed="73" result="big"/>
+    <feDisplacementMap in="SourceGraphic" in2="big" scale="6" xChannelSelector="R" yChannelSelector="G" result="disp"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.87" numOctaves="3" seed="4" result="grain"/>
+    <feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.85 1.2" result="holes"/>
+    <feComposite in="disp" in2="holes" operator="in"/>
+  </filter>
+</svg>
+
+<div style="height:100%;display:flex;align-items:center;justify-content:center;background:transparent;overflow:hidden;font-family:'Yeseva One',serif;">
+  
+
+  <div style="transform:rotate(-2.5deg);filter:url(#ink);mix-blend-mode:multiply;color:#8a1f53;display:flex;flex-direction:column;align-items:center;gap:8px;">
+
+    <!-- starburst flourish -->
+    <div style="display:flex;align-items:center;gap:12px;font-family:'Archivo Narrow',sans-serif;font-weight:700;letter-spacing:.3em;font-size:14px;text-transform:uppercase;padding-left:.3em;white-space:nowrap;">
+      <span>&#10038;</span><span>Son of a Preacher Man</span><span>&#10038;</span>
+    </div>
+
+    <div style="font-weight:400;font-size:78px;line-height:.86;letter-spacing:.005em;text-transform:uppercase;white-space:nowrap;">Homosexual</div>
+
+    <div style="display:flex;align-items:center;gap:12px;margin-top:14px;">
+      <div style="width:34px;height:4px;background:currentColor;"></div>
+      <div style="font-family:'Archivo Narrow',sans-serif;font-weight:600;letter-spacing:.26em;font-size:13px;text-transform:uppercase;padding-left:.26em;white-space:nowrap;color:#111;">London Soul &middot; 1939 — 1999</div>
+      <div style="width:34px;height:4px;background:currentColor;"></div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
