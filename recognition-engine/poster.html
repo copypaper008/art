@@ -740,8 +740,8 @@ class Component extends DCLogic {
     'ARCHIVAL PHOTOGRAPH: MATCHED','SUBJECT FILE: COMPILING',
   ];
 
-  // set to 4 for the full installation (each station is 1040px wide)
-  STATIONS = 1;
+  // 4 stations on a 43" 4K landscape monitor — all visible simultaneously
+  STATIONS = 4;
 
   videos = [];
   _vrefs = {};
@@ -767,12 +767,12 @@ class Component extends DCLogic {
     this.fit();
     this._onResize = () => this.fit();
     window.addEventListener('resize', this._onResize);
-    this._onKey = (e) => { if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); this.launchScan(0); } };
+    this._onKey = (e) => { if (e.code === 'Space' || e.key === ' ') { e.preventDefault(); this.trigger(0); } };
     window.addEventListener('keydown', this._onKey);
-    window.__trigger = (i) => this.launchScan(i);
+    window.__trigger = (i) => this.trigger(i);
     this._onClick = () => {
       for (let i = 0; i < this.STATIONS; i++) {
-        if (this.state.stations[i].phase === 'live' && this.det?.[i]?.armed) { this.launchScan(i); break; }
+        if (this.state.stations[i].phase === 'live' && this.det?.[i]?.armed) { this.trigger(i); break; }
       }
     };
     window.addEventListener('click', this._onClick);
@@ -792,52 +792,6 @@ class Component extends DCLogic {
     this.connectSwapServer();
 
     this._watchdog = null;
-
-    // Reveal mode: arrived from scan page with swap result in localStorage
-    if (new URLSearchParams(window.location.search).get('reveal') === '1') {
-      const subjectIdx = parseInt(localStorage.getItem('RE_subjectIdx') || '0');
-      const swapResult = localStorage.getItem('RE_swapResult');
-      const leftEye    = localStorage.getItem('RE_leftEye');
-      const imgW       = localStorage.getItem('RE_imgW');
-      const imgH       = localStorage.getItem('RE_imgH');
-      this.captures[0] = {
-        src: '', vw: 0, vh: 0,
-        swappedSrc: swapResult ? 'data:image/jpeg;base64,' + swapResult : null,
-        leftEye: leftEye ? JSON.parse(leftEye) : null,
-        imgW: imgW ? parseInt(imgW) : 0,
-        imgH: imgH ? parseInt(imgH) : 0,
-      };
-      const subj = this.subjects[subjectIdx];
-      if (subj) {
-        const sf = this.STAMP_FILES[subj.id];
-        if (sf && !(subj.id in this.stampHtmlCache)) this.fetchStampHtml(subj.id, sf);
-      }
-      setTimeout(() => { if (!this.dead) this.triggerReveal(subjectIdx); }, 150);
-    }
-  }
-
-  // Navigate to scan page, passing the captured frame + chosen subject via localStorage
-  launchScan(i) {
-    const subjectIdx = this.pickSubject(i);
-    const subj = this.subjects[subjectIdx];
-    const frame = this.captureFrame(i);
-    try {
-      localStorage.setItem('RE_subjectIdx',  String(subjectIdx));
-      localStorage.setItem('RE_subjectId',   subj.id);
-      if (frame) localStorage.setItem('RE_frame', frame.src.split(',')[1]);
-      localStorage.removeItem('RE_swapResult');
-    } catch (_) {}
-    window.location = 'index.html?scan=1';
-  }
-
-  // Jump straight to the card-reveal phase (skip the dark scanning overlay)
-  triggerReveal(subjectIdx) {
-    const REVEAL_START = 15.5; // seconds — overlay starts fading at t=16
-    this._scanSubjects[0] = (this.subjects[subjectIdx] || this.subjects[0]).id;
-    const stations = this.state.stations.slice();
-    stations[0] = { phase: 'scanning', t: 0, subjectIdx };
-    this.t0[0] = performance.now() - REVEAL_START * 1000;
-    this.setState({ stations }, () => this.ensureRaf(0));
   }
 
   connectSwapServer() {
@@ -972,11 +926,9 @@ class Component extends DCLogic {
   // ---- Auto-detection: fires when skin tone holds still long enough --------
   startDetect() {
     const HOLD = 850, CLEAR = 550;
-    const isReveal = new URLSearchParams(window.location.search).get('reveal') === '1';
     this.dCanvas = document.createElement('canvas');
     this.dCanvas.width = 48; this.dCanvas.height = 48;
     this.detectTimer = setInterval(() => {
-      if (isReveal) return; // detection disabled during reveal phase
       const now = performance.now();
       let changed = false;
       for (let i = 0; i < this.STATIONS; i++) {
@@ -988,7 +940,7 @@ class Component extends DCLogic {
         let prog = 0;
         if (live && this.detectArmed[i] && this.presentSince[i]) {
           prog = Math.min(1, (now - this.presentSince[i]) / HOLD);
-          if (prog >= 1) { this.detectArmed[i] = false; this.presentSince[i] = 0; this.launchScan(i); }
+          if (prog >= 1) { this.detectArmed[i] = false; this.presentSince[i] = 0; this.trigger(i); }
         }
         const prev = this.det[i] || {};
         const next = { present, prog, armed: this.detectArmed[i] };
@@ -1089,10 +1041,6 @@ class Component extends DCLogic {
         if (autoLoop) {
           stations[i] = { phase: 'live', t: 0, subjectIdx: stations[i].subjectIdx };
           if (this.videos[i] && this.stream) this.videos[i].play().catch(() => {});
-          // After reveal, return to idle (clears URL params)
-          if (new URLSearchParams(window.location.search).get('reveal') === '1') {
-            setTimeout(() => { window.location = 'poster.html'; }, 1000);
-          }
         }
         else { stations[i] = { phase: 'done', t: TOTAL, subjectIdx: stations[i].subjectIdx }; }
         this._rafs[i] = null;
