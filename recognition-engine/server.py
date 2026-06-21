@@ -38,7 +38,6 @@ ASSETS = os.path.join(os.path.dirname(__file__), 'assets')
 MODEL_PATH = os.path.join(os.path.dirname(__file__), 'inswapper_128.onnx')
 
 PORTRAIT_FILES = [
-    # original 16
     ('warhol',       'warhol-portrait.jpeg'),
     ('haring',       'haring-portrait.jpeg'),
     ('milk',         'milk-portrait.jpeg'),
@@ -55,18 +54,29 @@ PORTRAIT_FILES = [
     ('stamp',        'stamp-portrait.png'),
     ('wilde',        'wilde-portrait.jpeg'),
     ('jack',         'jack-portrait.jpeg'),
-    # new subjects
-    ('woolf',        'woolf-portrait.png'),
-    ('sappho',       'sappho-portrait.png'),
-    ('waters',       'waters-portrait.png'),
-    ('brownb',       'brownb-portrait.png'),
-    ('magda',        'magda-portrait.png'),
-    ('kake',         'kake-portrait.png'),
-    ('vidal',        'vidal-portrait.png'),
-    ('hadrian',      'hadrian-portrait.png'),
+    ('freddie',      'freddie-portrait.jpeg'),
+    ('elton',        'elton-portrait.png'),
+    ('baldwin',      'baldwin-portrait.jpeg'),
+    ('marsha',       'marsha-portrait.jpeg'),
     ('kramer',       'kramer-portrait.png'),
     ('rupaul',       'rupaul-portrait.png'),
-    ('elton',        'elton-portrait.png'),
+    ('waters',       'waters-portrait.png'),
+    ('vidal',        'vidal-portrait.png'),
+    ('woolf',        'woolf-portrait.png'),
+    ('sappho',       'sappho-portrait.png'),
+    ('hadrian',      'hadrian-portrait.png'),
+    ('nathan',       'nathan-portrait.jpeg'),
+    ('peterallen',   'peterallen-portrait.jpeg'),
+    ('magda',        'magda-portrait.png'),
+    ('brownb',       'brownb-portrait.png'),
+    ('vilanch',      'vilanch-portrait.jpeg'),
+    ('kake',         'kake-portrait.png'),
+    ('ursula',       'ursula-portrait.jpeg'),
+    ('bugs',         'bugs-portrait.jpeg'),
+    ('tankgirl',     'tankgirl-portrait.jpeg'),
+    ('sylvester',    'sylvester-portrait.jpeg'),
+    ('vita',         'vita-portrait.jpeg'),
+    ('gadsby',       'gadsby-portrait.jpeg'),
 ]
 
 # ---- startup ----------------------------------------------------------------
