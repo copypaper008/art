@@ -16,6 +16,13 @@
   html,body{margin:0;padding:0;background:#08080a;}
   @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
   @keyframes rainbowShift{to{background-position:200% 0}}
+  @keyframes portraitFloat{
+    0%  {transform:scale(1.000) translate(0px,0px) rotate(0deg);}
+    25% {transform:scale(1.005) translate(-1px,-1.5px) rotate(0.12deg);}
+    50% {transform:scale(1.008) translate(1px,-1px) rotate(-0.08deg);}
+    75% {transform:scale(1.004) translate(0px,0.5px) rotate(0.06deg);}
+    100%{transform:scale(1.000) translate(0px,0px) rotate(0deg);}
+  }
 </style>
 </helmet>
 
@@ -749,14 +756,7 @@ class Component extends DCLogic {
     this.startDetect();
     this.connectSwapServer();
 
-    // Watchdog: if a stream is active but the flow-control chain is broken
-    // (first send failed, captureFrame returned null, WS reconnected, etc.),
-    // this re-kicks it every 2 seconds.
-    this._watchdog = setInterval(() => {
-      for (let i = 0; i < this.STATIONS; i++) {
-        if (this._streamActive[i]) this._sendNextFrame(i);
-      }
-    }, 2000);
+    this._watchdog = null;
   }
 
   connectSwapServer() {
@@ -764,13 +764,7 @@ class Component extends DCLogic {
       try {
         const ws = new WebSocket('ws://localhost:8765');
         this.swapWs = ws;
-        ws.onopen = () => {
-          this.swapServerOk = true;
-          // Restart any streams that were active when the WS dropped
-          for (let i = 0; i < this.STATIONS; i++) {
-            if (this._streamActive[i]) this._sendNextFrame(i);
-          }
-        };
+        ws.onopen = () => { this.swapServerOk = true; };
         ws.onmessage = (e) => {
           try {
             const msg = JSON.parse(e.data);
@@ -786,11 +780,6 @@ class Component extends DCLogic {
               }
             }
 
-            // Flow control: only send the next frame after the server responds,
-            // so we never queue frames faster than the server can process them.
-            if (this._streamActive[station]) {
-              this._sendNextFrame(station);
-            }
           } catch (_) {}
         };
         ws.onerror = () => {};
@@ -984,15 +973,12 @@ class Component extends DCLogic {
     this.captures[i] = captured;
     this._scanSubjects[i] = subj.id;
 
-    // Send the first frame (neutral reference for LivePortrait) and mark active.
-    // Subsequent frames are sent in onmessage after each server response so we
-    // never queue frames faster than the server can process them (flow control).
-    this._streamActive[i] = true;
+    // Send one frame to the swap server; result arrives via onmessage.
     if (this.swapWs && this.swapWs.readyState === WebSocket.OPEN) {
       const frame = this.captureFrame(i);
       if (frame) {
         try {
-          this.swapWs.send(JSON.stringify({ subject: subj.id, frame: frame.src.split(',')[1], station: i, first: true }));
+          this.swapWs.send(JSON.stringify({ subject: subj.id, frame: frame.src.split(',')[1], station: i }));
         } catch (_) {}
       }
     }
@@ -1010,9 +996,6 @@ class Component extends DCLogic {
     const step = (now) => {
       const t = (now - this.t0[i]) / 1000;
       if (t >= TOTAL) {
-        // Stop live streaming when the scan cycle ends
-        this._streamActive[i] = false;
-        if (this.streamTimers[i]) { clearInterval(this.streamTimers[i]); this.streamTimers[i] = null; }
         this._scanSubjects[i] = null;
         const stations = this.state.stations.slice();
         if (autoLoop) { stations[i] = { phase: 'live', t: 0, subjectIdx: stations[i].subjectIdx }; if (this.videos[i] && this.stream) this.videos[i].play().catch(() => {}); }
@@ -1205,7 +1188,9 @@ class Component extends DCLogic {
         style: {
           position:'absolute', inset:'0', width:'100%', height:'100%',
           objectFit:'cover', objectPosition:'center top',
-          opacity:1, pointerEvents:'none'
+          opacity:1, pointerEvents:'none',
+          animation:'portraitFloat 7s ease-in-out infinite',
+          transformOrigin:'center 30%',
         }
       });
     } else {
@@ -1253,7 +1238,9 @@ class Component extends DCLogic {
       opacity: (!live && swapSrc) ? 1 : 0,
       zIndex: 10,
       pointerEvents: 'none',
-      transition: 'opacity 0.3s',
+      transition: 'opacity 0.6s',
+      animation: 'portraitFloat 7s ease-in-out infinite',
+      transformOrigin: 'center 30%',
     };
 
     const oRingW = lerp(22, 26, detP);
