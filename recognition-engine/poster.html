@@ -1713,9 +1713,10 @@ class Component extends DCLogic {
     // ---- Stamp: positioned over the document/tables area below the face photo ----
     // Starting at ~840px keeps the stamp on the light paper area (mix-blend-mode:multiply
     // needs a light background — the dark face window above would make it invisible).
-    // Layer sits in the flex:1 spacer zone below SCAN STATUS, above the tables.
-    // Fixed height prevents the stamp covering the NOTICE footer below.
-    o.stampLayerStyle = { position:'absolute', top:'490px', left:'0', right:'0', height:'280px', zIndex:30, pointerEvents:'none', overflow:'visible' };
+    // Layer starts below the SCAN STATUS percentage bars (~550px) and covers the
+    // spacer + start of tables — mix-blend-mode:multiply makes the stamp visible on
+    // the light card paper. Fixed height keeps it off the NOTICE footer below.
+    o.stampLayerStyle = { position:'absolute', top:'560px', left:'0', right:'0', height:'260px', zIndex:30, pointerEvents:'none', overflow:'visible' };
     o.bandStampEl = locked ? this.buildStamp(subj, stampIn, stampOp) : null;
 
     // ---- Card content wrapper: snap to invisible when returning to idle ----
