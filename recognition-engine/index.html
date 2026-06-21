@@ -807,8 +807,8 @@ class Component extends DCLogic {
         X = (ox + n[m.id].x * dw) / PW * 100;
         Y = (oy + n[m.id].y * dh) / PH * 100;
       } else {
-        X = pos.fx + Math.sin(abs / 900 + seed + j) * 0.6 + Math.sin(abs / 2300 + seed + j) * 0.4;
-        Y = pos.fy + Math.cos(abs / 1050 + seed + j) * 0.5 + Math.cos(abs / 1900 + seed + j) * 0.3;
+        X = pos.fx + Math.sin(abs / 900 + seed + j) * 2.8 + Math.sin(abs / 2300 + seed + j) * 1.4;
+        Y = pos.fy + Math.cos(abs / 1050 + seed + j) * 2.2 + Math.cos(abs / 1900 + seed + j) * 1.1;
       }
       const ax = pos.side === "L" ? 4 : 96;
       links.push({ x1: ax, y1: pos.ay, x2: X, y2: Y });
