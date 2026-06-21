@@ -793,7 +793,7 @@ class Component extends DCLogic {
     const subjectIdx = (subjectOffset + loopNum) % this.subjects.length;
     const subject = this.subjects[subjectIdx];
 
-    const template = this.positionTemplates[subjectIdx % this.positionTemplates.length];
+    const template = this.positionTemplates[(subjectIdx + i * 3) % this.positionTemplates.length];
     const face = this.computeFace(i, abs, template);
     const t = abs % loopLen;
     const speed = 28;
