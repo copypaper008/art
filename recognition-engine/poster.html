@@ -1745,17 +1745,16 @@ class Component extends DCLogic {
     o.explStyle = { display:'inline-block', opacity:explP, transform:`scale(${lerp(1.18,1,explP).toFixed(3)})`, transformOrigin:'left center' };
     o.dispoStyle = { display:'inline-block', opacity:dispoOp, transform:`translateY(${lerp(4,0,dispoIn).toFixed(1)}px)` };
 
-    // ---- Stamp: positioned over the document/tables area below the face photo ----
-    // Starting at ~840px keeps the stamp on the light paper area (mix-blend-mode:multiply
-    // needs a light background — the dark face window above would make it invisible).
-    // Layer starts below the SCAN STATUS percentage bars (~550px) and covers the
-    // Stamp layer anchored precisely over the portrait photo column.
-    // Card layout trace: content padding 37px top, 39px left.
-    // Header≈103px + divider+gap≈47px + identity≈110px + divider+gap≈47px + main-row margin 26px = 333px to main row start.
-    // Photo column: left = 39 + 42(rail) + 34(gap) = 115px, width = 300px.
-    // Face window: top = 333 + 14(padding) = 347px, height = 560px.
-    // Stamp center: x=265px (photo centre), y=627px (face window centre).
-    o.stampLayerStyle = { position:'absolute', left:'115px', width:'300px', top:'333px', height:'588px', zIndex:30, pointerEvents:'none', overflow:'visible' };
+    // ---- Stamp layer: spans full card width, sits over the light tables/paper area ----
+    // Card layout (from card root, 1040×1560):
+    //   Header+identity+dividers:        ≈ 341px to main-row start
+    //   Face window (dark bg):           355–915px  ← multiply blend invisible here
+    //   Photo metadata:                  915–959px
+    //   Tables section (light paper):    ≈ 983–1300px  ← stamp must land here
+    //   NOTICE footer:                   ≈ 1300–1480px
+    // Stamp layer: full card width, centered at y≈980 (top of tables).
+    // mix-blend-mode:multiply in the stamp HTML shows ink on the beige card paper.
+    o.stampLayerStyle = { position:'absolute', left:'0', right:'0', top:'680px', height:'600px', zIndex:30, pointerEvents:'none', overflow:'visible' };
     o.bandStampEl = locked ? this.buildStamp(subj, stampIn, stampOp) : null;
 
     // ---- Card content wrapper: snap to invisible when returning to idle ----
@@ -1795,8 +1794,11 @@ class Component extends DCLogic {
   renderVals() {
     const stageW = this.STATIONS * 1040 + Math.max(0, this.STATIONS - 1) * 20;
     return {
-    stageStyle: {
-        position: 'absolute', top: '50%', left: '50%',
+      stageStyle: {
+        position: 'absolute',
+        width: `${stageW}px`,
+        height: '1560px',
+        top: '50%', left: '50%',
         transform: `translate(-50%, -50%) scale(${this.state.scale})`,
         transformOrigin: 'center center',
       },
