@@ -994,7 +994,7 @@ class Component extends DCLogic {
 
   ensureRaf(i) {
     if (this._rafs[i]) return;
-    const TOTAL = 28.0;
+    const TOTAL = 36.0;
     const autoLoop = this.props.autoLoop ?? true;
     const step = (now) => {
       const t = (now - this.t0[i]) / 1000;
@@ -1220,6 +1220,9 @@ class Component extends DCLogic {
     o.liveOverlayStyle = {
       position:'absolute', inset:'0', zIndex:9,
       background:'#0a0a0b', opacity:overlayFade,
+      // When returning to idle, fade the overlay IN gently so the portrait
+      // doesn't hard-cut away — JS controls the fade-OUT during scan.
+      transition: live ? 'opacity 2.5s ease-in' : 'none',
       pointerEvents: (live || (!live && t < 17.5)) ? 'auto' : 'none'
     };
     o.overlayVideoRef = this.makeOverlayVideoRef(i);
