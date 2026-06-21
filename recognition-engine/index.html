@@ -640,6 +640,9 @@ class Component extends DCLogic {
   states = ["OBSERVING", "THINKING", "DEEP IN THOUGHT", "CROSS-REFERENCING", "REASONING", "FORMING CONCLUSION"];
   norm = [{}, {}, {}, {}];
   hasFace = [false, false, false, false];
+  faceSince = [0, 0, 0, 0];
+  loadTime = Date.now();
+  navigating = false;
   camW = [0, 0, 0, 0];
   camH = [0, 0, 0, 0];
   rafs = [];
@@ -742,7 +745,7 @@ class Component extends DCLogic {
   onMesh(i, results) {
     if (i == null) return;
     const lm = results.multiFaceLandmarks && results.multiFaceLandmarks[0];
-    if (!lm) { this.hasFace[i] = false; return; }
+    if (!lm) { this.hasFace[i] = false; this.faceSince[i] = 0; return; }
     const v = this.bgRefs[i].current;
     if (v) { this.camW[i] = v.videoWidth; this.camH[i] = v.videoHeight; }
     const n = this.norm[i];
@@ -755,6 +758,12 @@ class Component extends DCLogic {
       n[m.id] = { x, y };
     });
     this.hasFace[i] = true;
+    if (!this.faceSince[i]) this.faceSince[i] = Date.now();
+    // After face held for 2s (with 5s cooldown on page load) → go to poster
+    if (!this.navigating && Date.now() - this.loadTime > 5000 && Date.now() - this.faceSince[i] > 2000) {
+      this.navigating = true;
+      window.location = 'poster.html?autostart=1';
+    }
   }
 
   ease(x) { return x < 0 ? 0 : x > 1 ? 1 : 1 - Math.pow(1 - x, 3); }

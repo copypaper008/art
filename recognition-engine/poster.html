@@ -792,6 +792,11 @@ class Component extends DCLogic {
     this.connectSwapServer();
 
     this._watchdog = null;
+
+    // If navigated from scan page, auto-trigger after camera settles
+    if (new URLSearchParams(window.location.search).get('autostart') === '1') {
+      setTimeout(() => { if (!this.dead) this.trigger(0); }, 1500);
+    }
   }
 
   connectSwapServer() {
@@ -1038,7 +1043,14 @@ class Component extends DCLogic {
       if (t >= TOTAL) {
         this._scanSubjects[i] = null;
         const stations = this.state.stations.slice();
-        if (autoLoop) { stations[i] = { phase: 'live', t: 0, subjectIdx: stations[i].subjectIdx }; if (this.videos[i] && this.stream) this.videos[i].play().catch(() => {}); }
+        if (autoLoop) {
+          stations[i] = { phase: 'live', t: 0, subjectIdx: stations[i].subjectIdx };
+          if (this.videos[i] && this.stream) this.videos[i].play().catch(() => {});
+          // Return to scan page if we were launched from it
+          if (new URLSearchParams(window.location.search).get('autostart') === '1') {
+            setTimeout(() => { window.location = 'index.html'; }, 1000);
+          }
+        }
         else { stations[i] = { phase: 'done', t: TOTAL, subjectIdx: stations[i].subjectIdx }; }
         this._rafs[i] = null;
         this.setState({ stations });
