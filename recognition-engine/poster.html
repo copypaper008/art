@@ -1833,9 +1833,8 @@ class Component extends DCLogic {
     // With the face window at 560px + 14px padding, the main row is ~616px tall, so the
     // spacer runs from y≈616 to y≈955 on the card. The metrics column starts at x≈449
     // (border 1 + inner padding 6 + content padding 32 + scan rail 42 + gap 34 + photo 300 + gap 34).
-    // The stamp is confined to the right column so it never overlaps the dark face window
-    // (multiply blend needs a light background to be visible).
-    o.stampLayerStyle = { position:'absolute', top:'616px', left:'449px', right:'0', height:'339px', zIndex:30, pointerEvents:'none', overflow:'visible' };
+    // Stamp covers the full card face so it centres correctly over the entire portrait.
+    o.stampLayerStyle = { position:'absolute', inset:'0', zIndex:30, pointerEvents:'none', overflow:'visible' };
     o.bandStampEl = locked ? this.buildStamp(subj, stampIn, stampOp) : null;
 
     // ---- Card content wrapper: snap to invisible when returning to idle ----
