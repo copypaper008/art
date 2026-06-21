@@ -62,7 +62,7 @@ sleep 1
 
 echo "        Web server   >  http://localhost:8080"
 echo ""
-open "http://localhost:8080"
+open "http://localhost:8080/poster.html"
 
 echo " [OK]  Browser opened."
 echo ""
