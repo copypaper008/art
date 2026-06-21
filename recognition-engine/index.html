@@ -66,8 +66,6 @@
         </div>
       </div>
 
-      <div style="margin-top:18px; font-size:14px; letter-spacing:.15em; color:#d94339;">&#9656; {{ p.subjectName }}</div>
-
       <div style="margin-top:20px; display:flex; gap:50px;">
         <div>
           <div style="font-size:11px; letter-spacing:.25em; color:rgba(233,227,221,.4);">CONFIDENCE</div>
@@ -619,11 +617,24 @@ class Component extends DCLogic {
   ];
 
   markerPositions = [
-    { id: "m0", idx: 10,  side: "L", ay: 52, fx: 50, fy: 17 },
-    { id: "m1", idx: 9,   side: "L", ay: 65, fx: 46, fy: 30 },
-    { id: "m2", idx: 50,  side: "L", ay: 78, fx: 42, fy: 44 },
-    { id: "m3", idx: 263, side: "R", ay: 58, fx: 58, fy: 28 },
-    { id: "m4", idx: 152, side: "R", ay: 73, fx: 55, fy: 55, yoff: 6 }
+    { id: "m0", idx: 10  },
+    { id: "m1", idx: 9   },
+    { id: "m2", idx: 50  },
+    { id: "m3", idx: 263 },
+    { id: "m4", idx: 152 }
+  ];
+
+  positionTemplates = [
+    [ { side:"L", ay:50, fx:48, fy:15 }, { side:"L", ay:63, fx:43, fy:28 }, { side:"L", ay:76, fx:38, fy:44 }, { side:"R", ay:56, fx:62, fy:28 }, { side:"R", ay:72, fx:57, fy:58 } ],
+    [ { side:"L", ay:48, fx:52, fy:14 }, { side:"L", ay:60, fx:33, fy:32 }, { side:"R", ay:54, fx:64, fy:26 }, { side:"R", ay:68, fx:60, fy:45 }, { side:"L", ay:80, fx:48, fy:65 } ],
+    [ { side:"L", ay:52, fx:50, fy:17 }, { side:"R", ay:56, fx:67, fy:30 }, { side:"L", ay:68, fx:36, fy:42 }, { side:"R", ay:74, fx:62, fy:55 }, { side:"L", ay:82, fx:44, fy:72 } ],
+    [ { side:"L", ay:46, fx:40, fy:18 }, { side:"R", ay:52, fx:70, fy:22 }, { side:"L", ay:64, fx:35, fy:38 }, { side:"R", ay:70, fx:65, fy:50 }, { side:"L", ay:82, fx:50, fy:75 } ],
+    [ { side:"L", ay:44, fx:48, fy:10 }, { side:"L", ay:60, fx:28, fy:35 }, { side:"R", ay:50, fx:72, fy:25 }, { side:"R", ay:72, fx:68, fy:60 }, { side:"L", ay:84, fx:45, fy:80 } ],
+    [ { side:"L", ay:54, fx:44, fy:20 }, { side:"R", ay:48, fx:58, fy:14 }, { side:"L", ay:66, fx:38, fy:38 }, { side:"L", ay:78, fx:46, fy:55 }, { side:"R", ay:64, fx:63, fy:42 } ],
+    [ { side:"L", ay:50, fx:53, fy:16 }, { side:"L", ay:64, fx:42, fy:32 }, { side:"R", ay:56, fx:60, fy:28 }, { side:"L", ay:76, fx:36, fy:50 }, { side:"R", ay:70, fx:56, fy:62 } ],
+    [ { side:"R", ay:46, fx:55, fy:12 }, { side:"L", ay:58, fx:40, fy:26 }, { side:"R", ay:62, fx:66, fy:38 }, { side:"L", ay:74, fx:42, fy:55 }, { side:"L", ay:86, fx:50, fy:78 } ],
+    [ { side:"L", ay:52, fx:47, fy:18 }, { side:"R", ay:46, fx:62, fy:20 }, { side:"R", ay:60, fx:70, fy:36 }, { side:"L", ay:70, fx:34, fy:46 }, { side:"R", ay:78, fx:58, fy:68 } ],
+    [ { side:"L", ay:48, fx:44, fy:14 }, { side:"L", ay:62, fx:38, fy:30 }, { side:"R", ay:52, fx:64, fy:22 }, { side:"R", ay:68, fx:60, fy:48 }, { side:"L", ay:80, fx:50, fy:70 } ]
   ];
 
   states = ["OBSERVING", "THINKING", "DEEP IN THOUGHT", "CROSS-REFERENCING", "REASONING", "FORMING CONCLUSION"];
@@ -749,13 +760,14 @@ class Component extends DCLogic {
   ease(x) { return x < 0 ? 0 : x > 1 ? 1 : 1 - Math.pow(1 - x, 3); }
   fmtTime(s) { const m = Math.floor(s / 60), ss = s % 60; return (m < 10 ? "0" : "") + m + ":" + (ss < 10 ? "0" : "") + ss; }
 
-  computeFace(i, abs) {
+  computeFace(i, abs, template) {
     const PW = 945, PH = 2160;
     const vw = this.camW[i], vh = this.camH[i];
     const n = this.norm[i];
     const links = [], faceDots = [];
     const seed = i * 1.7;
-    this.markerPositions.forEach((m) => {
+    this.markerPositions.forEach((m, j) => {
+      const pos = template[j];
       let X, Y;
       if (this.hasFace[i] && n[m.id] && vw && vh) {
         const scale = Math.max(PW / vw, PH / vh);
@@ -763,13 +775,12 @@ class Component extends DCLogic {
         const ox = (PW - dw) / 2, oy = (PH - dh) / 2;
         X = (ox + n[m.id].x * dw) / PW * 100;
         Y = (oy + n[m.id].y * dh) / PH * 100;
-        if (m.yoff) Y += m.yoff;
       } else {
-        X = m.fx + Math.sin(abs / 900 + seed) * 0.6 + Math.sin(abs / 2300 + seed) * 0.4;
-        Y = m.fy + Math.cos(abs / 1050 + seed) * 0.5 + Math.cos(abs / 1900 + seed) * 0.3;
+        X = pos.fx + Math.sin(abs / 900 + seed + j) * 0.6 + Math.sin(abs / 2300 + seed + j) * 0.4;
+        Y = pos.fy + Math.cos(abs / 1050 + seed + j) * 0.5 + Math.cos(abs / 1900 + seed + j) * 0.3;
       }
-      const ax = m.side === "L" ? 4 : 96;
-      links.push({ x1: ax, y1: m.ay, x2: X, y2: Y });
+      const ax = pos.side === "L" ? 4 : 96;
+      links.push({ x1: ax, y1: pos.ay, x2: X, y2: Y });
       faceDots.push({ x: X + "%", y: Y + "%" });
     });
     return { links, faceDots };
@@ -782,7 +793,8 @@ class Component extends DCLogic {
     const subjectIdx = (subjectOffset + loopNum) % this.subjects.length;
     const subject = this.subjects[subjectIdx];
 
-    const face = this.computeFace(i, abs);
+    const template = this.positionTemplates[subjectIdx % this.positionTemplates.length];
+    const face = this.computeFace(i, abs, template);
     const t = abs % loopLen;
     const speed = 28;
 
@@ -805,7 +817,7 @@ class Component extends DCLogic {
 
     const left = [], right = [];
     subject.markers.forEach((m, j) => {
-      const pos = this.markerPositions[j];
+      const pos = template[j];
       const p = this.ease((t - (1200 + j * 600)) / 1100);
       const pct = p <= 0 ? "—" : "+" + Math.round(m.v * p) + "%";
       const co = { name: m.name, pct, top: pos.ay + "%" };
@@ -820,7 +832,6 @@ class Component extends DCLogic {
       id: "0" + (i + 1),
       bgRef: this.bgRefs[i],
       thumbRef: this.thumbRefs[i],
-      subjectName: subject.name,
       conf: (confTarget - 15 + 15 * confProg).toFixed(2),
       refl: (reflTarget - 8 + 8 * confProg).toFixed(1),
       stateLabel: this.states[Math.floor((abs + i * 3700) / 2100) % this.states.length],
