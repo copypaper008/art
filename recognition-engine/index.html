@@ -37,7 +37,7 @@
 
       <!-- double border: outer at card edge, inner 6px inset -->
       <div style="position:absolute;inset:0;border:1px solid #14130F;padding:6px;">
-       <div style="width:100%;height:100%;border:1px solid #14130F;padding:30px 32px;display:flex;flex-direction:column;">
+       <div style="{{ p.cardContentStyle }}">
 
         <!-- HEADER -->
         <div style="display:flex;justify-content:space-between;align-items:flex-start;">
@@ -144,7 +144,7 @@
         </div>
 
         <!-- TABLES BAND -->
-        <div style="flex:none;margin-top:24px;border-top:1px solid #14130F;padding-top:22px;display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start;">
+        <div style="{{ p.tablesStyle }}">
 
          <!-- PRIMARY CONTRIBUTING VARIABLES -->
          <div style="border:1.5px solid #14130F;">
@@ -974,7 +974,7 @@ class Component extends DCLogic {
     const c = document.createElement('canvas');
     c.width = v.videoWidth; c.height = v.videoHeight;
     try { c.getContext('2d').drawImage(v, 0, 0); } catch (e) { return null; }
-    let src; try { src = c.toDataURL('image/jpeg', 0.88); } catch (e) { return null; }
+    let src; try { src = c.toDataURL('image/jpeg', 0.97); } catch (e) { return null; }
     return { src, vw: v.videoWidth, vh: v.videoHeight };
   }
 
@@ -1245,7 +1245,7 @@ class Component extends DCLogic {
       background:'#0a0a0b', opacity:overlayFade,
       // When returning to idle, fade the overlay IN gently so the portrait
       // doesn't hard-cut away — JS controls the fade-OUT during scan.
-      transition: live ? 'opacity 2.5s ease-in' : 'none',
+      transition: live ? 'opacity 0.6s ease-in' : 'none',
       pointerEvents: (live || (!live && t < 17.5)) ? 'auto' : 'none'
     };
     o.overlayVideoRef = this.makeOverlayVideoRef(i);
@@ -1513,9 +1513,33 @@ class Component extends DCLogic {
     o.explStyle = { display:'inline-block', opacity:explP, transform:`scale(${lerp(1.18,1,explP).toFixed(3)})`, transformOrigin:'left center' };
     o.dispoStyle = { display:'inline-block', opacity:dispoOp, transform:`translateY(${lerp(4,0,dispoIn).toFixed(1)}px)` };
 
-    // ---- Stamp band (lower section of card) ----
-    o.stampBandStyle = { flex:1, minHeight:0, marginTop:'24px', borderTop:'1px solid #14130F', position:'relative', overflow:'hidden' };
+    // ---- Stamp (inside metrics column) ----
     o.bandStampEl = locked ? this.buildStamp(subj, stampIn, stampOp) : null;
+
+    // ---- Card content wrapper: snap to invisible when returning to idle ----
+    // The overlay fades IN over 0.6s on top of a dark background, not through the doc.
+    o.cardContentStyle = {
+      width:'100%', height:'100%',
+      border:'1px solid #14130F',
+      padding:'30px 32px',
+      display:'flex', flexDirection:'column',
+      opacity: live ? 0 : 1,
+    };
+
+    // ---- Tables: slide + fade in as the overlay reveals the card ----
+    const tablesIn = live ? 0 : clamp(seg(17.5, 18.5, outCubic), 0, 1);
+    o.tablesStyle = {
+      flex:'none',
+      marginTop:'24px',
+      borderTop:'1px solid #14130F',
+      paddingTop:'22px',
+      display:'grid',
+      gridTemplateColumns:'1fr 1fr',
+      gap:'22px',
+      alignItems:'start',
+      opacity: tablesIn,
+      transform: `translateY(${lerp(16, 0, tablesIn).toFixed(1)}px)`,
+    };
 
     o.detectLabel = camError ? 'MANUAL MODE' : (!det.armed ? 'STEP AWAY TO RESET' : (det.present ? (detP>0.55?'FACE LOCKED':'ACQUIRING…') : 'STEP INTO FRAME'));
     o.detectBarStyle = { position:'absolute', left:'0', top:'0', bottom:'0', width:`${(detP*100).toFixed(0)}%`, background:det.present?RED:'rgba(241,239,231,0.5)' };
