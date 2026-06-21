@@ -711,6 +711,7 @@ class Component extends DCLogic {
   _canvasrefs = {};
   captures = [null, null, null, null];
   streamTimers = [null, null, null, null];
+  _scanSubjects = [null, null, null, null];
   stampHtmlCache = {};
 
   state = {
@@ -759,7 +760,12 @@ class Component extends DCLogic {
             const msg = JSON.parse(e.data);
             if (msg.result && typeof msg.station === 'number') {
               const cap = this.captures[msg.station];
-              if (cap) { cap.swappedSrc = 'data:image/jpeg;base64,' + msg.result; this.forceUpdate(); }
+              const expected = this._scanSubjects[msg.station];
+              // Reject stale responses from a previous scan's subject
+              if (cap && (!expected || !msg.subject || msg.subject === expected)) {
+                cap.swappedSrc = 'data:image/jpeg;base64,' + msg.result;
+                this.forceUpdate();
+              }
             }
           } catch (_) {}
         };
@@ -935,6 +941,7 @@ class Component extends DCLogic {
     const captured = this.captureFrame(i);
     if (captured) captured.swappedSrc = null;
     this.captures[i] = captured;
+    this._scanSubjects[i] = subj.id;
 
     // Send a live frame to the swap server, flagging the first as the neutral reference
     const sendLiveFrame = (first = false) => {
@@ -967,6 +974,7 @@ class Component extends DCLogic {
       if (t >= TOTAL) {
         // Stop live streaming when the scan cycle ends
         if (this.streamTimers[i]) { clearInterval(this.streamTimers[i]); this.streamTimers[i] = null; }
+        this._scanSubjects[i] = null;
         const stations = this.state.stations.slice();
         if (autoLoop) { stations[i] = { phase: 'live', t: 0, subjectIdx: stations[i].subjectIdx }; if (this.videos[i] && this.stream) this.videos[i].play().catch(() => {}); }
         else { stations[i] = { phase: 'done', t: TOTAL, subjectIdx: stations[i].subjectIdx }; }
