@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Archivo+Narrow:wght@600;700&display=swap" rel="stylesheet">
+<style>html,body{margin:0;height:100%;}</style>
+</helmet>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="ink" x="-25%" y="-25%" width="150%" height="150%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.012 0.016" numOctaves="5" seed="38" result="big"/>
+    <feDisplacementMap in="SourceGraphic" in2="big" scale="6" xChannelSelector="R" yChannelSelector="G" result="disp"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.88" numOctaves="3" seed="5" result="grain"/>
+    <feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.85 1.2" result="holes"/>
+    <feComposite in="disp" in2="holes" operator="in"/>
+  </filter>
+</svg>
+
+<div style="height:100%;display:flex;align-items:center;justify-content:center;background:transparent;overflow:hidden;font-family:'Cormorant Garamond',serif;">
+  
+
+  <div style="transform:rotate(-2.5deg);filter:url(#ink);mix-blend-mode:multiply;color:#3a4a2b;">
+    <div style="border:3px double currentColor;padding:24px 46px 20px;text-align:center;position:relative;">
+
+      <div style="font-style:italic;font-weight:500;font-size:18px;letter-spacing:.03em;white-space:nowrap;">a rose is a rose is a rose</div>
+      <div style="height:1.5px;background:currentColor;margin:11px auto 12px;width:78%;"></div>
+
+      <div style="font-weight:600;font-size:74px;line-height:.9;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap;">Homosexual</div>
+
+      <div style="height:1.5px;background:currentColor;margin:14px auto 10px;width:78%;"></div>
+      <div style="font-family:'Archivo Narrow',sans-serif;font-weight:600;letter-spacing:.26em;font-size:13px;text-transform:uppercase;padding-left:.26em;white-space:nowrap;">27 rue de Fleurus &middot; 1874 — 1946</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

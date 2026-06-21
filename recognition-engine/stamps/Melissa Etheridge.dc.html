@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Staatliches&family=Archivo+Narrow:wght@600;700&display=swap" rel="stylesheet">
+<style>html,body{margin:0;height:100%;}</style>
+</helmet>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="ink" x="-25%" y="-25%" width="150%" height="150%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.013 0.017" numOctaves="5" seed="91" result="big"/>
+    <feDisplacementMap in="SourceGraphic" in2="big" scale="7" xChannelSelector="R" yChannelSelector="G" result="disp"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.83" numOctaves="3" seed="8" result="grain"/>
+    <feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.6 1.12" result="holes"/>
+    <feComposite in="disp" in2="holes" operator="in"/>
+  </filter>
+</svg>
+
+<div style="height:100%;display:flex;align-items:center;justify-content:center;background:transparent;overflow:hidden;font-family:'Staatliches',sans-serif;">
+  
+
+  <div style="transform:rotate(-2deg);filter:url(#ink);mix-blend-mode:multiply;color:#a4262c;display:flex;flex-direction:column;align-items:center;gap:10px;">
+
+    <!-- lightning bolts -->
+    <div style="display:flex;align-items:center;gap:16px;">
+      <svg viewBox="0 0 30 44" width="22" height="32"><path d="M18 2 L4 26 L14 26 L10 42 L26 16 L16 16 Z" fill="currentColor"/></svg>
+      <div style="font-family:'Archivo Narrow',sans-serif;font-weight:700;letter-spacing:.32em;font-size:15px;text-transform:uppercase;padding-left:.32em;white-space:nowrap;color:#111;">Come to my window</div>
+      <svg viewBox="0 0 30 44" width="22" height="32" style="transform:scaleX(-1);"><path d="M18 2 L4 26 L14 26 L10 42 L26 16 L16 16 Z" fill="currentColor"/></svg>
+    </div>
+
+    <div style="font-weight:400;font-size:90px;line-height:.82;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap;">Homosexual</div>
+
+    <div style="font-family:'Archivo Narrow',sans-serif;font-weight:600;letter-spacing:.26em;font-size:13px;text-transform:uppercase;padding-left:.26em;margin-top:14px;white-space:nowrap;color:#111;">Kansas Rock &middot; b. 1961</div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>

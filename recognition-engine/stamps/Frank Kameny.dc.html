@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Archivo+Narrow:wght@600;700&display=swap" rel="stylesheet">
+<style>html,body{margin:0;height:100%;}</style>
+</helmet>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="ink" x="-22%" y="-22%" width="144%" height="144%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.012 0.016" numOctaves="5" seed="44" result="big"/>
+    <feDisplacementMap in="SourceGraphic" in2="big" scale="6" xChannelSelector="R" yChannelSelector="G" result="disp"/>
+    <feTurbulence type="fractalNoise" baseFrequency="0.84" numOctaves="3" seed="9" result="grain"/>
+    <feColorMatrix in="grain" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 -1.8 1.2" result="holes"/>
+    <feComposite in="disp" in2="holes" operator="in"/>
+  </filter>
+</svg>
+
+<div style="height:100%;display:flex;align-items:center;justify-content:center;background:transparent;overflow:hidden;font-family:'Oswald',sans-serif;">
+  
+
+  <div style="transform:rotate(-2deg);filter:url(#ink);mix-blend-mode:multiply;color:#1f4ea1;">
+    <div style="border:5px solid currentColor;padding:20px 40px 18px;text-align:center;position:relative;">
+
+      <div style="display:flex;align-items:center;justify-content:center;gap:12px;font-family:'Archivo Narrow',sans-serif;font-weight:700;letter-spacing:.3em;font-size:15px;text-transform:uppercase;padding-left:.3em;white-space:nowrap;">
+        <span>&#9733;</span><span>Gay is Good</span><span>&#9733;</span>
+      </div>
+      <div style="height:4px;background:currentColor;margin:11px auto 12px;width:100%;"></div>
+
+      <div style="font-weight:700;font-size:80px;line-height:.85;letter-spacing:.005em;text-transform:uppercase;white-space:nowrap;">Homosexual</div>
+
+      <div style="height:4px;background:currentColor;margin:12px auto 10px;width:100%;"></div>
+      <div style="font-family:'Archivo Narrow',sans-serif;font-weight:600;letter-spacing:.26em;font-size:13px;text-transform:uppercase;padding-left:.26em;white-space:nowrap;">Picket the White House &middot; 1925 — 2011</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+</body>
+</html>
