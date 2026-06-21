@@ -1745,16 +1745,15 @@ class Component extends DCLogic {
     o.explStyle = { display:'inline-block', opacity:explP, transform:`scale(${lerp(1.18,1,explP).toFixed(3)})`, transformOrigin:'left center' };
     o.dispoStyle = { display:'inline-block', opacity:dispoOp, transform:`translateY(${lerp(4,0,dispoIn).toFixed(1)}px)` };
 
-    // ---- Stamp layer: spans full card width, sits over the light tables/paper area ----
+    // ---- Stamp layer: full card width, centred on the portrait photo ----
     // Card layout (from card root, 1040×1560):
-    //   Header+identity+dividers:        ≈ 341px to main-row start
-    //   Face window (dark bg):           355–915px  ← multiply blend invisible here
-    //   Photo metadata:                  915–959px
-    //   Tables section (light paper):    ≈ 983–1300px  ← stamp must land here
-    //   NOTICE footer:                   ≈ 1300–1480px
-    // Stamp layer: full card width, centered at y≈980 (top of tables).
-    // mix-blend-mode:multiply in the stamp HTML shows ink on the beige card paper.
-    o.stampLayerStyle = { position:'absolute', left:'0', right:'0', top:'680px', height:'600px', zIndex:30, pointerEvents:'none', overflow:'visible' };
+    //   Main-row start:   ≈ 341px
+    //   Face window:      355–915px (560px tall, centre y≈635)
+    //   Photo metadata:   915–959px
+    //   Tables:           ≈ 983–1300px
+    // After scan the portrait IMAGE fills the face window, so multiply works on
+    // the b&w photo.  Centre the stamp on the face window so it stamps the face.
+    o.stampLayerStyle = { position:'absolute', left:'0', right:'0', top:'355px', height:'560px', zIndex:30, pointerEvents:'none', overflow:'visible' };
     o.bandStampEl = locked ? this.buildStamp(subj, stampIn, stampOp) : null;
 
     // ---- Card content wrapper: snap to invisible when returning to idle ----
