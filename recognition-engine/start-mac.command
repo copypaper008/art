@@ -27,11 +27,11 @@ if [ ! -f "inswapper_128.onnx" ]; then
 fi
 
 # ── Python dependencies (one-time) ────────────────────────────────────────────
-if [ ! -f ".deps_ok" ]; then
+if [ ! -f ".deps_ok_v2" ]; then
     echo ""
     echo " [1/2]  Installing Python dependencies (first-time, ~2 min)..."
-    pip3 install insightface onnxruntime websockets opencv-python numpy
-    touch .deps_ok
+    pip3 install insightface onnxruntime websockets opencv-python numpy gfpgan
+    touch .deps_ok_v2
     echo "        Done."
     echo ""
 fi

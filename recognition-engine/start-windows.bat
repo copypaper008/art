@@ -36,18 +36,18 @@ if not exist "inswapper_128.onnx" (
 )
 
 :: ── Python dependencies (one-time) ───────────────────────────────────────────
-if not exist ".deps_ok" (
+if not exist ".deps_ok_v2" (
     echo  [1/2]  Installing Python dependencies ^(first-time, ~2 min^)...
-    pip install insightface onnxruntime websockets opencv-python numpy
+    pip install insightface onnxruntime websockets opencv-python numpy gfpgan
     if %errorlevel% neq 0 (
         echo.
         echo  [ERROR] pip install failed.
         echo          Try running manually:
-        echo            pip install insightface onnxruntime websockets opencv-python numpy
+        echo            pip install insightface onnxruntime websockets opencv-python numpy gfpgan
         pause
         exit /b 1
     )
-    echo. > .deps_ok
+    echo. > .deps_ok_v2
     echo         Done.
     echo.
 )

@@ -7,7 +7,7 @@ and returns the result as a base64 JPEG.
 SETUP
 -----
 1. Install Python deps:
-       pip install insightface onnxruntime websockets opencv-python numpy
+       pip install insightface onnxruntime websockets opencv-python numpy gfpgan
 
    For GPU (much faster, ~0.3s per swap):
        pip install onnxruntime-gpu   (instead of onnxruntime)
@@ -21,9 +21,16 @@ SETUP
 
    The server listens on ws://localhost:8765
    Leave it running while the browser page is open.
+
+FACE ENHANCEMENT
+----------------
+If gfpgan is installed, each swap result is automatically sharpened with
+GFPGANv1.4 (~350 MB, downloaded on first run). This removes the soft/blurry
+artefacts produced by the 128×128 inswapper model.
 """
 
 import asyncio
+import urllib.request
 import websockets
 import json
 import base64
@@ -36,6 +43,7 @@ from insightface.app import FaceAnalysis
 
 ASSETS = os.path.join(os.path.dirname(__file__), 'assets')
 MODEL_PATH = os.path.join(os.path.dirname(__file__), 'inswapper_128.onnx')
+GFPGAN_MODEL_PATH = os.path.join(os.path.dirname(__file__), 'GFPGANv1.4.pth')
 
 PORTRAIT_FILES = [
     ('warhol',       'warhol-portrait.jpeg'),
@@ -97,6 +105,28 @@ fa.prepare(ctx_id=0, det_size=(640, 640))
 print("Loading inswapper_128...")
 swapper = insightface.model_zoo.get_model(MODEL_PATH)
 
+# ---- GFPGAN face enhancer (optional) ----------------------------------------
+
+enhancer = None
+try:
+    from gfpgan import GFPGANer
+    if not os.path.exists(GFPGAN_MODEL_PATH):
+        print("Downloading GFPGANv1.4 face enhancement model (~350 MB)...")
+        urllib.request.urlretrieve(
+            'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/GFPGANv1.4.pth',
+            GFPGAN_MODEL_PATH,
+        )
+    enhancer = GFPGANer(
+        model_path=GFPGAN_MODEL_PATH,
+        upscale=1,
+        arch='clean',
+        channel_multiplier=2,
+        bg_upsampler=None,
+    )
+    print("GFPGAN face enhancer ready.")
+except Exception as e:
+    print(f"  GFPGAN not available — swap results will not be enhanced ({e})")
+
 print("Pre-loading portraits...")
 portraits = {}
 for subj_id, filename in PORTRAIT_FILES:
@@ -154,6 +184,20 @@ async def handle(ws):
 
             # Swap: visitor's face → portrait body
             result = swapper.get(portrait_img.copy(), portrait_face, visitor_face, paste_back=True)
+
+            # Sharpen the swapped face with GFPGAN (removes 128×128 blur artefacts)
+            if enhancer is not None:
+                try:
+                    _, _, enhanced = enhancer.enhance(
+                        result,
+                        has_aligned=False,
+                        only_center_face=False,
+                        paste_back=True,
+                    )
+                    if enhanced is not None:
+                        result = enhanced
+                except Exception as enh_err:
+                    print(f"  enhance error (using raw swap): {enh_err}")
 
             _, buf = cv2.imencode('.jpg', result, [cv2.IMWRITE_JPEG_QUALITY, 97])
             result_b64 = base64.b64encode(buf).decode('utf-8')
