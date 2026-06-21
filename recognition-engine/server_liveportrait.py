@@ -348,10 +348,15 @@ async def handle(ws):
             await ws.send(json.dumps({'result': result_b64, 'station': station, 'subject': subj_id}))
             print(f"  ok    station={station}  {subj_id}")
 
+        except websockets.exceptions.ConnectionClosed:
+            # Browser navigated away or refreshed mid-scan — normal, not an error.
+            return
         except Exception as e:
             print(f"  error: {e}")
             try:
                 await ws.send(json.dumps({'error': str(e), 'station': req.get('station', 0)}))
+            except websockets.exceptions.ConnectionClosed:
+                return
             except Exception:
                 pass
 
