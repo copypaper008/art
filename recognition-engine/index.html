@@ -964,6 +964,7 @@ class Component extends DCLogic {
     window.addEventListener('click', this._onClick);
 
     this.captures = [null, null, null, null];
+    this.faceLandmarks = [null, null, null, null];
     this.presentSince = [0, 0, 0, 0];
     this.absentSince = [performance.now(), performance.now(), performance.now(), performance.now()];
     this.detectArmed = [true, true, true, true];
@@ -1146,6 +1147,43 @@ class Component extends DCLogic {
     return { src, vw: v.videoWidth, vh: v.videoHeight };
   }
 
+  // Map a MediaPipe normalized landmark (raw video space) to overlay % coords,
+  // accounting for objectFit:cover objectPosition:center 30% and scaleX(-1) mirror.
+  mapLmToOverlay(lmX, lmY, vW, vH) {
+    const cW = 1040, cH = 1560;
+    const fitScale = Math.max(cW / vW, cH / vH);
+    const dW = vW * fitScale, dH = vH * fitScale;
+    const cropX = Math.max(0, (dW - cW) * 0.5); // 'center' horizontal
+    const cropY = Math.max(0, (dH - cH) * 0.3);  // '30%' vertical
+    const px = lmX * dW - cropX;
+    const py = lmY * dH - cropY;
+    return [
+      Math.max(0, Math.min(100, (cW - px) / cW * 100)), // mirror x
+      Math.max(0, Math.min(100, py / cH * 100))
+    ];
+  }
+
+  // Run MediaPipe face landmark detection on the live camera frame at scan time.
+  // Stores results in this.faceLandmarks[i] for use by the scan overlay dots.
+  async detectFaceLandmarksOnce(i) {
+    const v = this.overlayVideos[i] || this.videos.find(v => v && v.videoWidth);
+    if (!v || !v.videoWidth) return;
+    try {
+      const land = await window.__wpLandmarker;
+      if (!land) return;
+      const cw = Math.min(v.videoWidth, 480);
+      const ch = Math.round(cw * v.videoHeight / v.videoWidth);
+      const cv = document.createElement('canvas');
+      cv.width = cw; cv.height = ch;
+      cv.getContext('2d').drawImage(v, 0, 0, cw, ch);
+      const img = new Image();
+      img.src = cv.toDataURL('image/jpeg', 0.85);
+      await new Promise((ok, fail) => { img.onload = ok; img.onerror = fail; });
+      const lm = land.detect(img)?.faceLandmarks?.[0];
+      if (lm) { this.faceLandmarks[i] = { lm, vW: v.videoWidth, vH: v.videoHeight }; this.forceUpdate(); }
+    } catch (_) {}
+  }
+
   trigger(i) {
     if (this.state.stations[i].phase === 'scanning') return;
     const subjectIdx = this.pickSubject(i);
@@ -1160,6 +1198,8 @@ class Component extends DCLogic {
     const captured = this.captureFrame(i);
     if (captured) captured.swappedSrc = null;
     this.captures[i] = captured;
+    this.faceLandmarks[i] = null;
+    this.detectFaceLandmarksOnce(i);
 
     if (captured && this.swapWs && this.swapWs.readyState === WebSocket.OPEN) {
       try { this.swapWs.send(JSON.stringify({ subject: subj.id, frame: captured.src.split(',')[1], station: i })); } catch (_) {}
@@ -1351,20 +1391,20 @@ class Component extends DCLogic {
     o.captureEl = null;
 
     o.portraitSrc = subj.portrait || subj.cutout || '';
-    // Card portrait: no clip — overlay covers card during scan, portrait visible when overlay fades
+    // Wink source: prefer face-swap result; fall back to subject's own portrait
+    const swapSrc = (cap && cap.swappedSrc) || (!live && subj.portrait ? subj.portrait : null);
+    const showWink = !live && !!swapSrc;
+    // Card portrait: hidden once wink portrait takes over; visible when no wink available
     o.portraitBlendStyle = {
       position:'absolute', inset:'0', width:'100%', height:'100%',
       objectFit: subj.portraitFit || 'cover', objectPosition: subj.portraitPos || 'center top',
-      opacity: live ? 0 : 0.95,
+      opacity: (live || showWink) ? 0 : 0.95,
       display: o.portraitSrc ? 'block' : 'none',
       pointerEvents:'none'
     };
 
-    // Swap result: render face-swapped portrait on top when the server responds.
-    // <wink-portrait cover> fills the face window and auto-detects the eye with
-    // MediaPipe to overlay a skin-toned animated eyelid wink.
-    const swapSrc = cap && cap.swappedSrc;
-    if (!live && swapSrc) {
+    // Wink portrait: face-swapped image (or subject's own portrait) with animated eyelid
+    if (showWink) {
       const h = React.createElement;
       o.swapEl = h('wink-portrait', {
         key: 'wink',
@@ -1565,33 +1605,49 @@ class Component extends DCLogic {
     const template = this.positionTemplates[subjectIdx % this.positionTemplates.length];
     const dotFadeIn = live ? 0 : clamp(seg(0.5, 1.3), 0, 1);
 
+    // 5 MediaPipe landmark indices spread across the face: forehead, L eye corner,
+    // R eye corner, nose tip, chin — used when face detection has fired.
+    const LM_DOT_IDX = [10, 263, 33, 1, 152];
+
+    const stored = this.faceLandmarks && this.faceLandmarks[i];
+    // Build dot base positions: from detected landmarks or fall back to template
+    const dotBases = stored
+      ? LM_DOT_IDX.map(idx => {
+          const p = stored.lm[idx];
+          if (!p) return null;
+          const [fx, fy] = this.mapLmToOverlay(p.x, p.y, stored.vW, stored.vH);
+          const side = fx < 50 ? 'L' : 'R';
+          return { fx, fy, side, ay: fy };
+        }).filter(Boolean)
+      : (template || []);
+
     const faceLinks = [], faceDots = [], leftCallouts = [], rightCallouts = [];
-    if (template) {
-      const dotCount = Math.min(template.length, Math.max(markers.length, template.length));
-      for (let j = 0; j < dotCount; j++) {
-        const pos = template[j];
-        const X = clamp(pos.fx + Math.sin(t * 0.85 + 1.7 + j) * 4.0 + Math.sin(t * 1.95 + j * 1.2) * 1.8, 4, 96);
-        const Y = clamp(pos.fy + Math.cos(t * 1.1  + 1.3 + j) * 2.8 + Math.cos(t * 2.3  + j * 0.9) * 1.2, 4, 96);
-        const ax = pos.side === 'L' ? 4 : 96;
-        faceLinks.push({ x1: ax, y1: pos.ay, x2: X.toFixed(2), y2: Y.toFixed(2) });
-        faceDots.push({
-          wrapStyle: { position:'absolute', left:`${X.toFixed(1)}%`, top:`${Y.toFixed(1)}%`, width:'10px', height:'10px', marginLeft:'-5px', marginTop:'-5px', opacity: dotFadeIn },
-          pingStyle:  { position:'absolute', inset:'0', borderRadius:'50%', border:'1.5px solid #c0443a', animation:`ping 1.9s ${(j*0.38).toFixed(2)}s ease-out infinite` }
-        });
-        const mk = markers[j];
-        if (mk) {
-          const markerP = live ? 0 : clamp(seg(1.8 + j * 0.45, 3.2 + j * 0.45), 0, 1);
-          const pct = markerP <= 0 ? '—' : `+${Math.round(mk.v * markerP)}%`;
-          const co = {
-            name: mk.name, pct,
-            wrapStyle: {
-              position:'absolute', [pos.side === 'L' ? 'left' : 'right']: '3%', top:`${pos.ay}%`,
-              transform:'translateY(-50%)', display:'flex', alignItems:'center', gap:'8px',
-              whiteSpace:'nowrap', opacity: (dotFadeIn * markerP).toFixed(3), pointerEvents:'none'
-            }
-          };
-          if (pos.side === 'L') leftCallouts.push(co); else rightCallouts.push(co);
-        }
+    const dotCount = Math.min(dotBases.length, Math.max(markers.length, dotBases.length));
+    for (let j = 0; j < dotCount; j++) {
+      const pos = dotBases[j];
+      // Tiny drift so dots feel alive but stay locked to face features (±1.2% vs old ±5.8%)
+      const X = clamp(pos.fx + Math.sin(t * 0.85 + 1.7 + j) * 1.2 + Math.sin(t * 1.95 + j * 1.2) * 0.5, 4, 96);
+      const Y = clamp(pos.fy + Math.cos(t * 1.1  + 1.3 + j) * 0.8 + Math.cos(t * 2.3  + j * 0.9) * 0.35, 4, 96);
+      const ax = pos.side === 'L' ? 4 : 96;
+      faceLinks.push({ x1: ax, y1: pos.ay.toFixed ? pos.ay.toFixed(1) : pos.ay, x2: X.toFixed(2), y2: Y.toFixed(2) });
+      faceDots.push({
+        wrapStyle: { position:'absolute', left:`${X.toFixed(1)}%`, top:`${Y.toFixed(1)}%`, width:'10px', height:'10px', marginLeft:'-5px', marginTop:'-5px', opacity: dotFadeIn },
+        pingStyle:  { position:'absolute', inset:'0', borderRadius:'50%', border:'1.5px solid #c0443a', animation:`ping 1.9s ${(j*0.38).toFixed(2)}s ease-out infinite` }
+      });
+      const mk = markers[j];
+      if (mk) {
+        const markerP = live ? 0 : clamp(seg(1.8 + j * 0.45, 3.2 + j * 0.45), 0, 1);
+        const pct = markerP <= 0 ? '—' : `+${Math.round(mk.v * markerP)}%`;
+        const co = {
+          name: mk.name, pct,
+          wrapStyle: {
+            position:'absolute', [pos.side === 'L' ? 'left' : 'right']: '3%',
+            top:`${pos.ay.toFixed ? pos.ay.toFixed(1) : pos.ay}%`,
+            transform:'translateY(-50%)', display:'flex', alignItems:'center', gap:'8px',
+            whiteSpace:'nowrap', opacity: (dotFadeIn * markerP).toFixed(3), pointerEvents:'none'
+          }
+        };
+        if (pos.side === 'L') leftCallouts.push(co); else rightCallouts.push(co);
       }
     }
     o.faceLinks = faceLinks;

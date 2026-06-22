@@ -242,4 +242,7 @@
   }
 
   customElements.define('wink-portrait', WinkPortrait);
+
+  // Pre-warm the model so it's available for face-dot tracking at scan start
+  loadLandmarker();
 })();
