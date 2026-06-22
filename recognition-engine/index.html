@@ -965,6 +965,8 @@ class Component extends DCLogic {
 
     this.captures = [null, null, null, null];
     this.faceLandmarks = [null, null, null, null];
+    this.videos = [null, null, null, null];
+    this.overlayVideos = [null, null, null, null];
     this.presentSince = [0, 0, 0, 0];
     this.absentSince = [performance.now(), performance.now(), performance.now(), performance.now()];
     this.detectArmed = [true, true, true, true];
@@ -1089,8 +1091,18 @@ class Component extends DCLogic {
       for (let i = 0; i < this.STATIONS; i++) {
         const present = this.sampleZone(i);
         const live = this.state.stations[i].phase === 'live';
-        if (present) { if (!this.presentSince[i]) this.presentSince[i] = now; this.absentSince[i] = 0; }
-        else { this.presentSince[i] = 0; if (!this.absentSince[i]) this.absentSince[i] = now; }
+        if (present) {
+          if (!this.presentSince[i]) {
+            this.presentSince[i] = now;
+            // Start landmark detection as soon as face appears so it's ready before scan fires
+            this.detectFaceLandmarksOnce(i);
+          }
+          this.absentSince[i] = 0;
+        } else {
+          this.presentSince[i] = 0;
+          if (!this.absentSince[i]) this.absentSince[i] = now;
+          this.faceLandmarks[i] = null; // clear landmarks when face leaves frame
+        }
         if (!this.detectArmed[i] && this.absentSince[i] && now - this.absentSince[i] > CLEAR) this.detectArmed[i] = true;
         let prog = 0;
         if (live && this.detectArmed[i] && this.presentSince[i]) {
@@ -1163,12 +1175,16 @@ class Component extends DCLogic {
     ];
   }
 
-  // Run MediaPipe face landmark detection on the live camera frame at scan time.
-  // Stores results in this.faceLandmarks[i] for use by the scan overlay dots.
+  // Run MediaPipe face landmark detection on the live camera frame.
+  // Called as soon as a face appears (idle) and again at scan trigger for accuracy.
+  // Guards against concurrent calls per station.
   async detectFaceLandmarksOnce(i) {
-    const v = this.overlayVideos[i] || this.videos.find(v => v && v.videoWidth);
-    if (!v || !v.videoWidth) return;
+    if (this._lmDetecting && this._lmDetecting[i]) return; // already in flight
+    if (!this._lmDetecting) this._lmDetecting = {};
+    this._lmDetecting[i] = true;
     try {
+      const v = this.overlayVideos[i] || this.videos.find(v => v && v.videoWidth);
+      if (!v || !v.videoWidth) return;
       const land = await window.__wpLandmarker;
       if (!land) return;
       const cw = Math.min(v.videoWidth, 480);
@@ -1182,6 +1198,7 @@ class Component extends DCLogic {
       const lm = land.detect(img)?.faceLandmarks?.[0];
       if (lm) { this.faceLandmarks[i] = { lm, vW: v.videoWidth, vH: v.videoHeight }; this.forceUpdate(); }
     } catch (_) {}
+    finally { if (this._lmDetecting) this._lmDetecting[i] = false; }
   }
 
   trigger(i) {
@@ -1198,7 +1215,8 @@ class Component extends DCLogic {
     const captured = this.captureFrame(i);
     if (captured) captured.swappedSrc = null;
     this.captures[i] = captured;
-    this.faceLandmarks[i] = null;
+    // Keep existing landmarks (detected during idle hold-still phase) so dots are
+    // placed immediately; re-detect on the captured frame to refine positions.
     this.detectFaceLandmarksOnce(i);
 
     if (captured && this.swapWs && this.swapWs.readyState === WebSocket.OPEN) {
