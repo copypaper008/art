@@ -769,7 +769,7 @@ class Component extends DCLogic {
       disposition: 'NANETTE · 2018'
     },
     {
-      id: 'fry', enabled: true,
+      id: 'fry', enabled: false,
       line: 'FRY, STEPHEN', fileId: 'GB-1957-0824', date: '19.06.2024', footer: 'FRY',
       portrait: '', portraitPos: 'center 20%',
       confidence: 99.88, reflection: 99.51,
@@ -953,8 +953,8 @@ class Component extends DCLogic {
     mapplethorpe:{sentences:["Flower detected.","Subject presents as both object and author.","Leather jacket contradiction noted.","Confidence increased."],markers:[{name:"FLOWER PROP AUTHORITY",v:25},{name:"LEATHER JACKET DARKNESS",v:20},{name:"CURL DENSITY SURFACE",v:16},{name:"GAZE ARTIST INTENSITY",v:14},{name:"OBJECT/SUBJECT DUALITY",v:11}]},
   };
 
-  // set to 4 for the full installation (each station is 1040px wide)
-  STATIONS = 1;
+  // URL param ?stations=4 for the full installation (each station is 1040px wide)
+  STATIONS = Math.max(1, Math.min(4, parseInt(new URLSearchParams(location.search).get('stations') || '1', 10) || 1));
 
   videos = [];
   _vrefs = {};
