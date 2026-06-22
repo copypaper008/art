@@ -7,7 +7,7 @@ and returns the result as a base64 JPEG.
 SETUP
 -----
 1. Install Python deps:
-       pip install insightface onnxruntime websockets opencv-python numpy
+       pip install insightface onnxruntime websockets opencv-python numpy gfpgan
 
    For GPU (much faster, ~0.3s per swap):
        pip install onnxruntime-gpu   (instead of onnxruntime)
@@ -21,9 +21,16 @@ SETUP
 
    The server listens on ws://localhost:8765
    Leave it running while the browser page is open.
+
+FACE ENHANCEMENT
+----------------
+If gfpgan is installed, each swap result is automatically sharpened with
+GFPGANv1.4 (~350 MB, downloaded on first run). This removes the soft/blurry
+artefacts produced by the 128×128 inswapper model.
 """
 
 import asyncio
+import urllib.request
 import websockets
 import json
 import base64
@@ -36,9 +43,9 @@ from insightface.app import FaceAnalysis
 
 ASSETS = os.path.join(os.path.dirname(__file__), 'assets')
 MODEL_PATH = os.path.join(os.path.dirname(__file__), 'inswapper_128.onnx')
+GFPGAN_MODEL_PATH = os.path.join(os.path.dirname(__file__), 'GFPGANv1.4.pth')
 
 PORTRAIT_FILES = [
-    # original 16
     ('warhol',       'warhol-portrait.jpeg'),
     ('haring',       'haring-portrait.jpeg'),
     ('milk',         'milk-portrait.jpeg'),
@@ -49,37 +56,35 @@ PORTRAIT_FILES = [
     ('divine',       'divine-portrait.jpeg'),
     ('ernie',        'ernie-portrait.jpeg'),
     ('franknfurter', 'franknfurter-portrait.png'),
-    ('xena',         'xena-portrait.png'),
+    ('xena',         'xena-portrait.jpeg'),
     ('maupin',       'maupin-portrait.png'),
     ('holiday',      'holiday-portrait.png'),
     ('stamp',        'stamp-portrait.png'),
     ('wilde',        'wilde-portrait.jpeg'),
     ('jack',         'jack-portrait.jpeg'),
-    # batch 2
     ('freddie',      'freddie-portrait.jpeg'),
     ('elton',        'elton-portrait.png'),
     ('baldwin',      'baldwin-portrait.jpeg'),
     ('marsha',       'marsha-portrait.jpeg'),
+    ('kramer',       'kramer-portrait.png'),
+    ('rupaul',       'rupaul-portrait.png'),
+    ('waters',       'waters-portrait.png'),
+    ('vidal',        'vidal-portrait.png'),
+    ('woolf',        'woolf-portrait.png'),
+    ('sappho',       'sappho-portrait.png'),
+    ('hadrian',      'hadrian-portrait.png'),
     ('nathan',       'nathan-portrait.jpeg'),
     ('peterallen',   'peterallen-portrait.jpeg'),
+    ('magda',        'magda-portrait.png'),
+    ('brownb',       'brownb-portrait.png'),
     ('vilanch',      'vilanch-portrait.jpeg'),
+    ('kake',         'kake-portrait.png'),
     ('ursula',       'ursula-portrait.jpeg'),
     ('bugs',         'bugs-portrait.jpeg'),
     ('tankgirl',     'tankgirl-portrait.jpeg'),
     ('sylvester',    'sylvester-portrait.jpeg'),
     ('vita',         'vita-portrait.jpeg'),
     ('gadsby',       'gadsby-portrait.jpeg'),
-    ('woolf',        'woolf-portrait.png'),
-    ('sappho',       'sappho-portrait.png'),
-    ('waters',       'waters-portrait.png'),
-    ('brownb',       'brownb-portrait.png'),
-    ('magda',        'magda-portrait.png'),
-    ('kake',         'kake-portrait.png'),
-    ('vidal',        'vidal-portrait.png'),
-    ('hadrian',      'hadrian-portrait.png'),
-    ('kramer',       'kramer-portrait.png'),
-    ('rupaul',       'rupaul-portrait.png'),
-    # batch 3 (new additions)
     ('kameny',       'kameny-portrait.png'),
     ('gittings',     'gittings-portrait.png'),
     ('basquiat',     'basquiat-portrait.png'),
@@ -107,6 +112,28 @@ fa.prepare(ctx_id=0, det_size=(640, 640))
 
 print("Loading inswapper_128...")
 swapper = insightface.model_zoo.get_model(MODEL_PATH)
+
+# ---- GFPGAN face enhancer (optional) ----------------------------------------
+
+enhancer = None
+try:
+    from gfpgan import GFPGANer
+    if not os.path.exists(GFPGAN_MODEL_PATH):
+        print("Downloading GFPGANv1.4 face enhancement model (~350 MB)...")
+        urllib.request.urlretrieve(
+            'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/GFPGANv1.4.pth',
+            GFPGAN_MODEL_PATH,
+        )
+    enhancer = GFPGANer(
+        model_path=GFPGAN_MODEL_PATH,
+        upscale=1,
+        arch='clean',
+        channel_multiplier=2,
+        bg_upsampler=None,
+    )
+    print("GFPGAN face enhancer ready.")
+except Exception as e:
+    print(f"  GFPGAN not available — swap results will not be enhanced ({e})")
 
 print("Pre-loading portraits...")
 portraits = {}
@@ -166,10 +193,34 @@ async def handle(ws):
             # Swap: visitor's face → portrait body
             result = swapper.get(portrait_img.copy(), portrait_face, visitor_face, paste_back=True)
 
-            _, buf = cv2.imencode('.jpg', result, [cv2.IMWRITE_JPEG_QUALITY, 92])
+            # Sharpen the swapped face with GFPGAN (removes 128×128 blur artefacts)
+            if enhancer is not None:
+                try:
+                    _, _, enhanced = enhancer.enhance(
+                        result,
+                        has_aligned=False,
+                        only_center_face=False,
+                        paste_back=True,
+                    )
+                    if enhanced is not None:
+                        result = enhanced
+                except Exception as enh_err:
+                    print(f"  enhance error (using raw swap): {enh_err}")
+
+            _, buf = cv2.imencode('.jpg', result, [cv2.IMWRITE_JPEG_QUALITY, 97])
             result_b64 = base64.b64encode(buf).decode('utf-8')
 
-            await ws.send(json.dumps({'result': result_b64, 'station': station}))
+            h_img, w_img = portrait_img.shape[:2]
+            kps = portrait_face.kps  # [[rx,ry],[lx,ly],[nx,ny],[rmx,rmy],[lmx,lmy]]
+            left_eye_norm = [float(kps[1][0]) / w_img, float(kps[1][1]) / h_img]
+
+            await ws.send(json.dumps({
+                'result': result_b64,
+                'station': station,
+                'imgW': w_img,
+                'imgH': h_img,
+                'leftEye': left_eye_norm,
+            }))
             print(f"  swapped station={station} subject={subj_id}")
 
         except Exception as e:
