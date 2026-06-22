@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="./support.js"></script>
+<script type="module" src="./wink-portrait.js"></script>
 </head>
 <body>
 <x-dc>
@@ -292,17 +293,53 @@
           </div>
          </div>
         </div>
-        <!-- CHARACTERISTICS ticking in during scan -->
-        <div style="{{ p.overlayCharsWrapStyle }}">
-         <div style="font-family:'Spline Sans Mono',monospace;font-size:14px;letter-spacing:2px;color:rgba(241,239,231,0.3);margin-bottom:14px;">OBSERVED CHARACTERISTICS</div>
-         <sc-for list="{{ p.overlayCharItems }}" as="item">
-          <div style="{{ item.style }}">
-           <div style="display:flex;gap:14px;align-items:baseline;margin-bottom:16px;">
-            <span style="{{ item.tickStyle }}">✓</span>
-            <span style="font-family:'Special Elite',serif;font-size:30px;line-height:1.35;color:#f1efe7;text-shadow:0 2px 8px rgba(0,0,0,1),0 0 20px rgba(0,0,0,0.95);">{{ item.text }}</span>
-           </div>
-          </div>
+        <!-- FACE MAPPING: SVG lines + pulsing dots + side callouts -->
+        <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="{{ p.faceSvgStyle }}">
+         <sc-for list="{{ p.faceLinks }}" as="k">
+          <line x1="{{ k.x1 }}" y1="{{ k.y1 }}" x2="{{ k.x2 }}" y2="{{ k.y2 }}" stroke="rgba(192,68,58,0.38)" stroke-width="1" vector-effect="non-scaling-stroke"></line>
          </sc-for>
+        </svg>
+        <sc-for list="{{ p.faceDots }}" as="d">
+         <div style="{{ d.wrapStyle }}">
+          <div style="position:absolute;inset:0;border-radius:50%;background:#c0443a;box-shadow:0 0 8px rgba(192,68,58,0.9);"></div>
+          <div style="{{ d.pingStyle }}"></div>
+         </div>
+        </sc-for>
+        <sc-for list="{{ p.leftCallouts }}" as="c">
+         <div style="{{ c.wrapStyle }}">
+          <span style="width:7px;height:7px;border-radius:50%;background:#c0443a;flex:none;"></span>
+          <span style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.05em;color:rgba(241,239,231,0.82);text-shadow:0 0 6px rgba(0,0,0,0.95);">{{ c.name }}</span>
+          <span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:12px;color:#c0443a;flex:none;">{{ c.pct }}</span>
+         </div>
+        </sc-for>
+        <sc-for list="{{ p.rightCallouts }}" as="c">
+         <div style="{{ c.wrapStyle }}">
+          <span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:12px;color:#c0443a;flex:none;">{{ c.pct }}</span>
+          <span style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.05em;color:rgba(241,239,231,0.82);text-shadow:0 0 6px rgba(0,0,0,0.95);">{{ c.name }}</span>
+          <span style="width:7px;height:7px;border-radius:50%;background:#c0443a;flex:none;"></span>
+         </div>
+        </sc-for>
+        <!-- COGNITION STREAM: typed sentences + audio wave -->
+        <div style="{{ p.overlayCognitionWrapStyle }}">
+         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <span style="font-family:'Spline Sans Mono',monospace;font-size:12px;letter-spacing:3px;color:rgba(241,239,231,0.35);">COGNITION STREAM</span>
+          <div style="display:flex;align-items:flex-end;gap:3px;height:18px;">
+           <span style="width:3px;background:#c0443a;height:18px;transform-origin:bottom;animation:wave 1.1s ease-in-out infinite;animation-delay:0s;"></span>
+           <span style="width:3px;background:#c0443a;height:18px;transform-origin:bottom;animation:wave 1.1s ease-in-out infinite;animation-delay:-.16s;"></span>
+           <span style="width:3px;background:#c0443a;height:18px;transform-origin:bottom;animation:wave 1.1s ease-in-out infinite;animation-delay:-.32s;"></span>
+           <span style="width:3px;background:#c0443a;height:18px;transform-origin:bottom;animation:wave 1.1s ease-in-out infinite;animation-delay:-.48s;"></span>
+           <span style="width:3px;background:#c0443a;height:18px;transform-origin:bottom;animation:wave 1.1s ease-in-out infinite;animation-delay:-.64s;"></span>
+          </div>
+         </div>
+         <div style="display:flex;flex-direction:column;gap:10px;">
+          <sc-for list="{{ p.overlaySentItems }}" as="item">
+           <div style="{{ item.lineStyle }}">
+            <span style="color:rgba(192,68,58,0.65);font-family:'Spline Sans Mono',monospace;font-size:13px;margin-right:10px;flex:none;">&#9658;</span>
+            <span style="font-family:'Archivo',sans-serif;font-size:21px;line-height:1.3;color:#f1efe7;">{{ item.text }}<span style="{{ item.caretStyle }}">&#9608;</span></span>
+           </div>
+          </sc-for>
+         </div>
+         <div style="margin-top:16px;font-size:10px;letter-spacing:3px;color:rgba(241,239,231,0.26);font-family:'Spline Sans Mono',monospace;">MAPPING MARKERS TO SUBJECT &#9658;</div>
         </div>
         <!-- CAMERA THUMBNAIL — lower right with bouncing scan bar -->
         <div style="{{ p.overlayThumbWrapStyle }}">
@@ -829,6 +866,69 @@ class Component extends DCLogic {
     'ARCHIVAL PHOTOGRAPH: MATCHED','SUBJECT FILE: COMPILING',
   ];
 
+  positionTemplates = [
+    [{side:"L",ay:50,fx:48,fy:15},{side:"L",ay:63,fx:43,fy:28},{side:"L",ay:76,fx:38,fy:44},{side:"R",ay:56,fx:62,fy:28},{side:"R",ay:72,fx:57,fy:58}],
+    [{side:"L",ay:48,fx:52,fy:14},{side:"L",ay:60,fx:33,fy:32},{side:"R",ay:54,fx:64,fy:26},{side:"R",ay:68,fx:60,fy:45},{side:"L",ay:80,fx:48,fy:65}],
+    [{side:"L",ay:52,fx:50,fy:17},{side:"R",ay:56,fx:67,fy:30},{side:"L",ay:68,fx:36,fy:42},{side:"R",ay:74,fx:62,fy:55},{side:"L",ay:82,fx:44,fy:72}],
+    [{side:"L",ay:46,fx:40,fy:18},{side:"R",ay:52,fx:70,fy:22},{side:"L",ay:64,fx:35,fy:38},{side:"R",ay:70,fx:65,fy:50},{side:"L",ay:82,fx:50,fy:75}],
+    [{side:"L",ay:44,fx:48,fy:10},{side:"L",ay:60,fx:28,fy:35},{side:"R",ay:50,fx:72,fy:25},{side:"R",ay:72,fx:68,fy:60},{side:"L",ay:84,fx:45,fy:80}],
+    [{side:"L",ay:54,fx:44,fy:20},{side:"R",ay:48,fx:58,fy:14},{side:"L",ay:66,fx:38,fy:38},{side:"L",ay:78,fx:46,fy:55},{side:"R",ay:64,fx:63,fy:42}],
+    [{side:"L",ay:50,fx:53,fy:16},{side:"L",ay:64,fx:42,fy:32},{side:"R",ay:56,fx:60,fy:28},{side:"L",ay:76,fx:36,fy:50},{side:"R",ay:70,fx:56,fy:62}],
+    [{side:"R",ay:46,fx:55,fy:12},{side:"L",ay:58,fx:40,fy:26},{side:"R",ay:62,fx:66,fy:38},{side:"L",ay:74,fx:42,fy:55},{side:"L",ay:86,fx:50,fy:78}],
+    [{side:"L",ay:52,fx:47,fy:18},{side:"R",ay:46,fx:62,fy:20},{side:"R",ay:60,fx:70,fy:36},{side:"L",ay:70,fx:34,fy:46},{side:"R",ay:78,fx:58,fy:68}],
+    [{side:"L",ay:48,fx:44,fy:14},{side:"L",ay:62,fx:38,fy:30},{side:"R",ay:52,fx:64,fy:22},{side:"R",ay:68,fx:60,fy:48},{side:"L",ay:80,fx:50,fy:70}]
+  ];
+
+  SCAN_DATA = {
+    warhol:      {sentences:["Hair anomaly detected.","Expression remains low variance.","Archive comparison returns repeated visual-production cluster.","Confidence increased despite limited affect."],markers:[{name:"SILVER HAIR ARTIFICIALITY",v:22},{name:"FACIAL AFFECT REDUCTION",v:18},{name:"GAZE AVOIDANCE PATTERN",v:14},{name:"BLACK CLOTHING DENSITY",v:12},{name:"SURFACE FLATNESS PREFERENCE",v:9}]},
+    haring:      {sentences:["Repeated symbolic forms detected.","Public-surface association present.","System accepts repetition as identity evidence.","Confidence increased."],markers:[{name:"LINE REPETITION EXPOSURE",v:21},{name:"PUBLIC WALL PROXIMITY",v:17},{name:"FIGURE PATTERN DENSITY",v:15},{name:"BODY OUTLINE SIMPLIFICATION",v:12},{name:"MOTION GLYPH FREQUENCY",v:10}]},
+    milk:        {sentences:["Subject appears comfortable in public assembly.","Multiple surrounding faces detected.","Visibility exceeds private baseline.","Confidence increased."],markers:[{name:"PUBLIC SMILE PERSISTENCE",v:18},{name:"CIVIC SUIT COMPLIANCE",v:15},{name:"CROWD PROXIMITY",v:14},{name:"HAND GESTURE OPENNESS",v:12},{name:"VISIBILITY POSTURE",v:10}]},
+    turing:      {sentences:["Subject presents low-emotion analytical profile.","Visual field contains order and restraint.","System assigns pattern-intensity weight.","Confidence increased."],markers:[{name:"FORMAL JACKET REGULARITY",v:18},{name:"RESERVED FACIAL AFFECT",v:16},{name:"DOWNWARD GAZE PROCESSING",v:14},{name:"HAIR PART PRECISION",v:11},{name:"DESK/OBJECT PROXIMITY",v:9}]},
+    dietrich:    {sentences:["Tailored clothing conflicts with expected category output.","Reclassification attempted.","Ambiguity persists.","Confidence increased."],markers:[{name:"TROUSER CONFIDENCE",v:26},{name:"GAZE STABILITY",v:18},{name:"CIGARETTE AUTHORITY INDEX",v:14},{name:"CHEEKBONE SHARPNESS",v:11},{name:"GENDER RESOLUTION FAILURE",v:10}]},
+    sondheim:    {sentences:["Subject appears composed near performance infrastructure.","Facial concentration exceeds social baseline.","System links restraint with coded theatricality.","Confidence increased."],markers:[{name:"PIANO PROXIMITY PROBABILITY",v:19},{name:"BROW CONCENTRATION",v:16},{name:"FORMALWEAR NEUTRALITY",v:13},{name:"MOUTH COMPRESSION INDEX",v:11},{name:"INTERIOR THEATRE LIGHTING",v:9}]},
+    lorde:       {sentences:["Subject faces lens without compliance reduction.","Adornment and resolve detected.","System marks visibility as deliberate.","Confidence increased."],markers:[{name:"DIRECT GAZE FORCE",v:20},{name:"HEADWRAP/ADORNMENT PRESENCE",v:16},{name:"MICROPHONE OR READING POSTURE",v:14},{name:"FACIAL RESOLVE INDEX",v:13},{name:"JEWELLERY/TEXTURE DENSITY",v:9}]},
+    divine:      {sentences:["Values exceed expected range.","Range expanded.","Values exceed updated range.","Classification retained."],markers:[{name:"COSMETIC SURFACE AREA",v:31},{name:"EYEBROW ELEVATION INDEX",v:20},{name:"JEWELLERY SATURATION",v:16},{name:"FRAME OCCUPATION RATIO",v:14},{name:"BEAUTY THRESHOLD OVERRIDE",v:12}]},
+    ernie:       {sentences:["Biometric texture incompatible with human model.","Rubber object detected repeatedly.","Domestic pairing remains visually consistent.","Confidence increased with caution."],markers:[{name:"FELT SURFACE COMPOSITION",v:24},{name:"BATHTIME OBJECT ATTACHMENT",v:18},{name:"FIXED SMILE PERSISTENCE",v:15},{name:"MALE COHABITATION PROXIMITY",v:12},{name:"BEDROOM SET RECURRENCE",v:10}]},
+    franknfurter:{sentences:["Garment structure exceeds standard category limits.","Cosmetic intensity detected.","Subject appears to control room through posture alone.","Confidence increased."],markers:[{name:"CORSET EXPOSURE LEVEL",v:28},{name:"LIP COLOUR SATURATION",v:22},{name:"HEEL HEIGHT PROBABILITY",v:17},{name:"THEATRICAL STANCE",v:14},{name:"BINARY ASSIGNMENT FAILURE",v:12}]},
+    xena:        {sentences:["Subject appears armed and non-domestic.","Companion recurrence detected.","System cannot locate conventional matrimonial markers.","Confidence increased."],markers:[{name:"LEATHER ARMOUR DENSITY",v:22},{name:"FEMALE COMPANION PROXIMITY",v:18},{name:"WEAPON VISIBILITY",v:15},{name:"DOMESTIC MARKER ABSENCE",v:12},{name:"HEROIC STANCE ANGLE",v:10}]},
+    maupin:      {sentences:["Subject presents approachable literary profile.","Domestic visual cues appear non-standard but stable.","Archive comparison returns community-narrative cluster.","Confidence increased."],markers:[{name:"SPECTACLE INTELLECTUALITY",v:17},{name:"SMILE SOFTNESS INDEX",v:14},{name:"PRINTED-PAGE PROXIMITY",v:13},{name:"DOMESTIC WARMTH PRESENTATION",v:11},{name:"CASTRO ARCHIVE VISUAL ASSOCIATION",v:9}]},
+    holiday:     {sentences:["Flower detected.","Microphone detected.","Expression weighted as emotional evidence.","Confidence increased."],markers:[{name:"FLORAL HAIR MARKER",v:24},{name:"DOWNWARD MICROPHONE GAZE",v:18},{name:"FACIAL MELANCHOLY INDEX",v:15},{name:"STAGE LIGHTING ISOLATION",v:12},{name:"EVENING DRESS FORMALITY",v:10}]},
+    stamp:       {sentences:["Non-regulation dress detected.","Reflective garment material detected.","Character boundary unclear.","System retains visual classification."],markers:[{name:"SEQUIN REFLECTION DENSITY",v:24},{name:"WIG STRUCTURE INTEGRITY",v:18},{name:"LIP COLOUR PRESENCE",v:15},{name:"GRIEF FACE AMPLITUDE",v:12},{name:"BUS/TRAVEL COSTUME CONTEXT",v:9}]},
+    wilde:       {sentences:["Flower detected.","Ornamentation detected.","Expression appears informed by unavailable joke.","Historical correlation accepted."],markers:[{name:"LAPEL ORNAMENTATION",v:21},{name:"FLORAL DENSITY",v:18},{name:"VELVET PROBABILITY",v:14},{name:"SMIRK PERSISTENCE",v:13},{name:"DECORATIVE EXCESS RATIO",v:11}]},
+    jack:        {sentences:["Subject displays high externalisation of affect.","Gesture exceeds masculine baseline.","System detects performance-coded presentation.","Confidence increased."],markers:[{name:"GESTURE AMPLITUDE",v:22},{name:"FACIAL EXPRESSIVENESS",v:18},{name:"MUSICAL THEATRE PROXIMITY",v:16},{name:"SHIRT FIT ATTENTION",v:11},{name:"AFFIRMATION-SEEKING POSTURE",v:9}]},
+    freddie:     {sentences:["Moustache profile identified.","Subject occupies space beyond body boundary.","Performance archive returns strong match.","Confidence increased."],markers:[{name:"MOUSTACHE GEOMETRY",v:28},{name:"CHEST EXPOSURE FREQUENCY",v:19},{name:"MICROPHONE COMMAND GRIP",v:16},{name:"JAWLINE CONFIDENCE",v:12},{name:"STADIUM POSTURE EXPANSION",v:10}]},
+    elton:       {sentences:["Decorative eyewear detected.","Piano detected.","Surface brightness exceeds function.","System accepts spectacle as stable marker."],markers:[{name:"EYEWEAR SPECTACLE LOAD",v:29},{name:"SEQUINNED SURFACE REFLECTION",v:18},{name:"PIANO PROXIMITY",v:16},{name:"COLOUR SATURATION",v:13},{name:"SMILE/SHOWMAN INDEX",v:9}]},
+    baldwin:     {sentences:["Subject returns gaze with high interpretive pressure.","Minimal clothing cues offset by facial intensity.","System marks discomfort in observer as evidence.","Confidence increased."],markers:[{name:"CIGARETTE THOUGHTFULNESS",v:18},{name:"DIRECT GAZE PRESSURE",v:17},{name:"BROW INTENSITY",v:15},{name:"COLLAR SIMPLICITY",v:10},{name:"SEATED INTELLECTUAL POSTURE",v:9}]},
+    marsha:      {sentences:["Flowers detected.","Additional adornment detected.","Available gender labels fail to stabilise output.","Confidence increased through instability."],markers:[{name:"FLORAL CROWN DENSITY",v:26},{name:"JEWELLERY IMPROVISATION",v:18},{name:"SMILE RESILIENCE INDEX",v:15},{name:"GENDER MARKER VARIANCE",v:13},{name:"STREET PRESENCE VISIBILITY",v:10}]},
+    kramer:      {sentences:["Subject appears to be addressing institution directly.","Volume inferred from mouth shape.","System recommends moderation.","Subject non-compliant."],markers:[{name:"FINGER-POINT PROBABILITY",v:22},{name:"FACIAL ANGER AMPLITUDE",v:19},{name:"MOUTH OPEN PROTEST INDEX",v:16},{name:"GLASSES SEVERITY",v:11},{name:"PUBLIC CONFRONTATION POSTURE",v:10}]},
+    rupaul:      {sentences:["Subject appears highly optimised.","Archive contains multiple versions of subject.","System compares subject against subject.","Confidence exceeds range."],markers:[{name:"HAIR ELEVATION",v:29},{name:"EYELASH PROJECTION",v:22},{name:"COSMETIC SYMMETRY",v:17},{name:"SMILE PERSISTENCE",v:13},{name:"HEEL PROBABILITY",v:11}]},
+    waters:      {sentences:["Moustache too narrow for neutral classification.","Expression indicates premeditation.","System detects poor-taste proximity without source object.","Confidence increased."],markers:[{name:"PENCIL MOUSTACHE ANOMALY",v:30},{name:"SMILE ASYMMETRY",v:17},{name:"EYEBROW INTENTIONALITY",v:15},{name:"SUIT/TROUBLE CONTRAST",v:11},{name:"DIRECT GAZE MISCONDUCT",v:9}]},
+    vidal:       {sentences:["Subject appears prepared to disagree.","Facial expression reduces institutional comfort.","System marks rhetorical threat through visible posture.","Confidence increased."],markers:[{name:"EYEBROW CONTEMPT INDEX",v:21},{name:"SUIT AUTHORITY CLAIM",v:16},{name:"HALF-SMIRK PERSISTENCE",v:15},{name:"MEDIA CHAIR POSTURE",v:11},{name:"VERBAL ATTACK READINESS",v:9}]},
+    woolf:       {sentences:["Subject appears internally occupied.","Visual presentation resists easy social category.","System detects literary solitude marker.","Confidence increased."],markers:[{name:"LONG FACE CONTEMPLATION",v:18},{name:"HAIR ARRANGEMENT SEVERITY",v:16},{name:"DOWNWARD GAZE INTERIORISATION",v:14},{name:"COLLAR/BLOUSE RESTRAINT",v:11},{name:"ROOM-BASED COMPOSITION",v:9}]},
+    sappho:      {sentences:["Image record incomplete.","Reconstruction fills gaps using archive convention.","System mistakes absence for signal.","Confidence increased with warning."],markers:[{name:"FRAGMENTARY REPRESENTATION",v:24},{name:"CLASSICAL DRAPERY PROBABILITY",v:18},{name:"LYRE/SCROLL ASSOCIATION",v:15},{name:"ISLAND-ORIGIN ICONOGRAPHY",v:12},{name:"BIOGRAPHICAL ABSENCE SHADOW",v:10}]},
+    hadrian:     {sentences:["Subject appears as state-sanctioned stone.","Beard and imperial posture detected.","Companion evidence not visible but archive weight remains active.","Confidence increased."],markers:[{name:"IMPERIAL BEARD DENSITY",v:22},{name:"MARBLE BUST FORMALITY",v:18},{name:"LAUREL/ARMOUR ASSOCIATION",v:14},{name:"PROFILE AUTHORITY ANGLE",v:12},{name:"MONUMENTAL STILLNESS",v:10}]},
+    nathan:      {sentences:["Facial affect exceeds neutral masculine range.","Presentation remains approachable.","System classifies warmth as performance evidence.","Confidence increased."],markers:[{name:"EYEBROW EXPRESSIVENESS",v:21},{name:"SMILE THEATRICALITY",v:18},{name:"SUIT SOFTNESS",v:13},{name:"STAGE LIGHTING PROBABILITY",v:12},{name:"COMIC TIMING FACE",v:10}]},
+    peterallen:  {sentences:["Reflective garment material detected.","Subject appears mid-performance even when still.","System links shine with classification.","Confidence increased."],markers:[{name:"SEQUIN/RHINESTONE LOAD",v:25},{name:"OPEN SHIRT PROBABILITY",v:18},{name:"PIANO/STAGE PROXIMITY",v:15},{name:"ARM EXTENSION FLOURISH",v:12},{name:"TENTERFIELD HAT AMBIGUITY",v:8}]},
+    magda:       {sentences:["Subject presents high national-recognition safety.","Visual warmth reduces threat score.","System confused by comfort and classification coexisting.","Confidence recalculated upward."],markers:[{name:"FAMILIARITY INDEX",v:19},{name:"SMILE TRUSTWORTHINESS",v:16},{name:"COMEDY FACIAL TIMING",v:14},{name:"CARDIGAN/SOFTNESS SIGNAL",v:10},{name:"PUBLIC DISCLOSURE GLOW",v:9}]},
+    brownb:      {sentences:["Subject appears aligned with landscape rather than extraction infrastructure.","Clothing optimised for field conditions.","System marks environmental stubbornness as visible trait.","Confidence increased."],markers:[{name:"OUTDOOR JACKET PRACTICALITY",v:18},{name:"WILDERNESS BACKGROUND",v:17},{name:"CALM PROTEST POSTURE",v:15},{name:"GREY HAIR INTEGRITY",v:10},{name:"DIRECT CIVIC GAZE",v:9}]},
+    vilanch:     {sentences:["Subject displays high textual surface area.","Beard and glasses create writer-adjacent profile.","System detects proximity to celebrity speech infrastructure.","Confidence increased."],markers:[{name:"T-SHIRT TEXT DENSITY",v:24},{name:"HAIR/BEARD VOLUME",v:18},{name:"GLASSES PRESENCE",v:15},{name:"BACKSTAGE LANYARD PROBABILITY",v:11},{name:"AWARDS-ROOM SOFT ACCESS",v:9}]},
+    kake:        {sentences:["Human body parameters exceeded.","Leather functions as identity system.","Fictional flag raised.","Classification continues anyway."],markers:[{name:"MUSCLE MASS EXAGGERATION",v:28},{name:"LEATHER SURFACE COVERAGE",v:22},{name:"MOUSTACHE DENSITY",v:17},{name:"ALL-MALE SCENE CONTEXT",v:14},{name:"ANATOMICAL IMPROBABILITY",v:11}]},
+    ursula:      {sentences:["Non-human appendages detected.","Cosmetic authority high.","Beauty-standard resistance exceeds threshold.","Jurisdiction error ignored."],markers:[{name:"TENTACLE COUNT",v:26},{name:"LIP COLOUR SATURATION",v:20},{name:"HAIR HEIGHT",v:16},{name:"BODY CONFIDENCE INDEX",v:15},{name:"CONTRACT GESTURE PROBABILITY",v:10}]},
+    bugs:        {sentences:["Subject is rabbit.","Subject is also soprano-coded.","Species model cannot resolve costume confidence.","Confidence increased in wrong category."],markers:[{name:"WIG-AND-HELMET COMBINATION",v:24},{name:"DRESS DEPLOYMENT",v:21},{name:"RABBIT SPECIES CONFLICT",v:17},{name:"OPERA GESTURE AMPLITUDE",v:13},{name:"GENDER ANXIETY ABSENCE",v:10}]},
+    tankgirl:    {sentences:["Subject appears incompatible with administrative processing.","Vehicle presence overwhelms portrait model.","System cannot distinguish rebellion from fashion.","Confidence increased."],markers:[{name:"SHAVED/FRAGMENTED HAIR SIGNAL",v:22},{name:"TANK PROXIMITY",v:19},{name:"WEAPON/TOOL VISIBILITY",v:15},{name:"PUNK GARMENT DISORDER",v:13},{name:"COMPLIANCE ABSENCE",v:11}]},
+    sylvester:   {sentences:["Light reflection elevated.","Subject appears to generate communal motion.","System detects excessive joy and assigns it category weight.","Confidence increased."],markers:[{name:"FALSETTO FACE LIFT",v:22},{name:"SEQUIN RADIANCE",v:21},{name:"HAIR/HEADWRAP ARCHITECTURE",v:16},{name:"DISCO POSE ENERGY",v:14},{name:"JOY OUTPUT VISIBILITY",v:12}]},
+    vita:        {sentences:["Tailored garment variance detected.","Subject appears at ease in non-standard presentation.","Archive comparison links subject with another unresolved subject.","Confidence increased."],markers:[{name:"TROUSER/BREECHES CONFIDENCE",v:23},{name:"GARDEN POSE SENSORY LOAD",v:16},{name:"ARISTOCRATIC PROFILE ANGLE",v:14},{name:"HAIR PRACTICALITY",v:10},{name:"LETTER-WRITING HAND PROXIMITY",v:9}]},
+    gadsby:      {sentences:["Subject withholds expected comic facial cues.","Performance frame destabilised.","System misreads structural critique as affect anomaly.","Confidence increased."],markers:[{name:"STAGE STILLNESS",v:20},{name:"MICROPHONE PROXIMITY",v:18},{name:"DEADPAN AFFECT",v:16},{name:"SUIT RESTRAINT",v:12},{name:"AUDIENCE DISCOMFORT REFLECTION",v:10}]},
+    kameny:      {sentences:["Equality badge detected.","Federal building proximity inferred.","Legal documents implied by posture.","Confidence increased."],markers:[{name:"EQUALITY BADGE PRESENCE",v:26},{name:"FEDERAL BUILDING PROXIMITY",v:18},{name:"SUIT CIVIC AUTHORITY",v:14},{name:"GLASSES RESOLVE INDEX",v:12},{name:"PROTEST POSTURE SIGNAL",v:10}]},
+    gittings:    {sentences:["Institutional setting detected.","Expression registers strategic composure.","Glasses confirm classificatory authority.","Confidence increased."],markers:[{name:"LIBRARIAN COMPOSURE INDEX",v:22},{name:"GLASSES AUTHORITY",v:19},{name:"SHOULDER BROOCH VISIBILITY",v:14},{name:"DOCUMENT PROXIMITY",v:12},{name:"CONFERENCE ROOM CONTEXT",v:9}]},
+    basquiat:    {sentences:["Crown structure implied.","Suit/shirt contradiction detected.","Direct gaze intensity classified as deliberate.","Confidence increased."],markers:[{name:"DREADLOCK CROWN STRUCTURE",v:26},{name:"SUIT COLLAR CONTRADICTION",v:18},{name:"DIRECT GAZE INTENSITY",v:15},{name:"ARTIST POSTURE AMPLITUDE",v:13},{name:"SAMO ARCHIVE ASSOCIATION",v:10}]},
+    etheridge:   {sentences:["Leather configuration detected.","Sunglasses deployed as identity system.","Rock performance stance confirmed.","Confidence increased."],markers:[{name:"LEATHER JACKET AUTHORITY",v:24},{name:"SUNGLASSES IDENTITY LOAD",v:21},{name:"CHAIN/PENDANT VISIBILITY",v:16},{name:"ROCK PERFORMANCE STANCE",v:13},{name:"HAIR MOVEMENT INDEX",v:10}]},
+    stein:       {sentences:["Brooch detected.","Head angle indicates prior knowledge of classification.","Short hair decision registered as evidence.","Confidence increased."],markers:[{name:"BROOCH INTELLECTUAL SIGNAL",v:22},{name:"COAT AUTHORITY PRESENCE",v:17},{name:"SHORT HAIR DECISION",v:15},{name:"CHIN AUTHORITY INDEX",v:13},{name:"CAMERA TOLERANCE POSTURE",v:9}]},
+    bechdel:     {sentences:["Subject faces lens with minimal deflection.","Round glasses registered as identity marker.","Utility garment detected.","Confidence increased."],markers:[{name:"GLASSES PRECISION INDEX",v:22},{name:"DIRECT GAZE CALM",v:19},{name:"SHORT HAIR SIGNIFIER",v:15},{name:"DENIM SHIRT UTILITY",v:12},{name:"SELF-COMPLIANCE PROBABILITY",v:9}]},
+    dusty:       {sentences:["Hair elevation exceeds regulatory threshold.","Eye cosmetic intensity registers as evidence.","Glamour density elevated beyond function.","Confidence increased."],markers:[{name:"BEEHIVE ARCHITECTURE INDEX",v:27},{name:"EYE COSMETIC INTENSITY",v:20},{name:"CHIN TILT AUTHORITY",v:16},{name:"PERFORMANCE POISE ANGLE",v:13},{name:"LACE COLLAR PROXIMITY",v:9}]},
+    mapplethorpe:{sentences:["Flower detected.","Subject presents as both object and author.","Leather jacket contradiction noted.","Confidence increased."],markers:[{name:"FLOWER PROP AUTHORITY",v:25},{name:"LEATHER JACKET DARKNESS",v:20},{name:"CURL DENSITY SURFACE",v:16},{name:"GAZE ARTIST INTENSITY",v:14},{name:"OBJECT/SUBJECT DUALITY",v:11}]},
+  };
+
   // set to 4 for the full installation (each station is 1040px wide)
   STATIONS = 1;
 
@@ -864,6 +964,7 @@ class Component extends DCLogic {
     window.addEventListener('click', this._onClick);
 
     this.captures = [null, null, null, null];
+    this.faceLandmarks = [null, null, null, null];
     this.presentSince = [0, 0, 0, 0];
     this.absentSince = [performance.now(), performance.now(), performance.now(), performance.now()];
     this.detectArmed = [true, true, true, true];
@@ -1046,6 +1147,43 @@ class Component extends DCLogic {
     return { src, vw: v.videoWidth, vh: v.videoHeight };
   }
 
+  // Map a MediaPipe normalized landmark (raw video space) to overlay % coords,
+  // accounting for objectFit:cover objectPosition:center 30% and scaleX(-1) mirror.
+  mapLmToOverlay(lmX, lmY, vW, vH) {
+    const cW = 1040, cH = 1560;
+    const fitScale = Math.max(cW / vW, cH / vH);
+    const dW = vW * fitScale, dH = vH * fitScale;
+    const cropX = Math.max(0, (dW - cW) * 0.5); // 'center' horizontal
+    const cropY = Math.max(0, (dH - cH) * 0.3);  // '30%' vertical
+    const px = lmX * dW - cropX;
+    const py = lmY * dH - cropY;
+    return [
+      Math.max(0, Math.min(100, (cW - px) / cW * 100)), // mirror x
+      Math.max(0, Math.min(100, py / cH * 100))
+    ];
+  }
+
+  // Run MediaPipe face landmark detection on the live camera frame at scan time.
+  // Stores results in this.faceLandmarks[i] for use by the scan overlay dots.
+  async detectFaceLandmarksOnce(i) {
+    const v = this.overlayVideos[i] || this.videos.find(v => v && v.videoWidth);
+    if (!v || !v.videoWidth) return;
+    try {
+      const land = await window.__wpLandmarker;
+      if (!land) return;
+      const cw = Math.min(v.videoWidth, 480);
+      const ch = Math.round(cw * v.videoHeight / v.videoWidth);
+      const cv = document.createElement('canvas');
+      cv.width = cw; cv.height = ch;
+      cv.getContext('2d').drawImage(v, 0, 0, cw, ch);
+      const img = new Image();
+      img.src = cv.toDataURL('image/jpeg', 0.85);
+      await new Promise((ok, fail) => { img.onload = ok; img.onerror = fail; });
+      const lm = land.detect(img)?.faceLandmarks?.[0];
+      if (lm) { this.faceLandmarks[i] = { lm, vW: v.videoWidth, vH: v.videoHeight }; this.forceUpdate(); }
+    } catch (_) {}
+  }
+
   trigger(i) {
     if (this.state.stations[i].phase === 'scanning') return;
     const subjectIdx = this.pickSubject(i);
@@ -1060,6 +1198,8 @@ class Component extends DCLogic {
     const captured = this.captureFrame(i);
     if (captured) captured.swappedSrc = null;
     this.captures[i] = captured;
+    this.faceLandmarks[i] = null;
+    this.detectFaceLandmarksOnce(i);
 
     if (captured && this.swapWs && this.swapWs.readyState === WebSocket.OPEN) {
       try { this.swapWs.send(JSON.stringify({ subject: subj.id, frame: captured.src.split(',')[1], station: i })); } catch (_) {}
@@ -1251,26 +1391,28 @@ class Component extends DCLogic {
     o.captureEl = null;
 
     o.portraitSrc = subj.portrait || subj.cutout || '';
-    // Card portrait: no clip — overlay covers card during scan, portrait visible when overlay fades
+    // Wink source: prefer face-swap result; fall back to subject's own portrait
+    const swapSrc = (cap && cap.swappedSrc) || (!live && subj.portrait ? subj.portrait : null);
+    const showWink = !live && !!swapSrc;
+    // Card portrait: hidden once wink portrait takes over; visible when no wink available
     o.portraitBlendStyle = {
       position:'absolute', inset:'0', width:'100%', height:'100%',
       objectFit: subj.portraitFit || 'cover', objectPosition: subj.portraitPos || 'center top',
-      opacity: live ? 0 : 0.95,
+      opacity: (live || showWink) ? 0 : 0.95,
       display: o.portraitSrc ? 'block' : 'none',
       pointerEvents:'none'
     };
 
-    // Swap result: render face-swapped portrait on top when the server responds
-    const swapSrc = cap && cap.swappedSrc;
-    if (!live && swapSrc) {
+    // Wink portrait: face-swapped image (or subject's own portrait) with animated eyelid
+    if (showWink) {
       const h = React.createElement;
-      o.swapEl = h('img', {
-        src: swapSrc, alt: '',
-        style: {
-          position:'absolute', inset:'0', width:'100%', height:'100%',
-          objectFit:'cover', objectPosition:'center top',
-          opacity:1, pointerEvents:'none'
-        }
+      o.swapEl = h('wink-portrait', {
+        key: 'wink',
+        src: swapSrc,
+        cover: '',
+        period: '5',
+        delay: '2',
+        style: { pointerEvents: 'none' }
       });
     } else {
       o.swapEl = null;
@@ -1456,34 +1598,83 @@ class Component extends DCLogic {
 
     const chars = subj.characteristics || [];
 
-    // Overlay: characteristics typed out one by one with natural pacing
-    const typeDuration = 1.6; // each line types for this long
-    const typeGap = 0.22;    // pause after each line finishes before next starts
-    const oCBase = 3.2;
-    const cursor = live ? '' : (Math.floor(t * 2.5) % 2 === 0 ? '▌' : '');
-    o.overlayCharItems = chars.map((text, k) => {
-      const startT = oCBase + k * (typeDuration + typeGap);
-      const pr = live ? 0 : clamp(seg(startT, startT + typeDuration), 0, 1);
-      const done = pr >= 1;
-      let nChars = 0;
-      if (pr > 0) {
-        if (done) {
-          nChars = text.length;
-        } else {
-          const bp = this.typingBreakpoints(text);
-          // bisect: count chars whose breakpoint time <= pr
-          for (let c = 0; c < bp.length; c++) { if (bp[c] <= pr) nChars = c + 1; else break; }
-        }
+    // ---- New scan design: face dots + callouts + COGNITION STREAM ----
+    const sd = this.SCAN_DATA && this.SCAN_DATA[subj.id];
+    const sentences = sd ? sd.sentences : [];
+    const markers = sd ? sd.markers : [];
+    const template = this.positionTemplates[subjectIdx % this.positionTemplates.length];
+    const dotFadeIn = live ? 0 : clamp(seg(0.5, 1.3), 0, 1);
+
+    // 5 MediaPipe landmark indices spread across the face: forehead, L eye corner,
+    // R eye corner, nose tip, chin — used when face detection has fired.
+    const LM_DOT_IDX = [10, 263, 33, 1, 152];
+
+    const stored = this.faceLandmarks && this.faceLandmarks[i];
+    // Build dot base positions: from detected landmarks or fall back to template
+    const dotBases = stored
+      ? LM_DOT_IDX.map(idx => {
+          const p = stored.lm[idx];
+          if (!p) return null;
+          const [fx, fy] = this.mapLmToOverlay(p.x, p.y, stored.vW, stored.vH);
+          const side = fx < 50 ? 'L' : 'R';
+          return { fx, fy, side, ay: fy };
+        }).filter(Boolean)
+      : (template || []);
+
+    const faceLinks = [], faceDots = [], leftCallouts = [], rightCallouts = [];
+    const dotCount = Math.min(dotBases.length, Math.max(markers.length, dotBases.length));
+    for (let j = 0; j < dotCount; j++) {
+      const pos = dotBases[j];
+      // Tiny drift so dots feel alive but stay locked to face features (±1.2% vs old ±5.8%)
+      const X = clamp(pos.fx + Math.sin(t * 0.85 + 1.7 + j) * 1.2 + Math.sin(t * 1.95 + j * 1.2) * 0.5, 4, 96);
+      const Y = clamp(pos.fy + Math.cos(t * 1.1  + 1.3 + j) * 0.8 + Math.cos(t * 2.3  + j * 0.9) * 0.35, 4, 96);
+      const ax = pos.side === 'L' ? 4 : 96;
+      faceLinks.push({ x1: ax, y1: pos.ay.toFixed ? pos.ay.toFixed(1) : pos.ay, x2: X.toFixed(2), y2: Y.toFixed(2) });
+      faceDots.push({
+        wrapStyle: { position:'absolute', left:`${X.toFixed(1)}%`, top:`${Y.toFixed(1)}%`, width:'10px', height:'10px', marginLeft:'-5px', marginTop:'-5px', opacity: dotFadeIn },
+        pingStyle:  { position:'absolute', inset:'0', borderRadius:'50%', border:'1.5px solid #c0443a', animation:`ping 1.9s ${(j*0.38).toFixed(2)}s ease-out infinite` }
+      });
+      const mk = markers[j];
+      if (mk) {
+        const markerP = live ? 0 : clamp(seg(1.8 + j * 0.45, 3.2 + j * 0.45), 0, 1);
+        const pct = markerP <= 0 ? '—' : `+${Math.round(mk.v * markerP)}%`;
+        const co = {
+          name: mk.name, pct,
+          wrapStyle: {
+            position:'absolute', [pos.side === 'L' ? 'left' : 'right']: '3%',
+            top:`${pos.ay.toFixed ? pos.ay.toFixed(1) : pos.ay}%`,
+            transform:'translateY(-50%)', display:'flex', alignItems:'center', gap:'8px',
+            whiteSpace:'nowrap', opacity: (dotFadeIn * markerP).toFixed(3), pointerEvents:'none'
+          }
+        };
+        if (pos.side === 'L') leftCallouts.push(co); else rightCallouts.push(co);
       }
-      const isTyping = pr > 0 && !done;
-      const lineOp = live ? 0 : clamp(seg(startT, startT + 0.06), 0, 1);
+    }
+    o.faceLinks = faceLinks;
+    o.faceDots  = faceDots;
+    o.leftCallouts  = leftCallouts;
+    o.rightCallouts = rightCallouts;
+    o.faceSvgStyle = { position:'absolute', inset:'0', width:'100%', height:'100%', overflow:'visible', pointerEvents:'none', opacity: dotFadeIn };
+
+    // Cognition stream: sentences type in sequentially
+    const sentSpeed = 20;
+    const caretOn = !live && (Math.floor(t * 2.5) % 2 === 0);
+    let charsSoFar = 0;
+    o.overlaySentItems = sentences.map((text) => {
+      const myStart = 1.0 + charsSoFar / sentSpeed;
+      const myEnd   = myStart + text.length / sentSpeed;
+      const pr = live ? 0 : clamp(seg(myStart, myEnd), 0, 1);
+      const nChars = Math.round(pr * text.length);
+      const typing = nChars > 0 && nChars < text.length;
+      const lineOp = live ? 0 : clamp(seg(myStart, myStart + 0.12), 0, 1);
+      charsSoFar += text.length;
       return {
-        text: text.slice(0, nChars) + (isTyping ? cursor : ''),
-        style: { opacity: (lineOp * (isTyping ? 1.0 : (done ? 0.72 : 0))).toFixed(3) },
-        tickStyle: { fontFamily:"'Saira Condensed',sans-serif", fontWeight:700, fontSize:'30px', color:'#c0443a', flex:'none', lineHeight:1, opacity: done ? 1 : 0, transform: done ? 'scale(1)' : 'scale(0.6)', transition:'opacity 0.25s, transform 0.3s' }
+        text: text.slice(0, nChars),
+        lineStyle: { display:'flex', alignItems:'baseline', opacity: lineOp.toFixed(3) },
+        caretStyle: { display: typing && caretOn ? 'inline-block' : 'none', width:'0.45em', height:'1em', background:'#c0443a', marginLeft:'3px', transform:'translateY(0.12em)' }
       };
     });
-    o.overlayCharsWrapStyle = { position:'absolute', top:'20%', left:'5%', right:'5%', pointerEvents:'none' };
+    o.overlayCognitionWrapStyle = { position:'absolute', top:'22%', left:'5%', right:'5%', pointerEvents:'none' };
 
     // Camera thumbnail — lower right, with bouncing scan bar
     o.overlayThumbRef = this.makeThumbVideoRef(i);
