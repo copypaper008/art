@@ -1234,12 +1234,12 @@ class Component extends DCLogic {
       if (cachedHtml) {
         return h('div', {
           style: {
-            position: 'absolute', inset: '0',
+            position: 'absolute', top: 0, right: 0, bottom: 0, left: 0,
             transform: `scale(${scale})`,
             transformOrigin: 'center center',
             opacity,
             pointerEvents: 'none',
-            overflow: 'visible',
+            overflow: 'hidden',
           },
           dangerouslySetInnerHTML: { __html: cachedHtml }
         });
@@ -1754,7 +1754,7 @@ class Component extends DCLogic {
     //   Main-row bottom (y):          ≈ 955  (photo col: 14pad+560win+14pad+~28meta)
     //   Spacer height:                ≈ 345px of empty light-paper space
     // The stamp is centred in this empty right-column gap (light #ECEAE3 bg).
-    o.stampLayerStyle = { position:'absolute', left:'450px', right:'40px', top:'610px', height:'345px', zIndex:30, pointerEvents:'none', overflow:'visible' };
+    o.stampLayerStyle = { position:'absolute', left:'450px', right:'40px', top:'645px', height:'300px', zIndex:30, pointerEvents:'none', overflow:'hidden' };
     o.bandStampEl = locked ? this.buildStamp(subj, stampIn, stampOp) : null;
 
     // ---- Card content wrapper: snap to invisible when returning to idle ----
