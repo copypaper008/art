@@ -1556,6 +1556,8 @@ class Component extends DCLogic {
     o.reflLabel = live ? '––.–' : (refl*reflP).toFixed(1);
     o.reflGaugeStyle = { position:'absolute', top:'-3px', width:'2px', height:'7px', background:'#16130f', left:`${(reflP*refl).toFixed(1)}%` };
 
+    const chars = subj.characteristics || [];
+
     // ---- New scan design: face dots + callouts + COGNITION STREAM ----
     const sd = this.SCAN_DATA && this.SCAN_DATA[subj.id];
     const sentences = sd ? sd.sentences : [];
