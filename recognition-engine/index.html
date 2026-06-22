@@ -364,6 +364,30 @@
          </div>
         </div>
        </div>
+       <!-- MOBILE RESULT: portrait + verdict shown in overlay on small screens -->
+       <div style="{{ p.mobileResultStyle }}">
+        <div style="position:absolute;top:0;left:0;right:0;height:54%;overflow:hidden;">
+         <img src="{{ p.mobilePortraitSrc }}" alt="" style="{{ p.mobilePortraitStyle }}" />
+         <div style="position:absolute;bottom:0;left:0;right:0;height:320px;background:linear-gradient(to top,#0a0a0b 30%,transparent 100%);pointer-events:none;"></div>
+        </div>
+        <div style="position:absolute;top:54%;left:60px;right:60px;padding-top:18px;">
+         <div style="font-family:'Spline Sans Mono',monospace;font-size:22px;letter-spacing:4px;color:rgba(241,239,231,0.28);margin-bottom:18px;">RECOGNITION ENGINE v.7.3.1</div>
+         <div style="{{ p.mobileNameStyle }}">{{ p.subjectDisplay }}</div>
+         <div style="display:flex;gap:50px;align-items:flex-end;margin-top:28px;">
+          <div>
+           <div style="font-family:'Spline Sans Mono',monospace;font-size:34px;letter-spacing:3px;color:rgba(241,239,231,0.38);margin-bottom:6px;">CONFIDENCE</div>
+           <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:90px;line-height:1;color:#f1efe7;">{{ p.confText }}<span style="font-size:50px;">%</span></div>
+          </div>
+          <div>
+           <div style="font-family:'Spline Sans Mono',monospace;font-size:34px;letter-spacing:3px;color:rgba(241,239,231,0.38);margin-bottom:6px;">REFLECTION</div>
+           <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:90px;line-height:1;color:#f1efe7;">{{ p.reflText }}<span style="font-size:50px;">%</span></div>
+          </div>
+         </div>
+         <div style="{{ p.mobileVerdictStyle }}">{{ p.verdictText }}</div>
+         <div style="{{ p.mobileDispoStyle }}">{{ p.dispositionText }}</div>
+        </div>
+        {{ p.mobileBandStampEl }}
+       </div>
       </div>
      </div>
     </div>
@@ -965,6 +989,8 @@ class Component extends DCLogic {
 
     this.captures = [null, null, null, null];
     this.faceLandmarks = [null, null, null, null];
+    this.videos = [null, null, null, null];
+    this.overlayVideos = [null, null, null, null];
     this.presentSince = [0, 0, 0, 0];
     this.absentSince = [performance.now(), performance.now(), performance.now(), performance.now()];
     this.detectArmed = [true, true, true, true];
@@ -1089,8 +1115,18 @@ class Component extends DCLogic {
       for (let i = 0; i < this.STATIONS; i++) {
         const present = this.sampleZone(i);
         const live = this.state.stations[i].phase === 'live';
-        if (present) { if (!this.presentSince[i]) this.presentSince[i] = now; this.absentSince[i] = 0; }
-        else { this.presentSince[i] = 0; if (!this.absentSince[i]) this.absentSince[i] = now; }
+        if (present) {
+          if (!this.presentSince[i]) {
+            this.presentSince[i] = now;
+            // Start landmark detection as soon as face appears so it's ready before scan fires
+            this.detectFaceLandmarksOnce(i);
+          }
+          this.absentSince[i] = 0;
+        } else {
+          this.presentSince[i] = 0;
+          if (!this.absentSince[i]) this.absentSince[i] = now;
+          this.faceLandmarks[i] = null; // clear landmarks when face leaves frame
+        }
         if (!this.detectArmed[i] && this.absentSince[i] && now - this.absentSince[i] > CLEAR) this.detectArmed[i] = true;
         let prog = 0;
         if (live && this.detectArmed[i] && this.presentSince[i]) {
@@ -1163,12 +1199,16 @@ class Component extends DCLogic {
     ];
   }
 
-  // Run MediaPipe face landmark detection on the live camera frame at scan time.
-  // Stores results in this.faceLandmarks[i] for use by the scan overlay dots.
+  // Run MediaPipe face landmark detection on the live camera frame.
+  // Called as soon as a face appears (idle) and again at scan trigger for accuracy.
+  // Guards against concurrent calls per station.
   async detectFaceLandmarksOnce(i) {
-    const v = this.overlayVideos[i] || this.videos.find(v => v && v.videoWidth);
-    if (!v || !v.videoWidth) return;
+    if (this._lmDetecting && this._lmDetecting[i]) return; // already in flight
+    if (!this._lmDetecting) this._lmDetecting = {};
+    this._lmDetecting[i] = true;
     try {
+      const v = this.overlayVideos[i] || this.videos.find(v => v && v.videoWidth);
+      if (!v || !v.videoWidth) return;
       const land = await window.__wpLandmarker;
       if (!land) return;
       const cw = Math.min(v.videoWidth, 480);
@@ -1182,6 +1222,7 @@ class Component extends DCLogic {
       const lm = land.detect(img)?.faceLandmarks?.[0];
       if (lm) { this.faceLandmarks[i] = { lm, vW: v.videoWidth, vH: v.videoHeight }; this.forceUpdate(); }
     } catch (_) {}
+    finally { if (this._lmDetecting) this._lmDetecting[i] = false; }
   }
 
   trigger(i) {
@@ -1198,7 +1239,8 @@ class Component extends DCLogic {
     const captured = this.captureFrame(i);
     if (captured) captured.swappedSrc = null;
     this.captures[i] = captured;
-    this.faceLandmarks[i] = null;
+    // Keep existing landmarks (detected during idle hold-still phase) so dots are
+    // placed immediately; re-detect on the captured frame to refine positions.
     this.detectFaceLandmarksOnce(i);
 
     if (captured && this.swapWs && this.swapWs.readyState === WebSocket.OPEN) {
@@ -1342,6 +1384,9 @@ class Component extends DCLogic {
     const mirror = this.props.mirrorCam ?? true;
     const camError = this.state.camError;
     const det = (this.det && this.det[i]) || { present: false, prog: 0, armed: true };
+    // Mobile: scale < 0.45 means the document card is too small to read
+    const isMobileScale = Math.min(window.innerWidth / 1040, window.innerHeight / 1560) * 0.97;
+    const isMobile = isMobileScale < 0.45;
 
     const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
     const outCubic = x => 1 - Math.pow(1-x, 3);
@@ -1434,7 +1479,8 @@ class Component extends DCLogic {
     };
 
     // Full-card live overlay: stays up through scan, fades after portrait is revealed
-    const overlayFade = live ? 1 : clamp(1 - seg(16.0, 17.5, outCubic), 0, 1);
+    // On mobile the overlay stays opaque — result is shown inside it, not on the doc card
+    const overlayFade = live ? 1 : (isMobile ? 1 : clamp(1 - seg(16.0, 17.5, outCubic), 0, 1));
     o.liveOverlayStyle = {
       position:'absolute', inset:'0', zIndex:9,
       background:'#0a0a0b', opacity:overlayFade,
@@ -1484,7 +1530,9 @@ class Component extends DCLogic {
     o.overlayIdleStyle = { position:'absolute', inset:'0', opacity: overlayIdleOp, pointerEvents:'none' };
 
     // Overlay scan content: portrait reveal + scan FX + stats, fades in when scan fires
-    const overlayScanOp = live ? 0 : clamp(seg(0.2, 0.7, outCubic), 0, 1);
+    // On mobile, also fade it OUT before the mobile result section appears
+    const scanFadeOut = isMobile ? clamp(1 - seg(16.5, 17.2), 0, 1) : 1;
+    const overlayScanOp = live ? 0 : clamp(seg(0.2, 0.7, outCubic), 0, 1) * scanFadeOut;
     o.overlayScanContentStyle = { position:'absolute', inset:'0', opacity: overlayScanOp, pointerEvents:'none' };
     o.overlayScanLineStyle = Object.assign({}, o.scanLineStyle);
     o.overlayScanTrailStyle = Object.assign({}, o.scanTrailStyle);
@@ -1757,6 +1805,42 @@ class Component extends DCLogic {
 
     o.camError = camError;
     o.flashStyle = { position:'absolute', inset:'0', background:RED, opacity:flash, pointerEvents:'none', mixBlendMode:'multiply', zIndex:7 };
+
+    // ---- Mobile result section (replaces document card on small screens) ----
+    const mobileResOp = (isMobile && !live) ? clamp(seg(17.0, 17.8, outCubic), 0, 1) : 0;
+    o.mobileResultStyle = {
+      position:'absolute', inset:'0', background:'#0a0a0b',
+      opacity: mobileResOp,
+      pointerEvents: mobileResOp > 0.01 ? 'auto' : 'none'
+    };
+    o.mobilePortraitSrc = swapSrc || subj.portrait || subj.cutout || '';
+    o.mobilePortraitStyle = {
+      position:'absolute', inset:'0', width:'100%', height:'100%',
+      objectFit: subj.portraitFit || 'cover',
+      objectPosition: subj.portraitPos || 'center top'
+    };
+    o.mobileNameStyle = {
+      fontFamily:"'Saira Condensed',sans-serif",
+      fontWeight:900, fontSize:'120px', lineHeight:0.9, letterSpacing:'-0.02em',
+      color:'#f1efe7', display:'block', opacity: interpP
+    };
+    const mobileVerdictP = (isMobile && !live) ? clamp(seg(19.0, 19.6, outCubic), 0, 1) : 0;
+    o.mobileVerdictStyle = {
+      fontFamily:"'Saira Condensed',sans-serif",
+      fontWeight:700, fontSize:'115px', lineHeight:0.95,
+      color:RED, display:'block', marginTop:'14px',
+      opacity: mobileVerdictP,
+      transform:`scale(${lerp(1.12,1,mobileVerdictP).toFixed(3)}) translateY(${lerp(8,0,mobileVerdictP).toFixed(1)}px)`,
+      transformOrigin:'left center'
+    };
+    const mobileDispoP = (isMobile && !live) ? clamp(seg(21.0, 21.5, outBack), 0, 1) : 0;
+    o.mobileDispoStyle = {
+      fontFamily:"'Spline Sans Mono',monospace",
+      fontSize:'34px', letterSpacing:'1.5px',
+      color:`rgba(241,239,231,${lerp(0,0.65,mobileDispoP).toFixed(3)})`,
+      display:'block', marginTop:'24px', wordBreak:'break-word'
+    };
+    o.mobileBandStampEl = (isMobile && locked) ? this.buildStamp(subj, stampIn, stampOp) : null;
 
     return o;
   }

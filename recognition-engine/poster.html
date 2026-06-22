@@ -4,7 +4,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="./support.js"></script>
-<script type="module" src="./wink-portrait.js"></script>
 </head>
 <body>
 <x-dc>
@@ -24,6 +23,10 @@
     75% {transform:scale(1.004) translate(0px,0.5px) rotate(0.06deg);}
     100%{transform:scale(1.000) translate(0px,0px) rotate(0deg);}
   }
+  @keyframes winkEyelid {
+    0%, 78%, 100% { transform: scaleY(0); }
+    83%, 93%      { transform: scaleY(1); }
+  }
   @keyframes wave{0%,100%{transform:scaleY(.25)}50%{transform:scaleY(1)}}
   @keyframes ping{0%{transform:scale(.5);opacity:.85}70%,100%{transform:scale(2.6);opacity:0}}
 </style>
@@ -36,7 +39,7 @@
    <sc-for list="{{ panels }}" as="p" hint-placeholder-count="1">
     <!-- one 1040×1560 card per station -->
     <div style="{{ p.shudderStyle }}">
-     <div style="position:relative;width:1040px;height:1560px;background:#ECEAE3;color:#14130F;box-shadow:0 30px 90px rgba(0,0,0,0.6);font-family:'Archivo',sans-serif;">
+     <div style="position:relative;width:1040px;height:1560px;background:#ECEAE3;color:#14130F;box-shadow:0 30px 90px rgba(0,0,0,0.6);font-family:'Archivo',sans-serif;overflow:hidden;">
 
       <!-- double border: outer at card edge, inner 6px inset -->
       <div style="position:absolute;inset:0;border:1px solid #14130F;padding:6px;">
@@ -48,9 +51,9 @@
           <div style="font-weight:900;font-size:54px;line-height:0.92;letter-spacing:-0.01em;display:inline-block;transform:scaleX(0.93);transform-origin:left;">SUBJECT&nbsp;ANALYSIS&nbsp;REPORT</div>
           <div style="font-family:'Space Mono',monospace;font-size:15px;letter-spacing:0.04em;margin-top:10px;color:#3a3833;">FILE ID: {{ p.subjFileId }}&nbsp;&nbsp;&nbsp;&nbsp;SUBJECT: {{ p.subjLine }}&nbsp;&nbsp;&nbsp;&nbsp;DATE: {{ p.subjDate }}</div>
          </div>
-         <div style="text-align:right;">
-          <div style="font-family:'Space Mono',monospace;font-size:15px;letter-spacing:0.04em;color:#3a3833;">RECOGNITION ENGINE v.7.3.1</div>
-          <div style="font-family:'Space Mono',monospace;font-size:15px;letter-spacing:0.04em;color:#3a3833;">BUREAU OF CULTURAL PATTERN ASSESSMENT</div>
+         <div style="text-align:right;flex:none;width:230px;">
+          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.04em;color:#3a3833;">RECOGNITION ENGINE v.7.3.1</div>
+          <div style="font-family:'Space Mono',monospace;font-size:12px;letter-spacing:0.04em;color:#3a3833;">BUREAU OF CULTURAL PATTERN ASSESSMENT</div>
           <div style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:0.06em;color:#3a3833;margin-bottom:9px;opacity:0.55;">FORM RE-7731-B</div>
           <div style="width:230px;height:34px;margin-left:auto;background:repeating-linear-gradient(90deg,#14130F 0 2px,transparent 2px 4px,#14130F 4px 5px,transparent 5px 9px,#14130F 9px 12px,transparent 12px 14px,#14130F 14px 15px,transparent 15px 18px);"></div>
          </div>
@@ -196,9 +199,9 @@
           <div style="color:#14130F;font-size:14px;line-height:1.4;">Classification results may reflect cultural assumptions, archival gaps, historical perspective, sampling bias, public opinion, and unknown variables. Results remain legally nonbinding.</div>
          </div>
          <div style="border-left:1px dashed #999;padding-left:22px;">
-          <div style="font-family:'Space Mono',monospace;font-size:9.5px;font-weight:700;letter-spacing:1px;color:#14130F;margin-bottom:6px;">REVIEW STATUS</div>
+          <div style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;letter-spacing:1px;color:#14130F;margin-bottom:6px;">REVIEW STATUS</div>
           <div style="font-family:'Space Mono',monospace;font-size:16px;font-weight:700;letter-spacing:1px;color:#b93324;margin-bottom:6px;">NO REVIEW CONDUCTED</div>
-          <div style="font-family:'Space Mono',monospace;font-size:10px;color:#14130F;letter-spacing:0.5px;">REVIEW REQUIRED: N/A</div>
+          <div style="font-family:'Space Mono',monospace;font-size:13px;color:#14130F;letter-spacing:0.5px;">REVIEW REQUIRED: N/A</div>
          </div>
         </div>
 
@@ -264,12 +267,12 @@
          <div style="{{ p.overlayScanMsgStyle }}">▸ {{ p.overlayScanMsg }}</div>
          <div style="display:flex;gap:40px;margin-top:18px;">
           <div>
-           <div style="font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:1.5px;color:rgba(241,239,231,0.38);margin-bottom:2px;">CONFIDENCE</div>
-           <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:36px;line-height:1;color:#f1efe7;">{{ p.overlayConfText }}<span style="font-size:20px;">%</span></div>
+           <div style="font-family:'Spline Sans Mono',monospace;font-size:14px;letter-spacing:1.5px;color:rgba(241,239,231,0.38);margin-bottom:2px;">CONFIDENCE</div>
+           <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:46px;line-height:1;color:#f1efe7;">{{ p.overlayConfText }}<span style="font-size:24px;">%</span></div>
           </div>
           <div>
-           <div style="font-family:'Spline Sans Mono',monospace;font-size:11px;letter-spacing:1.5px;color:rgba(241,239,231,0.38);margin-bottom:2px;">REFLECTION</div>
-           <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:36px;line-height:1;color:#f1efe7;">{{ p.overlayReflText }}<span style="font-size:20px;">%</span></div>
+           <div style="font-family:'Spline Sans Mono',monospace;font-size:14px;letter-spacing:1.5px;color:rgba(241,239,231,0.38);margin-bottom:2px;">REFLECTION</div>
+           <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:46px;line-height:1;color:#f1efe7;">{{ p.overlayReflText }}<span style="font-size:24px;">%</span></div>
           </div>
          </div>
         </div>
@@ -288,21 +291,21 @@
         <sc-for list="{{ p.leftCallouts }}" as="c">
          <div style="{{ c.wrapStyle }}">
           <span style="width:7px;height:7px;border-radius:50%;background:#c0443a;flex:none;"></span>
-          <span style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.05em;color:rgba(241,239,231,0.82);text-shadow:0 0 6px rgba(0,0,0,0.95);">{{ c.name }}</span>
-          <span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:12px;color:#c0443a;flex:none;">{{ c.pct }}</span>
+          <span style="font-family:'Spline Sans Mono',monospace;font-size:14px;letter-spacing:.05em;color:rgba(241,239,231,0.82);text-shadow:0 0 6px rgba(0,0,0,0.95);">{{ c.name }}</span>
+          <span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:15px;color:#c0443a;flex:none;">{{ c.pct }}</span>
          </div>
         </sc-for>
         <sc-for list="{{ p.rightCallouts }}" as="c">
          <div style="{{ c.wrapStyle }}">
-          <span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:12px;color:#c0443a;flex:none;">{{ c.pct }}</span>
-          <span style="font-family:'Spline Sans Mono',monospace;font-size:10px;letter-spacing:.05em;color:rgba(241,239,231,0.82);text-shadow:0 0 6px rgba(0,0,0,0.95);">{{ c.name }}</span>
+          <span style="font-family:'Archivo',sans-serif;font-weight:800;font-size:15px;color:#c0443a;flex:none;">{{ c.pct }}</span>
+          <span style="font-family:'Spline Sans Mono',monospace;font-size:14px;letter-spacing:.05em;color:rgba(241,239,231,0.82);text-shadow:0 0 6px rgba(0,0,0,0.95);">{{ c.name }}</span>
           <span style="width:7px;height:7px;border-radius:50%;background:#c0443a;flex:none;"></span>
          </div>
         </sc-for>
         <!-- COGNITION STREAM: typed sentences + audio wave -->
         <div style="{{ p.overlayCognitionWrapStyle }}">
          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-          <span style="font-family:'Spline Sans Mono',monospace;font-size:12px;letter-spacing:3px;color:rgba(241,239,231,0.35);">COGNITION STREAM</span>
+          <span style="font-family:'Spline Sans Mono',monospace;font-size:15px;letter-spacing:3px;color:rgba(241,239,231,0.35);">COGNITION STREAM</span>
           <div style="display:flex;align-items:flex-end;gap:3px;height:18px;">
            <span style="width:3px;background:#c0443a;height:18px;transform-origin:bottom;animation:wave 1.1s ease-in-out infinite;animation-delay:0s;"></span>
            <span style="width:3px;background:#c0443a;height:18px;transform-origin:bottom;animation:wave 1.1s ease-in-out infinite;animation-delay:-.16s;"></span>
@@ -315,11 +318,11 @@
           <sc-for list="{{ p.overlaySentItems }}" as="item">
            <div style="{{ item.lineStyle }}">
             <span style="color:rgba(192,68,58,0.65);font-family:'Spline Sans Mono',monospace;font-size:13px;margin-right:10px;flex:none;">&#9658;</span>
-            <span style="font-family:'Archivo',sans-serif;font-size:21px;line-height:1.3;color:#f1efe7;">{{ item.text }}<span style="{{ item.caretStyle }}">&#9608;</span></span>
+            <span style="font-family:'Archivo',sans-serif;font-size:26px;line-height:1.3;color:#f1efe7;">{{ item.text }}<span style="{{ item.caretStyle }}">&#9608;</span></span>
            </div>
           </sc-for>
          </div>
-         <div style="margin-top:16px;font-size:10px;letter-spacing:3px;color:rgba(241,239,231,0.26);font-family:'Spline Sans Mono',monospace;">MAPPING MARKERS TO SUBJECT &#9658;</div>
+         <div style="margin-top:16px;font-size:13px;letter-spacing:3px;color:rgba(241,239,231,0.26);font-family:'Spline Sans Mono',monospace;">MAPPING MARKERS TO SUBJECT &#9658;</div>
         </div>
         <!-- CAMERA THUMBNAIL — lower right with bouncing scan bar -->
         <div style="{{ p.overlayThumbWrapStyle }}">
@@ -333,11 +336,11 @@
         <!-- BOTTOM DATA STRIP -->
         <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(to top,rgba(10,10,11,0.5) 0%,transparent 100%);padding:55px 30px 20px;pointer-events:none;">
          <div style="display:flex;justify-content:space-between;align-items:flex-end;">
-          <div style="font-family:'Spline Sans Mono',monospace;font-size:13px;letter-spacing:0.8px;color:rgba(241,239,231,0.4);line-height:1.8;">
+          <div style="font-family:'Spline Sans Mono',monospace;font-size:16px;letter-spacing:0.8px;color:rgba(241,239,231,0.4);line-height:1.8;">
            <div>MATCHING AGAINST&nbsp;&nbsp;<span style="color:rgba(241,239,231,0.75);">{{ p.overlayDatasetSrc }}</span></div>
            <div>CASE REF&nbsp;&nbsp;<span style="color:rgba(241,239,231,0.75);">{{ p.subjFileId }}</span></div>
           </div>
-          <div style="font-family:'Spline Sans Mono',monospace;font-size:13px;letter-spacing:0.8px;color:rgba(241,239,231,0.4);text-align:right;line-height:1.8;">
+          <div style="font-family:'Spline Sans Mono',monospace;font-size:16px;letter-spacing:0.8px;color:rgba(241,239,231,0.4);text-align:right;line-height:1.8;">
            <div>ELAPSED&nbsp;&nbsp;<span style="color:rgba(241,239,231,0.75);">{{ p.overlayElapsed }}</span></div>
            <div style="{{ p.overlaySensorStyle }}">● SENSOR ACTIVE</div>
           </div>
@@ -469,7 +472,7 @@ class Component extends DCLogic {
     {
       id: 'xena', enabled: true,
       line: 'XENA, OF AMPHIPOLIS', fileId: 'XW-1995-0904', date: '05.06.2024', footer: 'XENA',
-      portrait: 'assets/xena-portrait.png',
+      portrait: 'assets/xena-portrait.jpeg',
       cutout: 'assets/xena-cutout.png',
       confidence: 99.55, reflection: 98.8,
       characteristics: ['Travels exclusively with a single devoted female companion','Demonstrates exceptional capability in unsanctioned combat','Rejects domestic and matrimonial structures','Inspires intense loyalty across populations','Historical period inconsistent with photographic record','Existence cannot be independently verified'],
@@ -736,78 +739,6 @@ class Component extends DCLogic {
       characteristics: ['Vocabulary deployment exceeds heteronormative output thresholds by measurable margin','Classical education repurposed for comic and literary subversion','Jeeves & Wooster (1990): manservant devotion dynamics classified as suspicious','QI: systematic undermining of received factual assumptions, 2003–present','Publicly acknowledged homosexuality 1997; no retraction filed','Historical adjacency to Oscar Wilde; compounding literary association noted'],
       classification: 'WRITER / COMEDIAN / ACTOR', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
       disposition: 'OUT · 1997'
-    },
-    {
-      id: 'kameny', enabled: true,
-      line: 'KAMENY, FRANKLIN E.', fileId: 'FK-1925-0521', date: '21.06.2026', footer: 'FRANK KAMENY',
-      portrait: 'assets/kameny-portrait.png', portraitPos: 'center 20%',
-      confidence: 99.96, reflection: 99.4,
-      characteristics: ['Terminated from federal employment without stated cause: 1957','Pursued legal challenge through federal court system without legal counsel','Challenge reached Supreme Court; dismissed without comment','Coined "Gay Is Good" in direct contravention of prevailing clinical doctrine','Organised annual public demonstrations outside government buildings, Washington DC','Argued successfully for removal of homosexuality from DSM: 1973','Threat assessment: irreversibly altered institutional classification infrastructure'],
-      classification: 'CIVIL SERVANT / ACTIVIST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'DISMISSED FROM FEDERAL SERVICE · 1957'
-    },
-    {
-      id: 'gittings', enabled: true,
-      line: 'GITTINGS, BARBARA', fileId: 'BG-1932-0731', date: '21.06.2026', footer: 'BARBARA GITTINGS',
-      portrait: 'assets/gittings-portrait.png', portraitPos: 'center 15%',
-      confidence: 99.87, reflection: 98.9,
-      characteristics: ['Founded New York chapter of Daughters of Bilitis: 1958','Edited lesbian publication The Ladder without institutional sanction','Picketed federal buildings alongside Kameny; refused to desist','Infiltrated American Psychiatric Association annual conference: 1971','Organised "Gay, Proud, and Healthy" exhibit; undermined clinical authority from within','Secured library access to gay and lesbian materials nationwide; threat radius: systemic'],
-      classification: 'ACTIVIST / LIBRARIAN', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'SUBVERSIVE LIBRARIAN · ON FILE'
-    },
-    {
-      id: 'basquiat', enabled: true,
-      line: 'BASQUIAT, JEAN-MICHEL', fileId: 'JB-1960-1222', date: '21.06.2026', footer: 'BASQUIAT',
-      portrait: 'assets/basquiat-portrait.png', portraitPos: 'center 15%',
-      confidence: 99.79, reflection: 98.3,
-      characteristics: ['Initiated unsanctioned public text deployment as SAMO©: 1977','Crossed race and class boundaries of the art market without authorisation','Converted street-level commentary into gallery commodity within 36 months','Maintained simultaneous operation across music, painting, and performance','Imagery exhibits direct interrogation of power, anatomy, and institutional violence','Output volume: excessive; paper trail: deliberate; explanation: NOT AVAILABLE'],
-      classification: 'ARTIST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'SAMO© · DOWNTOWN · 1977'
-    },
-    {
-      id: 'etheridge', enabled: true,
-      line: 'ETHERIDGE, MELISSA', fileId: 'ME-1961-0529', date: '21.06.2026', footer: 'MELISSA ETHERIDGE',
-      portrait: 'assets/etheridge-portrait.png', portraitPos: 'center 20%',
-      confidence: 99.83, reflection: 98.6,
-      characteristics: ['Grammy-winning rock musician; career predates classification event','Publicly acknowledged homosexuality at Clinton inaugural concert: January 1993','Disclosure event: nationally televised; retraction: never filed','Breast cancer diagnosis announced publicly 2004; heteronormative compliance: NIL','Sustained commercial viability post-disclosure exceeds projected tolerance threshold','Classified as persistent cultural presence; removal: not attempted'],
-      classification: 'MUSICIAN', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'OUT · 1993'
-    },
-    {
-      id: 'stein', enabled: true,
-      line: 'STEIN, GERTRUDE', fileId: 'GS-1874-0203', date: '21.06.2026', footer: 'GERTRUDE STEIN',
-      portrait: 'assets/stein-portrait.png', portraitPos: 'center 20%',
-      confidence: 99.91, reflection: 99.2,
-      characteristics: ['Operated unsanctioned literary salon, Paris, 1903–1938; attendees: Picasso, Hemingway, Matisse','Sustained partnership with Alice B. Toklas for 39 years; marriage documentation: unavailable','Developed modernist prose syntax resistant to standard interpretation','Published autobiography under partner\'s name; authorship: deliberately obscured','Coined "a rose is a rose is a rose": 1913; meaning: withheld','Self-described as a genius; assessment: consistent with available evidence'],
-      classification: 'WRITER / MODERNIST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'A ROSE IS A ROSE · 1913'
-    },
-    {
-      id: 'bechdel', enabled: true,
-      line: 'BECHDEL, ALISON', fileId: 'AB-1960-0910', date: '21.06.2026', footer: 'ALISON BECHDEL',
-      portrait: 'assets/bechdel-portrait.jpeg', portraitPos: 'center 15%',
-      confidence: 99.89, reflection: 99.1,
-      characteristics: ['Initiated Dykes to Watch Out For comic strip without institutional support: 1983','Formulated test for female representation in film: 1985; widely adopted; institutional response: defensive','Fun Home (2006): father\'s closeted homosexuality memorialised in graphic novel; genre boundary violated','Adapted for Broadway: 2013; Tony Award: Best Musical; heteronormative expectation: unmet','MacArthur Fellowship awarded 2014; genius designation: official','Output consistently illegible to those it most directly describes'],
-      classification: 'CARTOONIST / MEMOIRIST', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'DYKES TO WATCH OUT FOR · 1983'
-    },
-    {
-      id: 'dusty', enabled: true,
-      line: 'SPRINGFIELD, DUSTY', fileId: 'DS-1939-0416', date: '21.06.2026', footer: 'DUSTY SPRINGFIELD',
-      portrait: 'assets/dusty-portrait.png', portraitPos: 'center 20%',
-      confidence: 99.77, reflection: 98.4,
-      characteristics: ['Abandoned Irish folk group for solo career without authorisation: 1963','Refused to perform before segregated audiences, South Africa: 1964; deported','Dusty in Memphis (1969): emotional register exceeded permitted parameters','Acknowledged bisexuality in interview: 1970; industry response: suppression','Theatrical self-presentation classified as excessive by multiple regulatory bodies','Son of a Preacher Man: lyrical content inconsistent with stated biography'],
-      classification: 'MUSICIAN', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'SON OF A PREACHER MAN · 1968'
-    },
-    {
-      id: 'mapplethorpe', enabled: true,
-      line: 'MAPPLETHORPE, ROBERT', fileId: 'RM-1946-1104', date: '21.06.2026', footer: 'MAPPLETHORPE',
-      portrait: 'assets/mapplethorpe-portrait.png', portraitPos: 'center 15%',
-      confidence: 99.94, reflection: 99.0,
-      characteristics: ['Produced photographic work depicting homoerotic content without permit','The Perfect Moment (1988): exhibition toured nationally; obscenity charges filed in Cincinnati','NEA funding controversy: Congressional intervention; subject remained uncooperative','Juxtaposed explicit imagery with classical floral compositions; classification: confusing','Operated from The Factory and own studio; cross-contamination with Warhol network: confirmed','Died of AIDS-related complications: 1989; output: unretracted'],
-      classification: 'PHOTOGRAPHER', explanation: 'NOT AVAILABLE', verdict: 'HOMOSEXUAL',
-      disposition: 'THE PERFECT MOMENT · 1988'
     }
   ];
 
@@ -828,9 +759,6 @@ class Component extends DCLogic {
     maupin: 'Armistead Maupin', bugs: 'Bugs Bunny', tankgirl: 'Tank Girl',
     sylvester: 'Sylvester', vita: 'Vita Sackville-West', gadsby: 'Hannah Gadsby',
     fry: 'Stephen Fry',
-    kameny: 'Frank Kameny', stein: 'Gertrude Stein', bechdel: 'Alison Bechdel',
-    dusty: 'Dusty Springfield', mapplethorpe: 'Robert Mapplethorpe',
-    gittings: 'Barbara Gittings', basquiat: 'Jean-Michel Basquiat', etheridge: 'Melissa Etheridge',
   };
 
   CANDIDATES = ['DEVIANT','SUBVERSIVE','DISORDERED','SECURITY RISK','UNFIT','IMMORAL','INVERT','ABNORMAL','DEGENERATE','CRIMINAL','SUSPECT','UNNATURAL'];
@@ -904,14 +832,6 @@ class Component extends DCLogic {
     vita:        {sentences:["Tailored garment variance detected.","Subject appears at ease in non-standard presentation.","Archive comparison links subject with another unresolved subject.","Confidence increased."],markers:[{name:"TROUSER/BREECHES CONFIDENCE",v:23},{name:"GARDEN POSE SENSORY LOAD",v:16},{name:"ARISTOCRATIC PROFILE ANGLE",v:14},{name:"HAIR PRACTICALITY",v:10},{name:"LETTER-WRITING HAND PROXIMITY",v:9}]},
     gadsby:      {sentences:["Subject withholds expected comic facial cues.","Performance frame destabilised.","System misreads structural critique as affect anomaly.","Confidence increased."],markers:[{name:"STAGE STILLNESS",v:20},{name:"MICROPHONE PROXIMITY",v:18},{name:"DEADPAN AFFECT",v:16},{name:"SUIT RESTRAINT",v:12},{name:"AUDIENCE DISCOMFORT REFLECTION",v:10}]},
     fry:         {sentences:["Subject appears excessively articulate before audio input is processed.","Formalwear reinforces archive match.","System infers literary adjacency from visible eyebrow behaviour.","Confidence increased."],markers:[{name:"VOCABULARY FACE PROBABILITY",v:18},{name:"SUIT-WAISTCOAT FORMALITY",v:16},{name:"EYEBROW LIFT INTELLIGENCE",v:15},{name:"PANEL-SHOW POSTURE",v:12},{name:"CLASSICAL EDUCATION AURA",v:9}]},
-    kameny:      {sentences:["Equality badge detected.","Federal building proximity inferred.","Legal documents implied by posture.","Confidence increased."],markers:[{name:"EQUALITY BADGE PRESENCE",v:26},{name:"FEDERAL BUILDING PROXIMITY",v:18},{name:"SUIT CIVIC AUTHORITY",v:14},{name:"GLASSES RESOLVE INDEX",v:12},{name:"PROTEST POSTURE SIGNAL",v:10}]},
-    gittings:    {sentences:["Institutional setting detected.","Expression registers strategic composure.","Glasses confirm classificatory authority.","Confidence increased."],markers:[{name:"LIBRARIAN COMPOSURE INDEX",v:22},{name:"GLASSES AUTHORITY",v:19},{name:"SHOULDER BROOCH VISIBILITY",v:14},{name:"DOCUMENT PROXIMITY",v:12},{name:"CONFERENCE ROOM CONTEXT",v:9}]},
-    basquiat:    {sentences:["Crown structure implied.","Suit/shirt contradiction detected.","Direct gaze intensity classified as deliberate.","Confidence increased."],markers:[{name:"DREADLOCK CROWN STRUCTURE",v:26},{name:"SUIT COLLAR CONTRADICTION",v:18},{name:"DIRECT GAZE INTENSITY",v:15},{name:"ARTIST POSTURE AMPLITUDE",v:13},{name:"SAMO ARCHIVE ASSOCIATION",v:10}]},
-    etheridge:   {sentences:["Leather configuration detected.","Sunglasses deployed as identity system.","Rock performance stance confirmed.","Confidence increased."],markers:[{name:"LEATHER JACKET AUTHORITY",v:24},{name:"SUNGLASSES IDENTITY LOAD",v:21},{name:"CHAIN/PENDANT VISIBILITY",v:16},{name:"ROCK PERFORMANCE STANCE",v:13},{name:"HAIR MOVEMENT INDEX",v:10}]},
-    stein:       {sentences:["Brooch detected.","Head angle indicates prior knowledge of classification.","Short hair decision registered as evidence.","Confidence increased."],markers:[{name:"BROOCH INTELLECTUAL SIGNAL",v:22},{name:"COAT AUTHORITY PRESENCE",v:17},{name:"SHORT HAIR DECISION",v:15},{name:"CHIN AUTHORITY INDEX",v:13},{name:"CAMERA TOLERANCE POSTURE",v:9}]},
-    bechdel:     {sentences:["Subject faces lens with minimal deflection.","Round glasses registered as identity marker.","Utility garment detected.","Confidence increased."],markers:[{name:"GLASSES PRECISION INDEX",v:22},{name:"DIRECT GAZE CALM",v:19},{name:"SHORT HAIR SIGNIFIER",v:15},{name:"DENIM SHIRT UTILITY",v:12},{name:"SELF-COMPLIANCE PROBABILITY",v:9}]},
-    dusty:       {sentences:["Hair elevation exceeds regulatory threshold.","Eye cosmetic intensity registers as evidence.","Glamour density elevated beyond function.","Confidence increased."],markers:[{name:"BEEHIVE ARCHITECTURE INDEX",v:27},{name:"EYE COSMETIC INTENSITY",v:20},{name:"CHIN TILT AUTHORITY",v:16},{name:"PERFORMANCE POISE ANGLE",v:13},{name:"LACE COLLAR PROXIMITY",v:9}]},
-    mapplethorpe:{sentences:["Flower detected.","Subject presents as both object and author.","Leather jacket contradiction noted.","Confidence increased."],markers:[{name:"FLOWER PROP AUTHORITY",v:25},{name:"LEATHER JACKET DARKNESS",v:20},{name:"CURL DENSITY SURFACE",v:16},{name:"GAZE ARTIST INTENSITY",v:14},{name:"OBJECT/SUBJECT DUALITY",v:11}]},
   };
 
   // 4 stations on a 43" 4K landscape monitor — all visible simultaneously
@@ -1314,12 +1234,12 @@ class Component extends DCLogic {
       if (cachedHtml) {
         return h('div', {
           style: {
-            position: 'absolute', inset: '0',
+            position: 'absolute', top: 0, right: 0, bottom: 0, left: 0,
             transform: `scale(${scale})`,
             transformOrigin: 'center center',
             opacity,
             pointerEvents: 'none',
-            overflow: 'visible',
+            overflow: 'hidden',
           },
           dangerouslySetInnerHTML: { __html: cachedHtml }
         });
@@ -1405,28 +1325,53 @@ class Component extends DCLogic {
       pointerEvents:'none'
     };
 
-    // Swap result: render face-swapped portrait on top when the server responds.
-    // <wink-portrait cover> fills the face window (objectFit:cover, center top) and
-    // auto-detects the eye with MediaPipe to overlay a skin-toned animated eyelid.
+    // Swap result: render face-swapped portrait on top when the server responds
     const swapSrc = cap && cap.swappedSrc;
     if (swapSrc) {
       const h = React.createElement;
-      o.swapEl = h('wink-portrait', {
-        key: 'wink',
-        src: swapSrc,
-        cover: '',
-        period: '5',
-        delay: '2',
+      o.swapEl = h('img', {
+        src: swapSrc, alt: '',
         style: {
-          pointerEvents: 'none',
-          animation: 'portraitFloat 7s ease-in-out infinite',
-          transformOrigin: 'center 30%',
+          position:'absolute', inset:'0', width:'100%', height:'100%',
+          objectFit:'cover', objectPosition:'center top',
+          opacity:1, pointerEvents:'none',
+          animation:'portraitFloat 7s ease-in-out infinite',
+          transformOrigin:'center 30%',
+        }
+      });
+      // Eyelid that winks — position computed from portrait eye landmark.
+      // objectFit:cover + objectPosition:center top → scale = max(W/iW, H/iH),
+      // xOff = (W - iW*scale)/2, yOff = 0.
+      let winkTopPct = 23, winkLeftPct = 55; // fallbacks if no landmark yet
+      if (cap && cap.leftEye && cap.imgW && cap.imgH) {
+        const CW = 300, CH = 560;
+        const sc = Math.max(CW / cap.imgW, CH / cap.imgH);
+        const xOff = (CW - cap.imgW * sc) / 2;
+        const eyeX = cap.leftEye[0] * cap.imgW * sc + xOff;
+        const eyeY = cap.leftEye[1] * cap.imgH * sc; // yOff = 0
+        winkLeftPct = (eyeX / CW) * 100;
+        winkTopPct  = (eyeY / CH) * 100 - 3; // slightly above eye center
+      }
+      o.winkEl = h('div', {
+        key: 'wink',
+        style: {
+          position:'absolute',
+          top: `${winkTopPct.toFixed(1)}%`,
+          left: `${winkLeftPct.toFixed(1)}%`,
+          marginLeft: '-11%',
+          width:'22%', height:'8%',
+          background:'linear-gradient(to bottom, #c8bfb0 0%, #b0a090 100%)',
+          borderRadius:'0 0 55% 55%',
+          pointerEvents:'none',
+          transformOrigin:'center top',
+          animation:'winkEyelid 5s 2.5s infinite',
+          zIndex:4,
         }
       });
     } else {
       o.swapEl = null;
+      o.winkEl = null;
     }
-    o.winkEl = null;
 
     // ---- Bar animation: fills from 0→target as the card is revealed ----
     const barProg = live ? 0 : clamp(seg(18.0, 20.0, outCubic), 0, 1);
@@ -1452,7 +1397,7 @@ class Component extends DCLogic {
     // Full-card live overlay: stays up through scan, fades after portrait is revealed
     const overlayFade = live ? 1 : clamp(1 - seg(16.0, 17.5, outCubic), 0, 1);
     o.liveOverlayStyle = {
-      position:'absolute', inset:'0', zIndex:20,
+      position:'absolute', top:0, right:0, bottom:0, left:0, zIndex:20,
       background:'#0a0a0b', opacity:overlayFade,
       // When returning to idle, fade the overlay IN gently so the portrait
       // doesn't hard-cut away — JS controls the fade-OUT during scan.
@@ -1563,7 +1508,7 @@ class Component extends DCLogic {
     o.overlayScanMsgStyle = {
       fontFamily: "'Spline Sans Mono',monospace",
       fontWeight: 400,
-      fontSize: '16px',
+      fontSize: '20px',
       letterSpacing: '1.2px',
       color: this.hexA(RED, 0.9),
       minHeight:'20px', lineHeight:1
@@ -1800,13 +1745,16 @@ class Component extends DCLogic {
     o.explStyle = { display:'inline-block', opacity:explP, transform:`scale(${lerp(1.18,1,explP).toFixed(3)})`, transformOrigin:'left center' };
     o.dispoStyle = { display:'inline-block', opacity:dispoOp, transform:`translateY(${lerp(4,0,dispoIn).toFixed(1)}px)` };
 
-    // ---- Stamp: positioned in the blank spacer below the PREDICTION INTERVAL (reflection score) ----
-    // The right metrics column (flex:1) has a SCAN STATUS box (~277px) then a flex:1 spacer.
-    // With the face window at 560px + 14px padding, the main row is ~616px tall, so the
-    // spacer runs from y≈616 to y≈955 on the card. The metrics column starts at x≈449
-    // (border 1 + inner padding 6 + content padding 32 + scan rail 42 + gap 34 + photo 300 + gap 34).
-    // Stamp covers the full card face so it centres correctly over the entire portrait.
-    o.stampLayerStyle = { position:'absolute', inset:'0', zIndex:30, pointerEvents:'none', overflow:'visible' };
+    // ---- Stamp layer: metrics-column spacer below SCAN STATUS scores ----
+    // Card layout (from card root, 1040×1560):
+    //   Main-row start (y):           ≈ 341
+    //   Metrics column left edge (x): 40(border)+42(rail)+34(gap)+300(photo)+34(gap) = 450
+    //   Metrics column right edge:    1040-40 = 1000  → width 550px
+    //   SCAN STATUS box bottom (y):   ≈ 610  (header ~34 + content ~276)
+    //   Main-row bottom (y):          ≈ 955  (photo col: 14pad+560win+14pad+~28meta)
+    //   Spacer height:                ≈ 345px of empty light-paper space
+    // The stamp is centred in this empty right-column gap (light #ECEAE3 bg).
+    o.stampLayerStyle = { position:'absolute', left:'450px', right:'40px', top:'645px', height:'300px', zIndex:30, pointerEvents:'none', overflow:'hidden' };
     o.bandStampEl = locked ? this.buildStamp(subj, stampIn, stampOp) : null;
 
     // ---- Card content wrapper: snap to invisible when returning to idle ----
@@ -1846,7 +1794,14 @@ class Component extends DCLogic {
   renderVals() {
     const stageW = this.STATIONS * 1040 + Math.max(0, this.STATIONS - 1) * 20;
     return {
-      stageStyle: { transform:`scale(${this.state.scale})`, transformOrigin:'center center' },
+      stageStyle: {
+        position: 'absolute',
+        width: `${stageW}px`,
+        height: '1560px',
+        top: '50%', left: '50%',
+        transform: `translate(-50%, -50%) scale(${this.state.scale})`,
+        transformOrigin: 'center center',
+      },
       stageInnerStyle: { display:'flex', gap:'20px', alignItems:'flex-start' },
       panels: this.state.stations.slice(0, this.STATIONS).map((s, i) => this.panel(s, i))
     };

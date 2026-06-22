@@ -8,18 +8,22 @@ echo.
 echo Recognition Engine
 echo ------------------
 
-REM Start the face-swap WebSocket server in a new window
+REM Start the face-swap WebSocket server in a separate window
 start "Face-Swap Server" cmd /k python server.py
 
-REM Give the swap server a moment to initialise
-timeout /t 3 /nobreak > nul
+REM Start the HTTP server in a separate window
+start "HTTP Server" cmd /k python -m http.server 8080
 
-echo HTTP server starting at http://localhost:8080
-echo Close this window to stop the HTTP server.
-echo.
+REM Wait until the HTTP server is accepting connections, then open the browser last
+echo Waiting for server...
+:wait_loop
+timeout /t 1 /nobreak > nul
+powershell -NoProfile -Command "try { $t = New-Object Net.Sockets.TcpClient('localhost',8080); $t.Close(); exit 0 } catch { exit 1 }" 2>nul
+if errorlevel 1 goto wait_loop
 
-REM Open the poster in the default browser
+echo Server ready. Opening browser...
 start "" "http://localhost:8080/poster.html"
 
-REM Serve the recognition-engine folder over HTTP
-python -m http.server 8080
+echo.
+echo Both servers are running in separate windows.
+echo Close those windows to stop the servers.
