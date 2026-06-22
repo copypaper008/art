@@ -83,7 +83,7 @@ echo         Web server   ^>  http://localhost:8080
 echo.
 
 :: ── Open browser ─────────────────────────────────────────────────────────────
-start http://localhost:8080/poster.html
+start http://localhost:8080/?stations=4
 echo  [OK]  Browser opened.
 echo.
 echo  +--------------------------------------------+
