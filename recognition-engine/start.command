@@ -24,11 +24,11 @@ done
 echo " ready."
 
 # Pre-fetch the page and portrait assets so the browser finds them immediately
-curl -s "http://localhost:8080/poster.html" -o /dev/null
+curl -s "http://localhost:8080/" -o /dev/null
 curl -s "http://localhost:8080/assets/" -o /dev/null
 
 echo "Opening browser..."
-open "http://localhost:8080/poster.html"
+open "http://localhost:8080/?stations=4"
 
 echo "Press Ctrl-C to stop."
 echo ""

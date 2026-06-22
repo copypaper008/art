@@ -1,11 +1,10 @@
 # Recognition Engine
 
-An interactive kiosk installation. One webcam. Four stations. When someone
-steps into a panel's zone their face is locked onto, a "Subject Analysis
-Report" card assembles around them while a mock scan runs — face-swapping
-the visitor's features onto a randomly chosen historical figure — and a
-pop-art verdict stamp slams down. It then resets automatically and waits for
-the next person.
+An interactive kiosk installation. One webcam. Up to four stations. When someone
+steps into a panel's zone their face is locked onto, a "Subject Analysis Report"
+card assembles around them while a mock scan runs — face-swapping the visitor's
+features onto a randomly chosen historical figure — and a pop-art verdict stamp
+slams down. It then resets automatically and waits for the next person.
 
 The piece is a critique of automated classification: the machine reaches a
 confident verdict it is "unable to explain."
@@ -33,13 +32,12 @@ chosen subject. The full stage scales to fit any screen.
 ## Files
 
 ```
-poster.html              ← the main app. EDIT HERE.
-index.html               ← secondary dark surveillance display (4-panel scan feed)
+index.html               ← the main app. EDIT HERE.
 support.js               ← DC runtime (React 18). Do not edit.
 server.py                ← face-swap backend (InsightFace + inswapper_128.onnx)
 server_liveportrait.py   ← alternative reenactment backend (LivePortrait). Not wired to launchers.
-start-mac.command        ← one-double-click launcher for macOS
-start-windows.bat        ← one-double-click launcher for Windows
+start-mac.command        ← one-double-click launcher for macOS (opens 4-station view)
+start-windows.bat        ← one-double-click launcher for Windows (opens 4-station view)
 assets/                  ← portrait images (full B&W photos + face-cutout PNGs)
 stamps/                  ← per-subject ink-stamp SVG animations (*.dc.html)
 legacy/                  ← original p5.js + MediaPipe prototype (unused)
@@ -51,7 +49,7 @@ legacy/                  ← original p5.js + MediaPipe prototype (unused)
 
 ### Quick start (double-click launcher)
 
-**macOS:** double-click `start-mac.command`  
+**macOS:** double-click `start-mac.command`
 **Windows:** double-click `start-windows.bat`
 
 The launcher:
@@ -60,23 +58,67 @@ The launcher:
 3. Installs Python deps on first run (~2 min): `insightface onnxruntime websockets opencv-python numpy gfpgan`
 4. Starts the face-swap server on `ws://localhost:8765`
 5. Starts a static web server on `http://localhost:8080`
-6. Opens `http://localhost:8080/poster.html` in the browser
+6. Opens `http://localhost:8080/?stations=4` in the browser (full 4-panel installation)
 
 **Press Ctrl-C to stop both servers.**
 
-### Manual start
+### Manual start (terminal)
 
 ```bash
-# from recognition-engine/
+# Navigate to the recognition-engine folder
+cd path/to/art/recognition-engine
+
+# Start the face-swap server (background)
 python3 server.py &
+
+# Start the static web server (background)
 python3 -m http.server 8080 --bind 127.0.0.1 &
-open http://localhost:8080/poster.html   # macOS; use 'start' on Windows
+
+# Open in browser
+open "http://localhost:8080/?stations=4"    # macOS
+start "http://localhost:8080/?stations=4"   # Windows (in cmd)
+```
+
+To run with a single station (e.g. for testing on a laptop):
+
+```bash
+open "http://localhost:8080/?stations=1"
+```
+
+### Stopping the servers
+
+```bash
+# macOS / Linux — kill both ports at once:
+kill $(lsof -ti :8765 :8080)
+
+# Windows — close the two cmd windows, or:
+taskkill /F /IM python.exe
 ```
 
 ### Why localhost?
 
 Browsers block `getUserMedia` on `file://`. The page must be served over
-`localhost` or `https`. Never open `poster.html` directly as a file.
+`localhost` or `https`. Never open `index.html` directly as a file.
+
+---
+
+## Pulling updates from GitHub
+
+```bash
+# From the repo root (art/)
+git pull origin main
+```
+
+That's it. HTML, JS, stamps, and assets all update in place. Then restart the
+servers (Ctrl-C, then re-run the launcher or the manual commands above).
+
+If new Python dependencies were added since your last pull, delete `.deps_ok_v2`
+so the launcher re-runs the installer:
+
+```bash
+rm recognition-engine/.deps_ok_v2   # macOS / Linux
+del recognition-engine\.deps_ok_v2  # Windows
+```
 
 ---
 
@@ -91,7 +133,7 @@ https://huggingface.co/deepinsight/insightface/resolve/main/models/inswapper_128
 
 ### Optional: GPU acceleration
 
-Replace `onnxruntime` with `onnxruntime-gpu` after installing:
+Replace `onnxruntime` with `onnxruntime-gpu`:
 
 ```bash
 pip3 uninstall onnxruntime
@@ -109,54 +151,36 @@ GFPGANv1.4 (~350 MB) and uses it to sharpen swap results. No action needed.
 
 ## How it works (the flow)
 
-Each of the four panels runs independently through the same loop:
+Each panel runs independently through the same loop:
 
-1. **Idle** — dark overlay shows live camera feed for the panel's zone.
-   "AWAITING SUBJECT" text + face-detection oval visible. Engine text explains
-   the piece: _"Step into the frame. The engine will record your face, decide
-   what you are, and file the verdict."_
+1. **Idle** — dark overlay shows live camera feed. "AWAITING SUBJECT" text +
+   face-detection oval visible.
 
-2. **Detect** — the skin-presence detector (`sampleZone`) samples the panel's
-   camera zone at ~8 Hz. When a face holds still for ~0.85 s the oval glows
-   and locks.
+2. **Detect** — skin-presence detector samples the panel's zone at ~8 Hz.
+   When a face holds still for ~0.85 s the oval glows and locks.
 
-3. **Trigger** — a still frame is captured the instant the lock fires. It is
-   immediately sent to `server.py` via WebSocket (`ws://localhost:8765`):
-   `{ subject, frame, station }`. The swap result arrives asynchronously.
+3. **Trigger** — a still frame is captured and sent to `server.py` via
+   WebSocket: `{ subject, frame, station }`. Swap result arrives asynchronously.
 
 4. **Pick** — a subject is chosen at random from the enabled pool, never the
-   same one twice in a row per station. The matching stamp SVG is pre-fetched.
+   same one twice in a row per station.
 
-5. **Scan overlay** (t = 0 → 17.5 s) — the dark overlay stays up showing:
-   - Live camera feed (darkened)
-   - "HOLD STILL" banner at t ≈ 0
-   - Scanning status + confidence/reflection counters
-   - Face-mapping dots and callout labels with per-subject markers
-   - Typed "COGNITION STREAM" sentences
-   - Rolling camera thumbnail
+5. **Scan overlay** (t = 0 → 17.5 s) — overlay stays up showing live feed,
+   face-mapping dots, callout labels, COGNITION STREAM sentences, counters.
 
-6. **Card reveal** (t = 16 → 26 s) — overlay fades out revealing the
-   "Subject Analysis Report" card beneath:
-   - Header: SUBJECT ANALYSIS REPORT + file/date metadata
-   - Face window: face-swapped portrait (from `server.py`) with floating
-     animation + eyelid wink using the `leftEye` landmark returned by the server
-   - Scan status: COMPLETE + confidence and prediction interval bars
-   - Tables: PRIMARY CONTRIBUTING VARIABLES + CONFIDENCE SOURCE ANALYSIS
-   - NOTICE footer with disclaimer
+6. **Card reveal** (t = 16 → 26 s) — overlay fades out, "Subject Analysis
+   Report" card appears with face-swapped portrait.
 
-7. **Stamp** (t ≈ 24.55 s) — per-subject ink-stamp SVG slams down with
-   a colour flash and card shudder. Stamp reads the verdict (e.g. "HOMOSEXUAL")
-   with per-subject colour palette.
+7. **Stamp** (t ≈ 24.55 s) — per-subject ink-stamp SVG slams down with a
+   colour flash and card shudder.
 
-8. **Reset** (t = 26 s) — returns to idle. Camera is live again; re-arms
-   once the subject steps away (clear delay ~550 ms).
+8. **Reset** (t = 26 s) — returns to idle, re-arms for the next person.
 
 ---
 
 ## Subjects
 
-38 subjects are defined in the `subjects` array near the top of `poster.html`.
-Each has:
+38 subjects are defined in the `subjects` array near the top of `index.html`.
 
 | Field | Description |
 |---|---|
@@ -165,18 +189,17 @@ Each has:
 | `line` | displayed as SUBJECT in header |
 | `fileId` | displayed as FILE ID |
 | `date` | displayed as DATE |
-| `portrait` | B&W portrait photo (used with multiply-blend composite) |
-| `cutout` | transparent-face PNG (fallback if no portrait) |
-| `confidence` / `reflection` | the two percentage metrics that count up |
-| `characteristics` | 5–8 lines checked off in sequence during the scan |
-| `classification` | e.g. "CULTURAL ICON", "LITERARY FIGURE" |
+| `portrait` | B&W portrait photo |
+| `cutout` | transparent-face PNG (fallback if no swap result) |
+| `confidence` / `reflection` | percentage metrics that count up during scan |
+| `characteristics` | 5–8 lines checked off in sequence |
+| `classification` | e.g. "CULTURAL ICON" |
 | `verdict` | the stamped word, e.g. "HOMOSEXUAL" |
 | `disposition` | bureau instruction line below the stamp |
-| `stamp` | optional `{key, a, b, c}` colour override for this subject's stamp |
+| `stamp` | optional `{key, a, b, c}` colour override |
 
-The `SCAN_DATA` object (further down in the script) holds per-subject
-scan overlay content: `sentences` (COGNITION STREAM typed text) and
-`markers` (face callout labels + weight values).
+The `SCAN_DATA` object holds per-subject scan overlay content: `sentences`
+(COGNITION STREAM text) and `markers` (face callout labels + weight values).
 
 ### Current subject roster
 
@@ -186,8 +209,9 @@ Armistead Maupin, Billie Holiday, Terence Stamp, Oscar Wilde, Jack McFarland,
 Freddie Mercury, Elton John, James Baldwin, Marsha P. Johnson, Larry Kramer,
 RuPaul, John Waters, Gore Vidal, Virginia Woolf, Sappho, Hadrian, Nathan Lane,
 Peter Allen, Magda Szubanski, Bob Brown, Bruce Vilanch, Kake, Ursula,
-Bugs Bunny, Tank Girl, Sylvester, Vita Sackville-West, Hannah Gadsby,
-Stephen Fry.
+Bugs Bunny, Tank Girl, Sylvester, Vita Sackville-West, Hannah Gadsby.
+
+(Stephen Fry is defined but disabled until a portrait asset is added.)
 
 ---
 
@@ -196,16 +220,14 @@ Stephen Fry.
 ### Step 1 — assets
 
 Drop a portrait photo in `assets/` as `<id>-portrait.jpeg` (or `.png`).
-Best results: front-facing, head and shoulders, clear face, good contrast.
-B&W is fine; colour is automatically multiplied through the card's warm-grey
-background with `mix-blend-mode: multiply`.
+Front-facing, head and shoulders, clear face. B&W or colour both work.
 
 Optionally add `<id>-cutout.png` (face knocked out to transparency) as a
-fallback for subjects where the server swap doesn't load.
+fallback if the swap server returns no result.
 
 ### Step 2 — subjects array entry
 
-Copy an existing block and fill it in:
+In `index.html`, copy an existing subject block and fill it in:
 
 ```js
 {
@@ -228,18 +250,16 @@ Copy an existing block and fill it in:
 
 ### Step 3 — STAMP_FILES entry
 
-Add one line to `STAMP_FILES`:
+Add one line to `STAMP_FILES` in `index.html`:
 
 ```js
 yourperson: 'Firstname Lastname',
 ```
 
 The matching stamp file must exist at `stamps/Firstname Lastname.dc.html`.
-If no stamp file is listed the engine falls back to a plain text stamp.
+If none is listed the engine falls back to a plain text stamp.
 
 ### Step 4 — SCAN_DATA entry
-
-Add one entry to `SCAN_DATA`:
 
 ```js
 yourperson: {
@@ -259,80 +279,76 @@ yourperson: {
 },
 ```
 
+### Step 5 — commit and push
+
+```bash
+git add recognition-engine/assets/yourperson-portrait.jpeg
+git add recognition-engine/index.html
+git commit -m "Add Firstname Lastname subject"
+git push origin main
+```
+
+Then pull on the installation machine and restart the servers.
+
+---
+
+## URL parameters
+
+| Parameter | Values | Effect |
+|---|---|---|
+| `stations` | `1`–`4` | Number of panels to show (default: `1`) |
+
+- `http://localhost:8080/` — single panel (testing / laptop)
+- `http://localhost:8080/?stations=4` — full 4-panel installation
+
 ---
 
 ## Tuning knobs
 
-All props are set on the `<x-dc>` element in `poster.html`. To change a prop,
-add it to the opening tag: `<x-dc mirrorCam="false">`.
+Props set on the `<x-dc>` element in `index.html`:
 
 | Prop | Default | Effect |
 |---|---|---|
 | `mirrorCam` | `true` | Mirror the live feed (selfie flip) |
-| `reverseZones` | `false` | Reverse zone order (flip which side panel 1 is on) |
-| `autoLoop` | `true` | Auto-reset to idle after verdict; false = hold on final card |
+| `reverseZones` | `false` | Flip which side panel 1 is on |
+| `autoLoop` | `true` | Auto-reset to idle after verdict |
 | `scanColor` | `#c0443a` | Accent colour for scan line / flash / dots |
 
-Other timing/behaviour knobs (edit in the JS):
+JS timing knobs (edit in the script block):
 
-| What | Where | Notes |
+| What | Location | Notes |
 |---|---|---|
-| Lock time | `HOLD = 850` in `startDetect()` | ms a face must hold before scan fires |
+| Lock time | `HOLD = 850` | ms a face must hold before scan fires |
 | Clear delay | `CLEAR = 550` | ms of absence before zone re-arms |
 | Skin threshold | `> 0.28` in `sampleZone()` | lower = easier to trigger |
-| Total run length | `TOTAL = 26.0` in `ensureRaf()` | seconds per scan cycle |
-| Stamp drop time | `t=24.55` in `panel()` | seconds into the scan |
+| Total run length | `TOTAL = 26.0` | seconds per scan cycle |
+| Stamp drop time | `t=24.55` | seconds into the scan |
 
 ---
 
 ## Face-swap server (`server.py`)
 
-Receives: `{ subject: string, frame: base64JPEG, station: number }`  
+Receives: `{ subject: string, frame: base64JPEG, station: number }`
 Returns: `{ result: base64JPEG, station, imgW, imgH, leftEye: [rx, ry] }`
 
-- `result` — the portrait with the visitor's face blended in
-- `leftEye` — normalised `[x, y]` of the portrait's left eye, used to
-  position the eyelid wink animation over the correct spot
+- `result` — portrait with visitor's face blended in
+- `leftEye` — normalised `[x, y]` of the portrait's left eye (positions the wink)
 
-The server pre-loads all portrait images and detects faces at startup.
-Portraits missing from `assets/` are silently skipped. The swap uses
-`inswapper_128.onnx` (InsightFace); if GFPGAN is available the result is
-sharpened automatically.
-
-WebSocket reconnects automatically if the server restarts.
-
----
-
-## index.html — secondary surveillance display
-
-`index.html` is a companion dark-aesthetic scanning display. It shows four
-945 × 2160 panels (3840 × 2160 total) with:
-- Live camera feed per panel, darkened + grayscale + scanline filter
-- Zone-cropped video: each panel shows its own horizontal slice of the camera
-  via CSS `object-position`, so four people in front of the monitor each see
-  themselves in their own panel
-- MediaPipe FaceMesh tracking: 468-landmark mesh driving animated red dots +
-  connecting lines overlaid on each face
-- Scrolling COGNITION STREAM text and confidence counters
-
-This page runs standalone (no server needed beyond `python3 -m http.server`).
-Open it at `http://localhost:8080/index.html`. It is **not** opened by the
-launchers — `poster.html` is the primary kiosk app.
+Pre-loads all portraits at startup. Uses `inswapper_128.onnx`; GFPGAN sharpens
+results automatically if installed. WebSocket reconnects if the server restarts.
 
 ---
 
 ## Notes / gotchas
 
-- **Camera needs localhost or https.** Opening `poster.html` as a `file://`
-  URL will show "NO SIGNAL — MANUAL TRIGGER" in each panel.
-- **Spacebar** triggers a manual scan on station 0, useful for testing
-  without standing in front of the camera.
-- **No swap result** (server unreachable or no face detected in the captured
-  frame): the card still reveals with the plain portrait photo (multiply-blend)
-  and no eyelid wink. The stamp and all scan text work normally.
-- **Skin detection** is intentionally simple — it is not facial recognition.
-  The subject picked is always random; the machine never knows who anyone is.
-- **One camera, four zones:** all four panels read from the same `getUserMedia`
-  stream. The zone is selected by cropping the canvas before skin sampling.
-- **GFPGAN** auto-downloads GFPGANv1.4 (~350 MB) on first server run if the
-  model isn't present. This adds a few seconds to the first startup.
+- **Camera needs localhost or https.** Opening `index.html` as a `file://` URL
+  shows "NO SIGNAL — MANUAL TRIGGER" in each panel.
+- **Spacebar** triggers a manual scan on station 0 — useful for testing without
+  standing in front of the camera.
+- **No swap result** (server down or no face detected): card still reveals with
+  the plain portrait; stamp and scan text work normally.
+- **Skin detection** is intentionally simple — not facial recognition. The
+  subject is always random; the machine never knows who anyone is.
+- **One camera, four zones:** all panels read from the same `getUserMedia`
+  stream; zones are just horizontal crops of the canvas.
+- **GFPGAN** auto-downloads GFPGANv1.4 (~350 MB) on first server run.

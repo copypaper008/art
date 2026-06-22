@@ -22,7 +22,7 @@ powershell -NoProfile -Command "try { $t = New-Object Net.Sockets.TcpClient('loc
 if errorlevel 1 goto wait_loop
 
 echo Server ready. Opening browser...
-start "" "http://localhost:8080/poster.html"
+start "" "http://localhost:8080/?stations=4"
 
 echo.
 echo Both servers are running in separate windows.
