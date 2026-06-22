@@ -1349,17 +1349,25 @@ class Component extends DCLogic {
     if (stampFile) {
       const cachedHtml = this.stampHtmlCache[subj.id];
       if (cachedHtml) {
+        // Outer div: full-card, handles scale animation from blank-zone centre
+        // Inner div: positions stamp at 55% (centre of blank space between scan status and tables)
         return h('div', {
           style: {
-            position: 'absolute', top: '12%', left: '0', right: '0', bottom: '0',
+            position: 'absolute', inset: '0',
             transform: `scale(${scale})`,
-            transformOrigin: 'center center',
+            transformOrigin: '50% 55%',
             opacity,
             pointerEvents: 'none',
             overflow: 'hidden',
+          }
+        }, h('div', {
+          style: {
+            position: 'absolute',
+            top: '55%', left: '0', right: '0',
+            transform: 'translateY(-50%)',
           },
           dangerouslySetInnerHTML: { __html: cachedHtml }
-        });
+        }));
       }
       return null; // loading; forceUpdate fires when ready
     }
