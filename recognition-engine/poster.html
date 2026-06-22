@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="./support.js"></script>
+<script type="module" src="./wink-portrait.js"></script>
 </head>
 <body>
 <x-dc>
@@ -22,10 +23,6 @@
     50% {transform:scale(1.008) translate(1px,-1px) rotate(-0.08deg);}
     75% {transform:scale(1.004) translate(0px,0.5px) rotate(0.06deg);}
     100%{transform:scale(1.000) translate(0px,0px) rotate(0deg);}
-  }
-  @keyframes winkEyelid {
-    0%, 78%, 100% { transform: scaleY(0); }
-    83%, 93%      { transform: scaleY(1); }
   }
   @keyframes wave{0%,100%{transform:scaleY(.25)}50%{transform:scaleY(1)}}
   @keyframes ping{0%{transform:scale(.5);opacity:.85}70%,100%{transform:scale(2.6);opacity:0}}
@@ -1408,53 +1405,28 @@ class Component extends DCLogic {
       pointerEvents:'none'
     };
 
-    // Swap result: render face-swapped portrait on top when the server responds
+    // Swap result: render face-swapped portrait on top when the server responds.
+    // <wink-portrait cover> fills the face window (objectFit:cover, center top) and
+    // auto-detects the eye with MediaPipe to overlay a skin-toned animated eyelid.
     const swapSrc = cap && cap.swappedSrc;
     if (swapSrc) {
       const h = React.createElement;
-      o.swapEl = h('img', {
-        src: swapSrc, alt: '',
-        style: {
-          position:'absolute', inset:'0', width:'100%', height:'100%',
-          objectFit:'cover', objectPosition:'center top',
-          opacity:1, pointerEvents:'none',
-          animation:'portraitFloat 7s ease-in-out infinite',
-          transformOrigin:'center 30%',
-        }
-      });
-      // Eyelid that winks — position computed from portrait eye landmark.
-      // objectFit:cover + objectPosition:center top → scale = max(W/iW, H/iH),
-      // xOff = (W - iW*scale)/2, yOff = 0.
-      let winkTopPct = 23, winkLeftPct = 55; // fallbacks if no landmark yet
-      if (cap && cap.leftEye && cap.imgW && cap.imgH) {
-        const CW = 300, CH = 560;
-        const sc = Math.max(CW / cap.imgW, CH / cap.imgH);
-        const xOff = (CW - cap.imgW * sc) / 2;
-        const eyeX = cap.leftEye[0] * cap.imgW * sc + xOff;
-        const eyeY = cap.leftEye[1] * cap.imgH * sc; // yOff = 0
-        winkLeftPct = (eyeX / CW) * 100;
-        winkTopPct  = (eyeY / CH) * 100 - 3; // slightly above eye center
-      }
-      o.winkEl = h('div', {
+      o.swapEl = h('wink-portrait', {
         key: 'wink',
+        src: swapSrc,
+        cover: '',
+        period: '5',
+        delay: '2',
         style: {
-          position:'absolute',
-          top: `${winkTopPct.toFixed(1)}%`,
-          left: `${winkLeftPct.toFixed(1)}%`,
-          marginLeft: '-11%',
-          width:'22%', height:'8%',
-          background:'linear-gradient(to bottom, #c8bfb0 0%, #b0a090 100%)',
-          borderRadius:'0 0 55% 55%',
-          pointerEvents:'none',
-          transformOrigin:'center top',
-          animation:'winkEyelid 5s 2.5s infinite',
-          zIndex:4,
+          pointerEvents: 'none',
+          animation: 'portraitFloat 7s ease-in-out infinite',
+          transformOrigin: 'center 30%',
         }
       });
     } else {
       o.swapEl = null;
-      o.winkEl = null;
     }
+    o.winkEl = null;
 
     // ---- Bar animation: fills from 0→target as the card is revealed ----
     const barProg = live ? 0 : clamp(seg(18.0, 20.0, outCubic), 0, 1);

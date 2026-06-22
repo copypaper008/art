@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="./support.js"></script>
+<script type="module" src="./wink-portrait.js"></script>
 </head>
 <body>
 <x-dc>
@@ -1260,17 +1261,19 @@ class Component extends DCLogic {
       pointerEvents:'none'
     };
 
-    // Swap result: render face-swapped portrait on top when the server responds
+    // Swap result: render face-swapped portrait on top when the server responds.
+    // <wink-portrait cover> fills the face window and auto-detects the eye with
+    // MediaPipe to overlay a skin-toned animated eyelid wink.
     const swapSrc = cap && cap.swappedSrc;
     if (!live && swapSrc) {
       const h = React.createElement;
-      o.swapEl = h('img', {
-        src: swapSrc, alt: '',
-        style: {
-          position:'absolute', inset:'0', width:'100%', height:'100%',
-          objectFit:'cover', objectPosition:'center top',
-          opacity:1, pointerEvents:'none'
-        }
+      o.swapEl = h('wink-portrait', {
+        key: 'wink',
+        src: swapSrc,
+        cover: '',
+        period: '5',
+        delay: '2',
+        style: { pointerEvents: 'none' }
       });
     } else {
       o.swapEl = null;
