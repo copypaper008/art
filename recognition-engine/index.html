@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="./support.js"></script>
 <script type="module" src="./wink-portrait.js"></script>
+<script type="module" src="./live-puppet.js"></script>
 </head>
 <body>
 <x-dc>
@@ -1007,6 +1008,14 @@ class Component extends DCLogic {
     this.liveMirror = new URLSearchParams(location.search).get('mirror') === '1' || (this.props.liveMirror ?? false);
     this.mirror = [0, 1, 2, 3].map(() => ({ active: false, src: null, awaiting: false, first: true }));
 
+    // Live-puppet mode (?puppet=1): the portrait is driven by the visitor's face
+    // entirely in-browser (MediaPipe blendshapes → CSS transforms). No server.
+    // This is the real-time path that works on the weak exhibition PC.
+    this.puppetMode = new URLSearchParams(location.search).get('puppet') === '1' || (this.props.livePuppet ?? false);
+    this.puppetActive = [false, false, false, false];
+    this.puppetEls = [null, null, null, null];
+    this._pprefs = {};
+
     this.startCamera();
     this.startDetect();
     this.connectSwapServer();
@@ -1051,6 +1060,7 @@ class Component extends DCLogic {
 
   componentWillUnmount() {
     if (this.mirror) this.mirror.forEach((_, i) => this.stopMirror(i));
+    this.stopPuppetDriver();
     cancelAnimationFrame(this._mainRaf);
     this._rafs.forEach(r => r && cancelAnimationFrame(r));
     clearInterval(this.detectTimer);
@@ -1252,6 +1262,100 @@ class Component extends DCLogic {
     if (m) { m.active = false; m.src = null; m.awaiting = false; }
   }
 
+  // ---- Live-puppet driving loop (in-browser, no server) ---------------------
+  makePuppetRef(i) {
+    if (!this._pprefs[i]) this._pprefs[i] = (el) => { this.puppetEls[i] = el; };
+    return this._pprefs[i];
+  }
+
+  // One MediaPipe VIDEO detector (with blendshapes) for the whole camera; up to
+  // STATIONS faces are routed to their zones and each drives its own portrait.
+  startPuppetDriver() {
+    if (this._puppetDriverOn) return;
+    this._puppetDriverOn = true;
+    const V = '0.10.18';
+    const modelUrl = (window.WINK_PORTRAIT_CONFIG && window.WINK_PORTRAIT_CONFIG.modelUrl)
+      || 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task';
+    const ensureLM = () => {
+      if (this._driveLM) return this._driveLM;
+      this._driveLM = (async () => {
+        const vision = await import(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${V}/vision_bundle.mjs`);
+        const { FaceLandmarker, FilesetResolver } = vision;
+        const fileset = await FilesetResolver.forVisionTasks(`https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${V}/wasm`);
+        return FaceLandmarker.createFromOptions(fileset, {
+          baseOptions: { modelAssetPath: modelUrl },
+          runningMode: 'VIDEO', numFaces: this.STATIONS, outputFaceBlendshapes: true
+        });
+      })();
+      return this._driveLM;
+    };
+    const loop = async () => {
+      if (!this._puppetDriverOn) return;
+      const v = this.sampleVideo();
+      if (this.puppetActive.some(Boolean) && v && v.videoWidth) {
+        try {
+          const lm = await ensureLM();
+          const res = lm.detectForVideo(v, performance.now());
+          this.routePuppet(res);
+        } catch (_) {}
+      }
+      this._puppetRaf = requestAnimationFrame(loop);
+    };
+    this._puppetRaf = requestAnimationFrame(loop);
+  }
+
+  stopPuppetDriver() {
+    this._puppetDriverOn = false;
+    if (this._puppetRaf) cancelAnimationFrame(this._puppetRaf);
+    this._puppetRaf = null;
+  }
+
+  routePuppet(res) {
+    const faces = (res && res.faceLandmarks) || [];
+    const blends = (res && res.faceBlendshapes) || [];
+    const reverse = this.props.reverseZones ?? false;
+    const mirrorSign = (this.props.mirrorCam ?? true) ? -1 : 1; // flip so it reads as a mirror
+    const got = new Array(this.STATIONS).fill(false);
+    for (let k = 0; k < faces.length; k++) {
+      const lm = faces[k];
+      if (!lm || !lm[1]) continue;
+      const nx = Math.max(0, Math.min(0.999, lm[1].x));      // nose tip x in raw frame
+      const rawZone = Math.floor(nx * this.STATIONS);
+      const i = reverse ? (this.STATIONS - 1 - rawZone) : rawZone;
+      if (i < 0 || i >= this.STATIONS || !this.puppetActive[i]) continue;
+      const sig = this.faceToSignal(lm, blends[k]);
+      sig.roll *= mirrorSign; sig.yaw *= mirrorSign;
+      const el = this.puppetEls[i];
+      if (el && el.drive) el.drive(sig);
+      got[i] = true;
+    }
+    for (let i = 0; i < this.STATIONS; i++) {
+      if (this.puppetActive[i] && !got[i]) { const el = this.puppetEls[i]; if (el && el.rest) el.rest(); }
+    }
+  }
+
+  // Visitor face landmarks + blendshapes → normalized drive signal.
+  faceToSignal(lm, blend) {
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+    const eyeR = lm[33], eyeL = lm[263], nose = lm[1], chin = lm[152];
+    const midx = (eyeR.x + eyeL.x) / 2, midy = (eyeR.y + eyeL.y) / 2;
+    const dx = eyeL.x - eyeR.x, dy = eyeL.y - eyeR.y;
+    const width = Math.hypot(dx, dy) || 0.001;
+    const roll = clamp((Math.atan2(dy, dx) * 180 / Math.PI) / 22, -1.5, 1.5);
+    const yaw = clamp(((nose.x - midx) / (width * 0.5)) / 0.9, -1.5, 1.5);
+    const faceH = (chin ? Math.hypot(chin.x - midx, chin.y - midy) : 0.001) || 0.001;
+    const pitch = clamp((((nose.y - midy) / faceH) - 0.45) / 0.18, -1.5, 1.5) * -1;
+    let jawOpen = 0, blinkL = 0, blinkR = 0;
+    if (blend && blend.categories) {
+      for (const c of blend.categories) {
+        if (c.categoryName === 'jawOpen') jawOpen = c.score;
+        else if (c.categoryName === 'eyeBlinkLeft') blinkL = c.score;
+        else if (c.categoryName === 'eyeBlinkRight') blinkR = c.score;
+      }
+    }
+    return { roll, yaw, pitch, jawOpen, blinkL, blinkR };
+  }
+
   // Map a MediaPipe normalized landmark (raw video space) to overlay % coords,
   // accounting for objectFit:cover objectPosition:center 30% and scaleX(-1) mirror.
   mapLmToOverlay(lmX, lmY, vW, vH) {
@@ -1312,9 +1416,9 @@ class Component extends DCLogic {
     // placed immediately; re-detect on the captured frame to refine positions.
     this.detectFaceLandmarksOnce(i);
 
-    // inswapper mode sends one frame now; live-mirror mode streams later (from
-    // ensureRaf, once the reveal window opens) so we skip the one-shot here.
-    if (!this.liveMirror && captured && this.swapWs && this.swapWs.readyState === WebSocket.OPEN) {
+    // inswapper mode sends one frame now; live-mirror streams later and the
+    // in-browser puppet needs no server at all, so both skip the one-shot here.
+    if (!this.liveMirror && !this.puppetMode && captured && this.swapWs && this.swapWs.readyState === WebSocket.OPEN) {
       try { this.swapWs.send(JSON.stringify({ subject: subj.id, frame: captured.src.split(',')[1], station: i })); } catch (_) {}
     }
 
@@ -1333,6 +1437,11 @@ class Component extends DCLogic {
       const t = (now - this.t0[i]) / 1000;
       if (t >= TOTAL) {
         if (this.liveMirror) this.stopMirror(i);
+        if (this.puppetMode) {
+          this.puppetActive[i] = false;
+          const el = this.puppetEls[i]; if (el && el.rest) el.rest();
+          if (!this.puppetActive.some(Boolean)) this.stopPuppetDriver();
+        }
         const stations = this.state.stations.slice();
         if (autoLoop) { stations[i] = { phase: 'live', t: 0, subjectIdx: stations[i].subjectIdx }; if (this.videos[i] && this.stream) this.videos[i].play().catch(() => {}); }
         else { stations[i] = { phase: 'done', t: TOTAL, subjectIdx: stations[i].subjectIdx }; }
@@ -1341,6 +1450,7 @@ class Component extends DCLogic {
         return;
       }
       if (this.liveMirror && t >= MIRROR_START && !this.mirror[i].active) this.startMirror(i);
+      if (this.puppetMode && t >= MIRROR_START && !this.puppetActive[i]) { this.puppetActive[i] = true; this.startPuppetDriver(); }
       const stations = this.state.stations.slice();
       stations[i] = { ...stations[i], t };
       this.setState({ stations });
@@ -1510,22 +1620,33 @@ class Component extends DCLogic {
     o.captureEl = null;
 
     o.portraitSrc = subj.portrait || subj.cutout || '';
+    // In-browser puppet: drive the subject's own portrait with the visitor's face.
+    const showPuppet = this.puppetMode && !live && !!subj.portrait;
     // Live-mirror frame (if streaming) takes precedence over the static result.
     const mirrorSrc = (this.liveMirror && this.mirror && this.mirror[i]) ? this.mirror[i].src : null;
     // Wink source: prefer face-swap result; fall back to subject's own portrait
     const swapSrc = (cap && cap.swappedSrc) || (!live && subj.portrait ? subj.portrait : null);
-    const showMirror = !live && !!mirrorSrc;
-    const showWink = !live && !showMirror && !!swapSrc;
-    // Card portrait: hidden once the wink/mirror takes over; visible otherwise
+    const showMirror = !live && !showPuppet && !!mirrorSrc;
+    const showWink = !live && !showPuppet && !showMirror && !!swapSrc;
+    // Card portrait: hidden once the puppet/wink/mirror takes over; visible otherwise
     o.portraitBlendStyle = {
       position:'absolute', inset:'0', width:'100%', height:'100%',
       objectFit: subj.portraitFit || 'cover', objectPosition: subj.portraitPos || 'center top',
-      opacity: (live || showWink || showMirror) ? 0 : 0.95,
+      opacity: (live || showWink || showMirror || showPuppet) ? 0 : 0.95,
       display: o.portraitSrc ? 'block' : 'none',
       pointerEvents:'none'
     };
 
-    if (showMirror) {
+    if (showPuppet) {
+      const h = React.createElement;
+      o.swapEl = h('live-puppet', {
+        key: 'puppet',
+        ref: this.makePuppetRef(i),
+        src: subj.portrait,
+        cover: '',
+        style: { pointerEvents: 'none' }
+      });
+    } else if (showMirror) {
       // Live-driven portrait: already animated by the visitor, so a plain image
       // that swaps src each frame — no synthetic wink.
       const h = React.createElement;

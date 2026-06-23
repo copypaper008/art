@@ -34,6 +34,8 @@ chosen subject. The full stage scales to fit any screen.
 ```
 index.html               ← the main app. EDIT HERE.
 support.js               ← DC runtime (React 18). Do not edit.
+wink-portrait.js         ← <wink-portrait> custom element (auto-winks a portrait)
+live-puppet.js           ← <live-puppet> custom element (in-browser real-time puppet, ?puppet=1)
 server.py                ← face-swap backend (InsightFace + inswapper_128.onnx)
 server_liveportrait.py   ← live reenactment backend (LivePortrait + ?mirror=1). Not wired to launchers.
 start-mac.command        ← one-double-click launcher for macOS (opens 4-station view)
@@ -297,11 +299,13 @@ Then pull on the installation machine and restart the servers.
 | Parameter | Values | Effect |
 |---|---|---|
 | `stations` | `1`–`4` | Number of panels to show (default: `1`) |
-| `mirror` | `1` | Live-mirror mode — drive the portrait with the visitor's live expressions (requires `server_liveportrait.py`, see below) |
+| `puppet` | `1` | Live-puppet mode — drive the portrait's blinks / mouth / head with the visitor's face, **in-browser, no server** (see below) |
+| `mirror` | `1` | Live-mirror mode — photoreal reenactment via `server_liveportrait.py` (needs a strong machine, see below) |
 
 - `http://localhost:8080/` — single panel (testing / laptop)
 - `http://localhost:8080/?stations=4` — full 4-panel installation
-- `http://localhost:8080/?stations=4&mirror=1` — full installation, live reenactment
+- `http://localhost:8080/?stations=4&puppet=1` — full installation, in-browser live puppet
+- `http://localhost:8080/?stations=4&mirror=1` — full installation, server-side reenactment
 
 ---
 
@@ -338,6 +342,30 @@ Returns: `{ result: base64JPEG, station, imgW, imgH, leftEye: [rx, ry] }`
 
 Pre-loads all portraits at startup. Uses `inswapper_128.onnx`; GFPGAN sharpens
 results automatically if installed. WebSocket reconnects if the server restarts.
+
+---
+
+## Live-puppet mode (`?puppet=1`) — recommended for weak hardware
+
+A real-time portrait that mirrors the visitor **entirely in the browser** — no
+Python server, no model download, no GPU. It reuses the MediaPipe face tracker
+already loaded for the wink, reads the visitor's **blendshapes** (jaw-open, eye
+blinks) and **head pose**, and drives the subject's own portrait with CSS
+transforms + overlays: the portrait **blinks, opens its mouth, and tilts/turns**
+to match the visitor during the card-reveal window.
+
+This is the path that runs at full frame rate on the **exhibition PC** (Intel
+HD integrated graphics) where server-side LivePortrait cannot keep up. It is a
+**stylized** puppet — no photoreal teeth or true 3D head-turn — but it is truly
+real-time with zero lag.
+
+**Run it:** nothing extra — `?puppet=1`, e.g. `http://localhost:8080/?stations=4&puppet=1`.
+The inswapper server is not used in this mode. Subjects whose portrait has no
+detectable face (cartoons — Bugs, Ernie, Ursula) simply stay still.
+
+**Tuning** (top of `live-puppet.js`, `GAINS`): `roll` / `yaw` / `pitch` (degrees
+of head movement), `mouth` (jaw-open amount), `ease` (smoothing). The
+perception side (visitor → signal) lives in `faceToSignal()` in `index.html`.
 
 ---
 
