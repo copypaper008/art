@@ -1000,6 +1000,13 @@ class Component extends DCLogic {
     this._rafs = [null, null, null, null];
     this._mainRaf = null;
 
+    // Live-mirror mode (server_liveportrait.py): the revealed portrait is driven
+    // by the visitor's live expressions instead of a one-shot face-swap. Opt-in
+    // via ?mirror=1 or the liveMirror prop so the default inswapper install is
+    // untouched until this is validated on the real hardware.
+    this.liveMirror = new URLSearchParams(location.search).get('mirror') === '1' || (this.props.liveMirror ?? false);
+    this.mirror = [0, 1, 2, 3].map(() => ({ active: false, src: null, awaiting: false, first: true }));
+
     this.startCamera();
     this.startDetect();
     this.connectSwapServer();
@@ -1014,8 +1021,23 @@ class Component extends DCLogic {
         ws.onmessage = (e) => {
           try {
             const msg = JSON.parse(e.data);
-            if (msg.result && typeof msg.station === 'number') {
-              const cap = this.captures[msg.station];
+            if (typeof msg.station !== 'number') return;
+            const st = msg.station;
+            // Live-mirror stream: each reply animates the portrait and unblocks
+            // the next frame (request-driven back-pressure — one frame in flight).
+            if (this.liveMirror) {
+              const m = this.mirror && this.mirror[st];
+              if (m && m.active) {
+                if (msg.result) m.src = 'data:image/jpeg;base64,' + msg.result;
+                m.awaiting = false;
+                this.forceUpdate();
+                this.pumpMirror(st);
+              }
+              return;
+            }
+            // inswapper one-shot result
+            if (msg.result) {
+              const cap = this.captures[st];
               if (cap) { cap.swappedSrc = 'data:image/jpeg;base64,' + msg.result; this.forceUpdate(); }
             }
           } catch (_) {}
@@ -1028,6 +1050,7 @@ class Component extends DCLogic {
   }
 
   componentWillUnmount() {
+    if (this.mirror) this.mirror.forEach((_, i) => this.stopMirror(i));
     cancelAnimationFrame(this._mainRaf);
     this._rafs.forEach(r => r && cancelAnimationFrame(r));
     clearInterval(this.detectTimer);
@@ -1183,6 +1206,52 @@ class Component extends DCLogic {
     return { src, vw: v.videoWidth, vh: v.videoHeight };
   }
 
+  // ---- Live-mirror streaming (server_liveportrait.py) -----------------------
+  // Crop the station's vertical zone from the shared camera so the right face
+  // drives each portrait. Returns base64 JPEG (no data: prefix), or null.
+  captureZone(i) {
+    const v = this.sampleVideo();
+    if (!v || !v.videoWidth || this.state.camError) return null;
+    const reverse = this.props.reverseZones ?? false;
+    const zone = reverse ? (this.STATIONS - 1 - i) : i;
+    const zw = v.videoWidth / this.STATIONS;
+    const sx = Math.floor(zone * zw), sw = Math.floor(zw), sh = v.videoHeight;
+    const c = document.createElement('canvas');
+    c.width = sw; c.height = sh;
+    try { c.getContext('2d').drawImage(v, sx, 0, sw, sh, 0, 0, sw, sh); } catch (e) { return null; }
+    try { return c.toDataURL('image/jpeg', 0.8).split(',')[1]; } catch (e) { return null; }
+  }
+
+  startMirror(i) {
+    if (!this.liveMirror) return;
+    const m = this.mirror[i];
+    if (!m || m.active) return;
+    m.active = true; m.first = true; m.src = null; m.awaiting = false;
+    this.pumpMirror(i);
+  }
+
+  // One frame in flight at a time: capture → send → (on reply) capture next.
+  // This is the client half of the back-pressure that stops the portrait
+  // drifting behind real time.
+  pumpMirror(i) {
+    const m = this.mirror && this.mirror[i];
+    if (!m || !m.active || m.awaiting) return;
+    if (!this.swapWs || this.swapWs.readyState !== WebSocket.OPEN) { setTimeout(() => this.pumpMirror(i), 300); return; }
+    const b64 = this.captureZone(i);
+    if (!b64) { setTimeout(() => this.pumpMirror(i), 120); return; }
+    const station = this.state.stations[i];
+    const subj = this.subjects[station.subjectIdx] || this.subjects[0];
+    const first = m.first; m.first = false;
+    m.awaiting = true;
+    try { this.swapWs.send(JSON.stringify({ subject: subj.id, frame: b64, station: i, first })); }
+    catch (_) { m.awaiting = false; setTimeout(() => this.pumpMirror(i), 300); }
+  }
+
+  stopMirror(i) {
+    const m = this.mirror && this.mirror[i];
+    if (m) { m.active = false; m.src = null; m.awaiting = false; }
+  }
+
   // Map a MediaPipe normalized landmark (raw video space) to overlay % coords,
   // accounting for objectFit:cover objectPosition:center 30% and scaleX(-1) mirror.
   mapLmToOverlay(lmX, lmY, vW, vH) {
@@ -1243,7 +1312,9 @@ class Component extends DCLogic {
     // placed immediately; re-detect on the captured frame to refine positions.
     this.detectFaceLandmarksOnce(i);
 
-    if (captured && this.swapWs && this.swapWs.readyState === WebSocket.OPEN) {
+    // inswapper mode sends one frame now; live-mirror mode streams later (from
+    // ensureRaf, once the reveal window opens) so we skip the one-shot here.
+    if (!this.liveMirror && captured && this.swapWs && this.swapWs.readyState === WebSocket.OPEN) {
       try { this.swapWs.send(JSON.stringify({ subject: subj.id, frame: captured.src.split(',')[1], station: i })); } catch (_) {}
     }
 
@@ -1256,10 +1327,12 @@ class Component extends DCLogic {
   ensureRaf(i) {
     if (this._rafs[i]) return;
     const TOTAL = 28.0;
+    const MIRROR_START = 13.5; // begin streaming just before the portrait reveal (~16s)
     const autoLoop = this.props.autoLoop ?? true;
     const step = (now) => {
       const t = (now - this.t0[i]) / 1000;
       if (t >= TOTAL) {
+        if (this.liveMirror) this.stopMirror(i);
         const stations = this.state.stations.slice();
         if (autoLoop) { stations[i] = { phase: 'live', t: 0, subjectIdx: stations[i].subjectIdx }; if (this.videos[i] && this.stream) this.videos[i].play().catch(() => {}); }
         else { stations[i] = { phase: 'done', t: TOTAL, subjectIdx: stations[i].subjectIdx }; }
@@ -1267,6 +1340,7 @@ class Component extends DCLogic {
         this.setState({ stations });
         return;
       }
+      if (this.liveMirror && t >= MIRROR_START && !this.mirror[i].active) this.startMirror(i);
       const stations = this.state.stations.slice();
       stations[i] = { ...stations[i], t };
       this.setState({ stations });
@@ -1436,20 +1510,32 @@ class Component extends DCLogic {
     o.captureEl = null;
 
     o.portraitSrc = subj.portrait || subj.cutout || '';
+    // Live-mirror frame (if streaming) takes precedence over the static result.
+    const mirrorSrc = (this.liveMirror && this.mirror && this.mirror[i]) ? this.mirror[i].src : null;
     // Wink source: prefer face-swap result; fall back to subject's own portrait
     const swapSrc = (cap && cap.swappedSrc) || (!live && subj.portrait ? subj.portrait : null);
-    const showWink = !live && !!swapSrc;
-    // Card portrait: hidden once wink portrait takes over; visible when no wink available
+    const showMirror = !live && !!mirrorSrc;
+    const showWink = !live && !showMirror && !!swapSrc;
+    // Card portrait: hidden once the wink/mirror takes over; visible otherwise
     o.portraitBlendStyle = {
       position:'absolute', inset:'0', width:'100%', height:'100%',
       objectFit: subj.portraitFit || 'cover', objectPosition: subj.portraitPos || 'center top',
-      opacity: (live || showWink) ? 0 : 0.95,
+      opacity: (live || showWink || showMirror) ? 0 : 0.95,
       display: o.portraitSrc ? 'block' : 'none',
       pointerEvents:'none'
     };
 
-    // Wink portrait: face-swapped image (or subject's own portrait) with animated eyelid
-    if (showWink) {
+    if (showMirror) {
+      // Live-driven portrait: already animated by the visitor, so a plain image
+      // that swaps src each frame — no synthetic wink.
+      const h = React.createElement;
+      o.swapEl = h('img', {
+        key: 'mirror',
+        src: mirrorSrc,
+        style: { position:'absolute', inset:'0', width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top', pointerEvents:'none' }
+      });
+    } else if (showWink) {
+      // Wink portrait: face-swapped image (or subject's own portrait) with animated eyelid
       const h = React.createElement;
       o.swapEl = h('wink-portrait', {
         key: 'wink',

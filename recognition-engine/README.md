@@ -35,7 +35,7 @@ chosen subject. The full stage scales to fit any screen.
 index.html               ← the main app. EDIT HERE.
 support.js               ← DC runtime (React 18). Do not edit.
 server.py                ← face-swap backend (InsightFace + inswapper_128.onnx)
-server_liveportrait.py   ← alternative reenactment backend (LivePortrait). Not wired to launchers.
+server_liveportrait.py   ← live reenactment backend (LivePortrait + ?mirror=1). Not wired to launchers.
 start-mac.command        ← one-double-click launcher for macOS (opens 4-station view)
 start-windows.bat        ← one-double-click launcher for Windows (opens 4-station view)
 assets/                  ← portrait images (full B&W photos + face-cutout PNGs)
@@ -297,9 +297,11 @@ Then pull on the installation machine and restart the servers.
 | Parameter | Values | Effect |
 |---|---|---|
 | `stations` | `1`–`4` | Number of panels to show (default: `1`) |
+| `mirror` | `1` | Live-mirror mode — drive the portrait with the visitor's live expressions (requires `server_liveportrait.py`, see below) |
 
 - `http://localhost:8080/` — single panel (testing / laptop)
 - `http://localhost:8080/?stations=4` — full 4-panel installation
+- `http://localhost:8080/?stations=4&mirror=1` — full installation, live reenactment
 
 ---
 
@@ -336,6 +338,38 @@ Returns: `{ result: base64JPEG, station, imgW, imgH, leftEye: [rx, ry] }`
 
 Pre-loads all portraits at startup. Uses `inswapper_128.onnx`; GFPGAN sharpens
 results automatically if installed. WebSocket reconnects if the server restarts.
+
+---
+
+## Live-mirror mode (`server_liveportrait.py` + `?mirror=1`)
+
+An alternative to the still face-swap: instead of pasting the visitor's captured
+face onto the portrait once, the portrait is **driven live** by the visitor's
+expressions (mouth, blinks, head tilt) during the card-reveal window. The
+frontend streams the visitor's zone to the server one frame at a time and swaps
+the returned image into the portrait each frame.
+
+**Run it:**
+1. `git clone https://github.com/KwaiVGI/LivePortrait liveportrait && pip install -r liveportrait/requirements.txt`
+2. `python3 server_liveportrait.py` (same port `8765` — run instead of `server.py`)
+3. Open with `?mirror=1`, e.g. `http://localhost:8080/?stations=4&mirror=1`
+
+**Protocol** — client → server per frame: `{ subject, frame: base64JPEG, station, first }`
+(`first: true` records the visitor's neutral pose). Server → client: `{ result: base64JPEG, station, subject }`.
+The client keeps **one frame in flight per station** (send → await → send fresh)
+and the server **drops stale queued frames**, so latency stays a constant
+"one inference behind" instead of accumulating.
+
+**Performance reality:** smooth real-time needs a CUDA GPU (~20–40 fps). On
+CPU-only machines (Mac / Intel PC) the generator is ~0.5–2 s/frame, so the
+mirror is responsive but low fps — and four stations share one server, so they
+update in turn. For smooth real-time on Mac/Intel, swap the backend to an ONNX
+build ([FasterLivePortrait](https://github.com/warmshao/FasterLivePortrait) with
+CoreML on Mac / OpenVINO on Intel); the streaming protocol above is unchanged.
+
+Tuning knobs live at the top of `server_liveportrait.py`: `EXP_SCALE` /
+`POSE_SCALE` / `ROLL_SCALE` / `T_SCALE` (how strongly the visitor drives the
+portrait) and `SMOOTH` (EMA smoothing of the motion).
 
 ---
 
