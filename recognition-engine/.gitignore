@@ -1,0 +1,14 @@
+# Python bytecode
+__pycache__/
+*.pyc
+
+# First-run dependency markers (created by the launchers)
+.deps_ok*
+
+# Large local-only model files (download per the README, not committed)
+inswapper_128.onnx
+GFPGANv1.4.pth
+gfpgan/
+
+# LivePortrait clone + its downloaded weights (live-mirror mode)
+liveportrait/
